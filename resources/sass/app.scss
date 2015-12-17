@@ -1,0 +1,67 @@
+// The following two lines import the default Sencha Touch theme. If you are building
+// a new theme, remove them and the add your own CSS on top of the base CSS (which
+// is already included in your app.json file).
+@import 'sencha-touch/default';
+@import 'sencha-touch/default/all';
+
+// Custom code goes here..
+
+// Examples of using the icon mixin:
+// @include icon('user');
+
+
+// ******************************************************************
+// Invalids
+// ******************************************************************
+
+.invalidField .x-form-field {
+  background-color: red !important;
+}
+
+
+// ******************************************************************
+// Ext.view.NumDisplay
+// ******************************************************************
+
+.NumDisplay {
+    font-family: "Lucida Console", Monaco, monospace;
+    text-align: right;
+    font-size: 1.3em;
+    font-weight: bold;
+    padding: 8px 6px 8px 6px;
+    color: #555555 !important;
+}
+
+.NumDisplayInfo {
+    font-size: 60%;
+    padding: 6px 6px 6px 6px;
+    color: grey !important;
+    text-align: left;
+}
+
+.NumDisplayError {
+    font-size: 60%;
+    padding: 6px 6px 6px 6px;
+    color: red !important;
+    text-align: left;
+}
+
+// ******************************************************************
+// NumberInput 
+// ******************************************************************
+
+@include sencha-button-ui('numInputButtonRed', #e06b5e,'glossy');
+@include sencha-button-ui('numInputButtonBlack', #525252,'glossy');
+
+.NumInputButton {
+    margin: 2px;
+    color: #ffffff !important; 
+    font-size: 1.3em;    
+}
+
+.NumInputContainer {
+    background-color: #525252 !important;
+    padding: 8px;
+}
+
+
