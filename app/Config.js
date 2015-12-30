@@ -17,7 +17,8 @@ Ext.define('Fpos.Config', {
         maxRows : 10,
         settings : null,
         user : null,
-        profile: null
+        profile: null,
+        admin: false
     },
     
     constructor: function(config) {

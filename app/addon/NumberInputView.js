@@ -17,7 +17,9 @@ Ext.define('Ext.view.NumberInputView', {
         
         editHandler: null,
         
-        hideOnMaskTap : true,
+        hideOnMaskTap: true,
+                
+        hideOnInputDone: true,
                 
         modal: true,
         
@@ -474,6 +476,10 @@ Ext.define('Ext.view.NumberInputView', {
         this.setFirstReplace(true);
     },
     
+    setError: function(err) {
+        this.numField.setError(err);
+    },    
+    
     changeSign: function() {
         var val = this.getValue();
         val=val*-1.0;
@@ -493,7 +499,9 @@ Ext.define('Ext.view.NumberInputView', {
                         handler(this, this.getValue());
                     }
                 } finally {
-                    this.hide();
+                    if ( this.getHideOnInputDone() ) {
+                        this.hide();
+                    }
                 }
             }
         }

@@ -113,12 +113,27 @@ Ext.define('Ext.proxy.PouchDBUtil',{
     },  
     
     search: function(db, domain, params, callback) {    
+        debugger;
         var self = this;
         var view = self.buildView(domain);
         
+        var deferred = null;
+        if ( !callback ) {
+            deferred = Ext.create('Ext.ux.Deferred');
+            callback = function(err, res) {
+                if (err) {
+                    deferred.reject(err);
+                } else if (res) {
+                    deferred.resolve(res);
+                } else {
+                    deferred.resolve();
+                }
+            };
+        }
+        
         if (view !== null) {
             params.key = view.key;
-            return db.query(view.name, params, function(err, res) {                
+            db.query(view.name, params, function(err, res) {                
                 if ( !err ) {
                     // no error result was successfull
                     if (callback) {
@@ -148,8 +163,13 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                     
             });       
         } else {
-           return db.allDocs(params, callback);
+           db.allDocs(params, callback);
         } 
+
+        if ( deferred ) 
+            return deferred.promise();
+            
+        return null;
     },
     
     /**

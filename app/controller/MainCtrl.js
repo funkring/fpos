@@ -70,7 +70,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             profile._id = '_local/profile';
             if (profile_rev) {
                 profile._rev = profile_rev;                
-            }
+            }            
             return db.put(profile);
         }).then(function() {
             // sync
@@ -235,9 +235,16 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     showLogin: function() {
-        if ( !this.pinInput ) {
-            this.pinInput = Ext.create('Ext.view.NumberInputView', {
-                hideOnMaskTap : false,
+        var self = this;
+        var db = Config.getDB();
+        
+        Config.setAdmin(false);
+        Config.setUser(null);
+        
+        if ( !self.pinInput ) {
+            self.pinInput = Ext.create('Ext.view.NumberInputView', {
+                hideOnMaskTap: false,
+                hideOnInputDone: false, 
                 centered : true,
                 ui: "pin",
                 maxlen: 4,
@@ -246,8 +253,36 @@ Ext.define('Fpos.controller.MainCtrl', {
                 title : "PIN für die Anmeldung"
             });
         }
-        this.pinInput.setHandler(function(value) {
-            //if (value !== )
+        self.pinInput.setHandler(function(view, pin) {
+          
+            var settings = Config.getSettings();
+            var profile = Config.getProfile();
+            var user = null;
+
+            // check profile            
+            if ( profile ) {
+                Ext.each(profile.user_ids, function(pos_user) {
+                    if ( pos_user.pin === pin ) {
+                        user = pos_user;
+                        return false;
+                    }
+                });
+            }
+            
+            if ( !user ) {
+                // check admin
+                if ( settings && settings.pin === pin ) {
+                    Config.setAdmin(true);
+                    view.hide();
+                } else {
+                    // user not found
+                    view.setError("Ungültiger PIN");
+                }
+            } else {
+                // pos user
+                Config.setUser(user);
+                view.hide();
+            }
             
         });
         Ext.Viewport.add(this.pinInput);
