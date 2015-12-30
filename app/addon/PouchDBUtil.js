@@ -1,7 +1,10 @@
-/*global Ext:false,PouchDB:false*,openerplib:false,console:false*/
+/*global Ext:false,PouchDB:false*,openerplib:false,futil:false,URI:false*/
 
 Ext.define('Ext.proxy.PouchDBUtil',{
     alternateClassName: 'DBUtil',
+    requires: [    
+        'Ext.ux.Deferred'
+    ],
     
     singleton: true,
     
@@ -317,259 +320,38 @@ Ext.define('Ext.proxy.PouchDBUtil',{
         db.destroy(callback);
     },
 
-
-    resetSync: function(dbName, callback) {
-        var self = this;
-        var db = self.getDB(dbName);
-        
-        db.get("_local/odoo_sync", function(err, doc) {
-            if ( !err ) {
-                db.remove(doc,function(err) {
-                    callback(err);            
-                });
-            } else {
-                callback();    
-            }
-        });        
-    },
-    
-     /**
-     * sync odoo store
-     */
-    syncOdooStore: function(config, con, db, store, syncUuid, res_model, domain, view, log, callback) {        
-        var syncName = syncUuid+"-{"+res_model+"}";
-        if ( domain ) {
-            syncName = syncName + "-{"+JSON.stringify(domain)+"}";
-        }
-        
-        var jdoc_obj = con.get_model("jdoc.jdoc");
-        
-        // delete docs
-        
-        // download docs
-        
-        // load changes
-        
-        // publish change
-        
-        // fetch changes
-        var syncChanges = function(syncPoint) {
-            db.changes({
-                include_docs: true,
-                since: syncPoint.seq,
-                filter: function(doc) {
-                    return doc.fdoo__ir_model === res_model;
-                }
-            }).then(function(changes) {
-                var fields =  store.getModel().getFields().keys;
-                jdoc_obj.exec("jdoc_sync", 
-                     [
-                       {
-                        "model" : res_model,
-                        "domain" : domain,
-                        "view": view, 
-                        "fields" : fields,
-                        "lastsync" : syncPoint,
-                        "changes" : changes.results || {},
-                        "actions" : config.actions || []                      
-                       },
-                       con.user_context
-                     ],                       
-                     null, 
-                     function(err, res) {
-                         if ( err ) {                                                             
-                             callback(err);
-                         } else {
-                             var server_changes = res.changes;
-                             var server_lastsync = res.lastsync;
-                             var pending_server_changes = server_changes.length+1;
-                             
-                             var docDeleted = 0;
-                             var docUpdated = 0;
-                             var docInserted = 0;
-                                                          
-                             var serverChangeDone = function(err) {
-                                if ( err ) {
-                                    log.warning(err);
-                                }
+    syncWithOdoo: function(db, client, sync_config) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        // invoke before sync
+        client.invoke("jdoc.jdoc","jdoc_couchdb_before",[sync_config])
+            .then(function(couchdb_config) {
+                
+                // get couchdb link
+                var password = client.getClient()._password;                                
+                var target_url = URI(couchdb_config.url)
+                    .username(couchdb_config.user)
+                    .password(password)
+                    .toString()+couchdb_config.db;
                                 
-                                if ( --pending_server_changes === 0) {
-                                    // update sync data                                   
-                                    db.info().then(function(res) {
-                                        server_lastsync.seq = res.update_seq;
-                                        db.get("_local/odoo_sync", function(err, doc) {
-                                           
-                                           // new sync point 
-                                           if (err) {
-                                              doc={_id: "_local/odoo_sync"};
-                                           } 
-                                           
-                                           // log statistik
-                                           log.info("Synchronisation für <b>" + res_model + "</b> ausgeführt </br> " +
-                                                    "<pre>" + 
-                                                    "    " + docDeleted + " Dokumente gelöscht" +
-                                                    "    " + docInserted + " Dokumente eingefügt" +
-                                                    "    " + docUpdated + " Dokumente aktualisiert" +
-                                                    "</pre>");
-                                           
-                                           doc[syncName]=server_lastsync;
-                                           db.put(doc, function(err) {                                              
-                                               callback(err, server_lastsync);                                               
-                                           });
-                                           
-                                        });
-                                    });           
-                                }                              
-                                 
-                             };
-                             
-                             // iterate changes
-                             Ext.each(server_changes, function(server_change) {
-                                // handle delete
-                                if ( server_change.deleted ) {
-                                    
-                                    // lösche dokument
-                                    db.get(server_change.id, function(err, doc) {
-                                         if ( !err ) {
-                                            doc._deleted=true; 
-                                            docDeleted++;                                         
-                                            //log.info("Dokument " + server_change.id + " wird gelöscht");
-                                            db.put(doc, serverChangeDone); //<- decrement pending operations
-                                         } else {
-                                            //log.warning("Dokument " + server_change.id + " nicht vorhanden zu löschen");
-                                            // decrement operations
-                                            serverChangeDone(); 
-                                         }                                      
-                                    });
-                                    
-                                //handle update
-                                } else if ( server_change.doc ) {
-                                    db.get(server_change.id, function(err, doc) {
-                                         if ( err ) {
-                                             docInserted++;
-                                             //log.warning("Dokument " + server_change.id + " wird neu erzeugt");
-                                         } else {
-                                             docUpdated++;                                         
-                                             server_change.doc._rev = doc._rev;
-                                             //log.info("Dokument " + server_change.id + " wird aktualisiert");
-                                         }
-                                         db.put(server_change.doc, serverChangeDone); //<- decrement pending operations                                         
-                                    });
-                                }
-                             });
-                             
-                             // changes done
-                             serverChangeDone();
-                         }
-                     });                                
-            }).catch(function(err) {
-                callback(err);
-            });
-        };
-        
-        
-        // get last syncpoint or create new
-        db.get("_local/odoo_sync", function(err, doc) {
-            var syncpoint;
-             
-            if (!err) {
-                syncpoint = doc[syncName];
-            }
-            
-            if ( !syncpoint ) {
-                syncpoint = {
-                    "date" : null,
-                    "sequence" : 0
-                };
-            }
-            
-            syncChanges(syncpoint);     
-            
-        });
-      
-    },
-    
-    /**
-     * sync with odoo
-     */
-    syncOdoo: function(config, log, callback) {
-         var self = this;
-         //credential, stores,
-         
-         var con = openerplib.get_connection(config.access.host, 
-                                            "jsonrpc", 
-                                            parseInt(config.access.port,10), 
-                                            config.access.db, 
-                                            config.access.user, 
-                                            config.access.password);
-                           
-         var syncuuid = "odoo_sync_{"+config.access.user + "}-{" + config.access.host + "}-{" + config.access.port.toString() + "}-{" + config.access.user +"}";
-                 
-         if ( !log ) {
-             log = function() {
-                 this.log = function(message) {
-                     console.log(message);
-                 };
-                 this.error = this.log;
-                 this.warning = this.log;
-                 this.debug = this.log;
-                 this.info = this.log;
-             };
-         }
-        
-         // prepare store sync
-         var syncStore = function(store, callback) {
-            var proxy = store.getProxy();
-            if ( proxy instanceof Ext.proxy.PouchDB ) {
-                // get model and domain  
-                var res_model = proxy.getResModel();
-                var domain = proxy.getDomain();
-                var view = proxy.getView();
-                // can only sync with model                
-                if ( res_model) {
-                    // get database                    
-                    var db = self.getDB(proxy.getDatabase());
-                    // sync odoo store
-                    self.syncOdooStore(config, con, db, store, syncuuid, res_model, domain, view, log, function(err, res) {
-                        callback(err, res);
+                // sync
+                db.sync(target_url)
+                    .then(function(sync_res) {
+                        // invoke after sync
+                        client.invoke("jdoc.jdoc","jdoc_couchdb_after",[sync_config]) 
+                            .then(function(couchdb_config) {
+                                deferred.resolve(sync_res);
+                            }).catch(function(err) {
+                                deferred.reject(err);
+                            });
+                                                   
+                    }).catch(function(err) {
+                        deferred.reject(err); 
                     });
-                } else {                    
-                    log.error("Kein resModel für Store " + Ext.getClass(store).getName() + " gesetzt!");
-                    callback();
-                }
-            }
-         };
-        
-                     
-         // start sync                    
-         con.authenticate( function(err)  {
-             if (err) {
-                 callback(err);
-             } else {
-                 log.info("Authentifizierung erfolgreich");       
-                 
-                 var storeIndex = -1;
-                 var storeLength = config.stores.length;
-                 var lastError = null;
-                 
-                 // handle stores
-                 var storeCallback = function(err, res) {
-                     if (err) {
-                         lastError = err;
-                     }
-                                      
-                     if ( ++storeIndex < storeLength ) {
-                        syncStore(config.stores[storeIndex], storeCallback);
-                     } else {
-                        callback(lastError, res);                            
-                     }
-                 };
-                 
-                 storeCallback();
-                    
-             }
-         } );
-        
+            }).catch(function(err) {
+                deferred.reject(err);               
+            });
+
+        return deferred.promise();
     }
     
 });

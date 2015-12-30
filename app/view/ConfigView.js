@@ -39,14 +39,14 @@ Ext.define('Fpos.view.ConfigView', {
                     },
                     {
                         xtype: 'textfield',
-                        name: 'db',
+                        name: 'database',
                         label: 'Datenbank',
                         placeHolder: 'odoo_fpos_xxx',
                         required: true
                     },
                     {
                         xtype: 'textfield',
-                        name: 'user',
+                        name: 'login',
                         label: 'Benutzer',
                         required: true,
                         autocomplete: false

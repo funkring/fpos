@@ -15,7 +15,7 @@ Ext.define('Ext.form.ViewManager', {
         this.initConfig(config);
     },
     
-    updateButtonState: function(view, saveButton, deleteButton) {
+    updateButtonState: function(view, items) {
         var saveable = false;
         var deleteable = false;
         
@@ -29,22 +29,49 @@ Ext.define('Ext.form.ViewManager', {
             } 
         } 
         
-        if ( saveButton ) {
+        if ( items.saveButton ) {
              if (saveable) {
-               saveButton.show();
+               items.saveButton.show();
             } else {
-               saveButton.hide();
+               items.saveButton.hide();
             }
         }
        
-        if ( deleteButton ) {
+        if ( items.deleteButton ) {
              if (deleteable) {
-               deleteButton.show();
+               items.deleteButton.show();
             } else {
-               deleteButton.hide();
+               items.deleteButton.hide();
             }
         }
         
+        var menu = view.menu || view.config.menu;
+        if ( menu ) {
+             Ext.Viewport.setMenu(menu, {
+                 side: 'left',
+                 reveal: true
+             });
+             if ( items.menuButton ) {
+                 items.menuButton.show();
+             }             
+        } else if ( items.menuButton )  {
+            items.menuButton.hide();
+            Ext.Viewport.removeMenu("left");
+        }        
+    },
+    
+    /**
+     * start loading
+     */
+    startLoading : function(msg) {
+        Ext.Viewport.setMasked({xtype: 'loadmask', message: msg});    
+    },
+    
+    /**
+     * stop loading
+     */
+    stopLoading : function() {
+        Ext.Viewport.setMasked(false);
     },
     
     /**
@@ -122,432 +149,104 @@ Ext.define('Ext.form.ViewManager', {
      */
     saveRecord: function(mainView) {
         var self = this;
-        futil.startLoading("Daten validieren...");             
-          
-        //invoke asynchronly
+        self.startLoading("Daten validieren...");             
+
         var deferred = Ext.create('Ext.ux.Deferred');
-            setTimeout(function() {
-                var view = mainView.getActiveItem();
+        var promise = deferred.promise();
+        
+        //invoke asynchronly
+        setTimeout(function() {            
+            var view = mainView.getActiveItem();
+            var valid = self.validateView(view);                 
+            if ( valid ) {
+                self.startLoading("Änderungen werden gespeichert...");
                 
-                futil.stopLoading();                
-                var valid = self.validateView(view);                 
-                if ( valid ) {
-                    futil.startLoading("Änderungen werden gespeichert...");
+                // record var
+                var record = null;
+                
+                // get handlers
+                var saveHandler = view.saveHandler || view.config.saveHandler;
+                var savedHandler = view.savedHandler || view.config.savedHandler;
+                                        
+                // the reload handler
+                var reloadHandler = function(err) {
                     
-                    // record var
-                    var record = null;
-                    
-                    // get handlers
-                    var saveHandler = view.saveHandler || view.config.saveHandler;
-                    var savedHandler = view.savedHandler || view.config.savedHandler;
-                                            
-                    // the reload handler
-                    var reloadHandler = function(err) {
-                        futil.stopLoading();
-                         
-                        if ( err ) {
-                            deferred.reject(err);
-                        } else {                        
-                            //check selection pattern
-                            var prevView = mainView.getPreviousItem();
-                            var popCount = 1;
-                            if (prevView && record) {
-                                // check field select record function
-                                var fieldSelectRecord = prevView.fieldSelectRecord || prevView.config.fieldSelectRecord;
-                                if (fieldSelectRecord) {
-                                    fieldSelectRecord(record);
-                                    popCount++;
-                                } 
-                            }
-                            // remove view
-                            mainView.pop(popCount); 
-                            
-                            // call other handler
-                            if (savedHandler) {
-                                savedHandler();
-                            }
-                            
-                            // resolve
-                            deferred.resolve();                            
-                        }       
-                    };
-                    
-                    if ( saveHandler ) {
-                        var res = saveHandler(view);
-                        if ( res ) {
-                            res.then(reloadHandler).catch(reloadHandler);
-                        } else {
-                            reloadHandler();
-                        }         
-                    } else {
-                        // otherwise try to store record
-                        record = view.getRecord();
-                        if ( record !== null ) {
-                            var values = view.getValues(); 
-                            record.set(values);
-                            record.save({
-                               callback: function() {
-                                  reloadHandler();
-                               }
-                            });
-                        } else {
-                            reloadHandler();
+                    if ( err ) {
+                        deferred.reject(err);
+                    } else {               
+                        //check selection pattern
+                        var prevView = mainView.getPreviousItem();
+                        var popCount = 1;
+                        if (prevView && record) {
+                            // check field select record function
+                            var fieldSelectRecord = prevView.fieldSelectRecord || prevView.config.fieldSelectRecord;
+                            if (fieldSelectRecord) {
+                                fieldSelectRecord(record);
+                                popCount++;
+                            } 
                         }
-                    }
+                        // remove view(s)
+                        mainView.pop(popCount);
+                        
+                        // call after save handler
+                        if (savedHandler) {
+                            var promiseSaveHandler = savedHandler();
+                            if ( promiseSaveHandler ) {
+                                promiseSaveHandler
+                                    .then(function() {
+                                        deferred.resolve();
+                                    })
+                                    .catch(function(err) {
+                                        deferred.reject(err);
+                                    });
+                                
+                            } else {
+                                deferred.resolve();
+                            }                         
+                        } else {                        
+                            // resolve
+                            deferred.resolve();
+                        }                            
+                    }       
+                };
+                
+                if ( saveHandler ) {
+                    var res = saveHandler(view);
+                    if ( res ) {
+                        res.then(function() {
+                            reloadHandler();
+                        }).catch(reloadHandler);
+                    } else {
+                        reloadHandler();
+                    }         
                 } else {
-                    deferred.reject("invalidField");
-                }
-        },0);
-        
-        return deferred.promise();
-    },
-    
-    
-    createNumberInput: function() {
-        var inputView = Ext.define('Ext.Panel', {
-            layout: 'vbox', 
-            
-            firstReplace: true,
-                
-            handler: null,
-            
-            editHandler: null,
-            
-            hideOnMaskTap : true,
-                    
-            modal: true,
-            
-            width: '336px',
-            
-            listeners: [
-                {
-                    fn: 'addNumber',
-                    event: 'tap',
-                    delegate: 'button[action=addNumber]'
-                },
-                {
-                    fn: 'clearInput',
-                    event: 'tap',
-                    delegate: 'button[action=clearInput]'
-                },
-                {
-                    fn: 'changeSign',
-                    event: 'tap',
-                    delegate: 'button[action=changeSign]'                
-                },
-                {
-                    fn: 'addComma',
-                    event: 'tap',
-                    delegate: 'button[action=addComma]'
-                },
-                {
-                    fn: 'numInputDone',
-                    event: 'tap',
-                    delegate: 'button[action=numInputDone]'   
-                },
-                {
-                    fn: 'showInput',
-                    event: 'show'
-                },
-                {
-                    fn: 'hideInput',
-                    event: 'hide'
-                },
-                {
-                    fn: 'editDetail',
-                    event: 'tap',
-                    delegate: 'numberview'
-                }
-                    
-            ], 
-            items: [
-                {   
-                    xtype: 'container',
-                    layout: 'hbox',
-                    items: [
-                        {
-                            xtype: 'numberview',
-                            flex: 1
-                        }                
-                    ]      
-                    
-                },
-                {
-                    xtype: 'container',
-                    layout: 'vbox',
-                    cls: 'NumInputContainer',
-                    items: [
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {                                
-                                    xtype: 'button',
-                                    text: '7',
-                                    width: '72px',
-                                    height: '66px',
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                    
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '8',
-                                    width: '72px',
-                                    height: '66px',
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'                                
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '9',
-                                    width: '72px',
-                                    height: '66px',          
-                                    ui: 'numInputButtonBlack',                      
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                }, 
-                                {
-                                    xtype: 'button',
-                                    text: 'CE',
-                                    width: '80px',
-                                    height: '66px',          
-                                    ui: 'numInputButtonRed',                      
-                                    cls: 'NumInputButton',
-                                    action: 'clearInput'
-                                }
-                            ]                    
-                        },
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {                                
-                                    xtype: 'button',
-                                    text: '4',
-                                    width: '72px',
-                                    height: '66px',
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '5',
-                                    width: '72px',
-                                    height: '66px',
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '6',
-                                    width: '72px',
-                                    height: '66px',          
-                                    ui: 'numInputButtonBlack',                      
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                }, 
-                                {
-                                    xtype: 'button',
-                                    text: '+/-',
-                                    width: '72px',
-                                    height: '66px',          
-                                    ui: 'numInputButtonBlack',                      
-                                    cls: 'NumInputButton',
-                                    action: 'changeSign'
-                                }
-                            ]                    
-                        },
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {
-                                    layout: 'vbox',
-                                    items: [
-                                        {
-                                            layout: 'hbox',
-                                            items: [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '1',
-                                                    width: '72px',
-                                                    height: '66px',
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '2',
-                                                    width: '72px',
-                                                    height: '66px',
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '3',
-                                                    width: '72px',
-                                                    height: '66px',          
-                                                    ui: 'numInputButtonBlack',                      
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                } 
-                                            ]                                
-                                        },
-                                        {
-                                            layout: 'hbox',
-                                            items:  [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '0',
-                                                    width: '148px',
-                                                    height: '66px',
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '.',
-                                                    width: '72px',
-                                                    height: '66px',
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addComma'
-                                                }
-                                            ]
-                                        }
-                                    ]                                                            
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '=',
-                                    width: '72px',
-                                    height: '136px',
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'numInputDone'
-                                }
-                            
-                            ]
-                        }          
-                    ]
-                    
-                }
-            
-            
-            ],
-            
-            
-            initialize: function() {
-                 var self = this;
-                 self.callParent(arguments);
-                 self.numField = self.query('numberview')[0];     
-            },
-            
-            addComma: function() {
-                var val = this.numField.getValue();
-                if ( val && val.indexOf(futil.comma) !== -1 ) {
-                    return;
-                }
-                val+=futil.comma;
-                this.numField.setValue(val);
-            },
-            
-            addNumber: function(button) {
-                var val = this.numField.getValue();
-                if ( !val || this.getFirstReplace() || val=='0' ) {
-                    this.setFirstReplace(false);
-                    val = '';
-                }
-                val+=button.getText();   
-                this.numField.setValue(val);
-            },
-            
-            setValue: function(val) {
-                this.numField.setValue(futil.formatFloat(val,0));
-                return val;
-            },
-            
-            getValue: function(val) {
-                return futil.parseFloat(this.numField.getValue());
-            },
-            
-            clearInput: function() {
-                this.setValue(0.0);
-            },
-            
-            changeSign: function() {
-                var val = this.getValue();
-                val=val*-1.0;
-                this.setValue(val);
-            },
-            
-            numInputDone: function() {
-                try {        
-                    var handler = this.getHandler();
-                    if ( handler ) {
-                        handler(this, this.getValue());
-                    }
-                } finally {
-                    this.hide();
-                }
-            },
-            
-            showInput: function()  {
-                this.visible=true;
-                this.setFirstReplace(true);     
-            },    
-            
-            hideInput: function() {
-                if ( this.visible ) {
-                    this.visible=false;
-                    this.setHandler(null);
-                }
-            },
-            
-            showBy: function(component, alignment, animation, value, handler, editHandler) {
-                var self = this;
-                
-                if ( !value ) {
-                    value = 0.0;
-                }
-                
-                self.setValue(value);        
-                self.setHandler(handler);
-                self.setEditHandler(editHandler);
-            
-                // call parent        
-                var successful = false;
-                try {
-                    self.callParent(arguments);
-                    successful = true;
-                } finally {
-                    if (!successful) {
-                        self.setHandler(null); 
+                    // otherwise try to store record
+                    record = view.getRecord();
+                    if ( record !== null ) {
+                        var values = view.getValues(); 
+                        record.set(values);
+                        record.save({
+                           callback: function() {
+                              reloadHandler();
+                           }
+                        });
+                    } else {
+                        reloadHandler();
                     }
                 }
-            },
-                
-            editDetail: function() {
-                try {        
-                    var handler = this.getEditHandler();
-                    if ( handler ) {
-                        handler(this, this.getValue());
-                    }
-                } finally {
-                    this.hide();
-                }
+            } else {                
+                deferred.reject("invalidField");
             }
-        });
-    
-        
-    }
-    
-        
+        },0);
+      
+        // return promise
+        return deferred.promise()
+            .then(function(result) {
+                self.stopLoading();
+            })
+            .catch(function(err) {
+                self.stopLoading();
+            });
+    }        
     
 });

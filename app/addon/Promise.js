@@ -224,6 +224,19 @@ Ext.define('Ext.ux.Promise', {
 
         return this;
     },
+    
+    
+    /**
+     * @method fail
+     * Alias for failure
+     * @param {Function} onFailure Callback executed after the promise is rejected
+     * @returns {Ext.ux.Promise} Return itself
+     */
+    catch: function (onFailure) {
+        this.then(undefined, onFailure);
+
+        return this;
+    },
 
     /**
      * Check if the promise is resolved or not

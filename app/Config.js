@@ -5,18 +5,19 @@ Ext.define('Fpos.Config', {
     alternateClassName: 'Config',
     requires: [
         'Ext.proxy.PouchDBUtil',
-        'Ext.store.LogStore'
+        'Ext.store.LogStore',
+        'Ext.client.OdooClient'
     ],
-    config : {
+    config : {       
         version : '1.2.1',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
         searchLimit : 100,
         maxRows : 10,
-        pos : null,
         settings : null,
-        userName : null
+        user : null,
+        profile: null
     },
     
     constructor: function(config) {
@@ -26,7 +27,7 @@ Ext.define('Fpos.Config', {
     applyLog: function(store) {
         if (store) {
             if ( !store ){
-                Ext.Logger.warn("The specified Store cannot be found", this);
+                Ext.Logger.warn("The specified store cannot be found", this);
             }
         }
         return store;
@@ -35,6 +36,40 @@ Ext.define('Fpos.Config', {
     getDB: function() {
         var db = DBUtil.getDB(this.getDatabaseName());
         return db;
+    },
+    
+    newClient: function() {
+        var settings = this.getSettings();
+        if (!settings) 
+            throw {
+                name : "No Settings",
+                message: "No settings to create a client"
+            };
+            
+            
+        var client = Ext.create('Ext.client.OdooClient', {
+            "host" : settings.host,
+            "port" : settings.port,
+            "database" : settings.database,
+            "login" : settings.login,
+            "password" : settings.password            
+        });
+        
+        
+        return client;
+    },
+    
+    handleError: function(err, alternativeError, forward) {
+        if ( !err.name || !err.message) {
+            if ( err.data && err.data.name && err.data.message ) {
+                err = err.data;
+            } else {
+                err = alternativeError;
+            }
+        }
+        Ext.Msg.alert(err.name, err.message);
+        if (forward) throw err;
+        
     }
     
 });

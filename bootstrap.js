@@ -21,7 +21,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.Element-static": "touch/src/dom/Element.static.js",
   "Ext.Element-style": "touch/src/dom/Element.style.js",
   "Ext.Element-traversal": "touch/src/dom/Element.traversal.js",
-  "Ext.Panel": "app/addon/ViewManager.js",
+  "Ext.client": "app/addon",
   "Ext.core.DomQuery": "touch/src/dom/Query.js",
   "Ext.data.reader.PouchDB": "app/addon/PouchDB.js",
   "Ext.device.Purchases.Product": "touch/src/device/purchases/Sencha.js",
@@ -81,7 +81,9 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.Media": [],
   "Ext.Menu": [],
   "Ext.MessageBox": [],
-  "Ext.Panel": [],
+  "Ext.Panel": [
+    "Ext.lib.Panel"
+  ],
   "Ext.ProgressIndicator": [],
   "Ext.Promise": [],
   "Ext.SegmentedButton": [],
@@ -179,6 +181,9 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.chart.series.sprite.Radar": [],
   "Ext.chart.series.sprite.Scatter": [],
   "Ext.chart.series.sprite.StackedCartesian": [],
+  "Ext.client.OdooClient": [
+    "OdooClient"
+  ],
   "Ext.data.ArrayStore": [],
   "Ext.data.Batch": [],
   "Ext.data.Connection": [],
@@ -858,7 +863,9 @@ Ext.ClassManager.addNameAliasMappings({
     "widget.menu"
   ],
   "Ext.MessageBox": [],
-  "Ext.Panel": [],
+  "Ext.Panel": [
+    "widget.panel"
+  ],
   "Ext.ProgressIndicator": [
     "widget.progressindicator"
   ],
@@ -1057,6 +1064,7 @@ Ext.ClassManager.addNameAliasMappings({
     "sprite.scatterSeries"
   ],
   "Ext.chart.series.sprite.StackedCartesian": [],
+  "Ext.client.OdooClient": [],
   "Ext.data.ArrayStore": [
     "store.array"
   ],

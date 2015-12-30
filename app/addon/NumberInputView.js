@@ -5,7 +5,8 @@ Ext.define('Ext.view.NumberInputView', {
     requires: [
         'Ext.Button',
         'Ext.Container',
-        'Ext.view.NumDisplay'
+        'Ext.view.NumDisplay',
+        'Ext.field.PatternText'
     ],
     config: {    
         layout: 'vbox', 
@@ -245,7 +246,7 @@ Ext.define('Ext.view.NumberInputView', {
                                 {
                                     xtype: 'button',
                                     text: 'OK',
-                                    width: bWidth,
+                                    width: bSpecialWidth,
                                     height: bTripleHeight,
                                     ui: 'numInputButtonBlack',
                                     cls: 'NumInputButton',
