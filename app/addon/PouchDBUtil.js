@@ -113,7 +113,6 @@ Ext.define('Ext.proxy.PouchDBUtil',{
     },  
     
     search: function(db, domain, params, callback) {    
-        debugger;
         var self = this;
         var view = self.buildView(domain);
         

@@ -116,14 +116,6 @@ Ext.define('Fpos.controller.MainCtrl', {
     mainViewInitialize: function() {
        var self = this;
        
-       // get size
-       var small = false;
-       var screenWidth = futil.screenWidth();
-       if ( screenWidth < 1024 ) {
-            small = true;
-       }
-       self.small = small;
-       
        // info template       
        var infoTmpl = null;
        if ( futil.hasSmallRes() ) { 
@@ -151,8 +143,17 @@ Ext.define('Fpos.controller.MainCtrl', {
             html: infoTmpl.apply({"version" : Config.getVersion()})       
        });
        
-       self.getMainView().push(mainPanel);
+       var mainView = self.getMainView();
+       mainView.reset();
+       mainView.push(mainPanel);
        self.loadConfig();       
+    },
+    
+    openPos: function() {
+        var self = this;
+        var mainView = self.getMainView();
+        mainView.reset();
+          
     },
     
     // basic save record
@@ -282,6 +283,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 // pos user
                 Config.setUser(user);
                 view.hide();
+                self.openPos();                
             }
             
         });
