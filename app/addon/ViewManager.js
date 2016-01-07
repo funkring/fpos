@@ -196,7 +196,7 @@ Ext.define('Ext.form.ViewManager', {
                                     .then(function() {
                                         deferred.resolve();
                                     })
-                                    .catch(function(err) {
+                                    ['catch'](function(err) {
                                         deferred.reject(err);
                                     });
                                 
@@ -215,7 +215,7 @@ Ext.define('Ext.form.ViewManager', {
                     if ( res ) {
                         res.then(function() {
                             reloadHandler();
-                        }).catch(reloadHandler);
+                        })['catch'](reloadHandler);
                     } else {
                         reloadHandler();
                     }         
@@ -244,7 +244,7 @@ Ext.define('Ext.form.ViewManager', {
             .then(function(result) {
                 self.stopLoading();
             })
-            .catch(function(err) {
+            ['catch'](function(err) {
                 self.stopLoading();
             });
     }        

@@ -194,7 +194,7 @@ Ext.define('Ext.proxy.PouchDBUtil',{
             } else {
                 callback(null, parent_list);
             }
-        }).catch(function(err) {
+        })['catch'](function(err) {
             callback(err);
         });      
     },
@@ -224,7 +224,7 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                  } else {
                      db.get(parent_uuid).then(function(doc) {                     
                          self.findFirstChild(db, doc[parent_field], parent_field, domain, callback);
-                     }).catch(function(err) {
+                     })['catch'](function(err) {
                         callback(err); 
                      });
                  }
@@ -359,14 +359,14 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                         client.invoke("jdoc.jdoc","jdoc_couchdb_after",[sync_config]) 
                             .then(function(couchdb_config) {
                                 deferred.resolve(sync_res);
-                            }).catch(function(err) {
+                            })['catch'](function(err) {
                                 deferred.reject(err);
                             });
                                                    
-                    }).catch(function(err) {
+                    })['catch'](function(err) {
                         deferred.reject(err); 
                     });
-            }).catch(function(err) {
+            })['catch'](function(err) {
                 deferred.reject(err);               
             });
 

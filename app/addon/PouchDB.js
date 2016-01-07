@@ -389,7 +389,7 @@ Ext.define('Ext.proxy.PouchDB', {
         db.get(uuid).then(function(doc) {
             var record = self.createRecord(doc);
             callback(null,record);
-        }).catch( function (err) {
+        })['catch']( function (err) {
             callback(err);
         });
     },

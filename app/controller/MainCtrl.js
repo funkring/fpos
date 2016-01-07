@@ -53,7 +53,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             return db.get('_local/profile');  
         }).then(function(profile) {
             profile_rev = profile._rev; 
-        }).catch(function(err) {
+        })['catch'](function(err) {
             // no profile        
         }).then(function() {
             // load profile
@@ -86,7 +86,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             });
         }).then(function() {
             ViewManager.stopLoading(); 
-        }).catch(function(err) {
+        })['catch'](function(err) {
             ViewManager.stopLoading();
             Config.handleError(err,{
                 name: "Unerwarteter Fehler", 
@@ -108,7 +108,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             Config.setProfile(profile);  
             self.showLogin();            
         })
-        .catch(function (error) {
+        ['catch'](function (error) {
             self.editConfig();
         }); 
     },
@@ -204,7 +204,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     return db.put(newValues);
                 },
                 savedHandler: function() {                    
-                    return self.sync().catch(function(err) {
+                    return self.sync()['catch'](function(err) {
                         self.editConfig();
                     });
                 }
@@ -216,7 +216,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         return db.get('_local/config').then( function(doc) {
             load(doc);
-        }).catch(function (error) {
+        })['catch'](function (error) {
             load({});
         }); 
     },
