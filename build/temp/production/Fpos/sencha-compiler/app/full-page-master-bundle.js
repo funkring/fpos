@@ -1,6 +1,6 @@
 // @tag full-page
-// @require /home/martin/Work/odoo/fpos/lib/futil.js
-// @require /home/martin/Work/odoo/fpos/lib/openerplib.js
-// @require /home/martin/Work/odoo/fpos/lib/pouchdb-5.1.0.min.js
-// @require /home/martin/Work/odoo/fpos/lib/URI.js
-// @require /home/martin/Work/odoo/fpos/app.js
+// @require /home/funkring/Work/android/fpos/lib/futil.js
+// @require /home/funkring/Work/android/fpos/lib/openerplib.js
+// @require /home/funkring/Work/android/fpos/lib/pouchdb-5.1.0.min.js
+// @require /home/funkring/Work/android/fpos/lib/URI.js
+// @require /home/funkring/Work/android/fpos/app.js
