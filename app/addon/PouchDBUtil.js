@@ -343,8 +343,9 @@ Ext.define('Ext.proxy.PouchDBUtil',{
         var deferred = Ext.create('Ext.ux.Deferred');
         // invoke before sync
         client.invoke("jdoc.jdoc","jdoc_couchdb_before",[sync_config])
-            .then(function(couchdb_config) {
-                
+            ['catch'](function(err) {
+                deferred.reject(err);               
+            }).then(function(couchdb_config) {
                 // get couchdb link
                 var password = client.getClient()._password;                                
                 var target_url = URI(couchdb_config.url)
@@ -366,8 +367,6 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                     })['catch'](function(err) {
                         deferred.reject(err); 
                     });
-            })['catch'](function(err) {
-                deferred.reject(err);               
             });
 
         return deferred.promise();

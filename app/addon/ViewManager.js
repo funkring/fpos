@@ -1,11 +1,31 @@
 /*global Ext:false, futil:false, DBUtil:false*/
 
+
+/**
+ * Workarounds 
+ */
+ 
+// Fix Freeze after double OK Button Click (https://www.sencha.com/forum/showthread.php?284450)
+Ext.override(Ext.MessageBox, {    
+    hide:  function() {
+        if (this.activeAnimation && this.activeAnimation._onEnd) {
+            this.activeAnimation._onEnd();
+        }
+        return this.callParent(arguments);
+    }
+});
+
+
+/**
+ * View manager
+ */
 Ext.define('Ext.form.ViewManager', {
     alternateClassName: 'ViewManager',
     singleton: true,
     requires: [
       'Ext.ux.Deferred',
-      'Ext.Panel'
+      'Ext.Panel',
+      'Ext.MessageBox'
     ],
     config : {
         
@@ -247,6 +267,18 @@ Ext.define('Ext.form.ViewManager', {
             ['catch'](function(err) {
                 self.stopLoading();
             });
-    }        
+    },
+    
+    handleError: function(err, alternativeError, forward) {
+        if ( !err.name || !err.message) {
+            if ( err.data && err.data.name && err.data.message ) {
+                err = err.data;
+            } else {
+                err = alternativeError;
+            }
+        }
+        Ext.Msg.alert(err.name, err.message);
+        if (forward) throw err;
+    } 
     
 });

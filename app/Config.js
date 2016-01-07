@@ -58,19 +58,5 @@ Ext.define('Fpos.Config', {
         
         
         return client;
-    },
-    
-    handleError: function(err, alternativeError, forward) {
-        if ( !err.name || !err.message) {
-            if ( err.data && err.data.name && err.data.message ) {
-                err = err.data;
-            } else {
-                err = alternativeError;
-            }
-        }
-        Ext.Msg.alert(err.name, err.message);
-        if (forward) throw err;
-        
-    }
-    
+    }    
 });

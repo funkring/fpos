@@ -48,7 +48,7 @@ Ext.define('Ext.client.OdooClient',{
         
         
         var deferred = Ext.create('Ext.ux.Deferred'); 
-        client.authenticate( function(err) {
+        client.authenticate( function(err) {            
             if (err) {
                 deferred.reject(err);
             } else {
@@ -76,7 +76,7 @@ Ext.define('Ext.client.OdooClient',{
         
         var deferred = Ext.create('Ext.ux.Deferred');
         client.send(service_name, method, args, function(err, result) {
-           if (err) {
+           if (err) {            
                 deferred.reject(err);
             } else {
                 deferred.resolve(result);                

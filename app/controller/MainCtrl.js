@@ -41,6 +41,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         var db = Config.getDB();
         var client = null;
         var profile_rev = null;
+        var sync_err = null;
         
         // reload config
         ViewManager.startLoading("Synchronisiere Datenbank");
@@ -49,17 +50,16 @@ Ext.define('Fpos.controller.MainCtrl', {
             Config.setSettings(config);
             client = Config.newClient();
             return client.connect();
+        })['catch'](function(err) {      
+            sync_err = err;            
+            throw sync_err;            
         }).then(function() {
             return db.get('_local/profile');  
         }).then(function(profile) {
             profile_rev = profile._rev; 
         })['catch'](function(err) {
-            if ( err === 'Offline' ) {
-               throw {
-                 name: "Offline",
-                 message: "Es konnte keine Verbindung zur Cloud hergestellt werden!"
-               };           
-            }
+            if ( sync_err )
+               throw sync_err;
             // no profile        
         }).then(function() {
             // load profile
@@ -94,7 +94,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             ViewManager.stopLoading(); 
         })['catch'](function(err) {
             ViewManager.stopLoading();
-            Config.handleError(err,{
+            ViewManager.handleError(err,{
                 name: "Unerwarteter Fehler", 
                 message: "Synchronisation konnte nicht durchgeführt werden"
             }, true);
@@ -127,7 +127,7 @@ Ext.define('Fpos.controller.MainCtrl', {
        if ( futil.hasSmallRes() ) { 
            infoTmpl = Ext.create('Ext.XTemplate', 
                         '<div style="width:120px;height:120px;margin:auto;">',
-                          '<img src="/resources/icons/AppInfo_120x120.png">',
+                          '<img src="resources/icons/AppInfo_120x120.png">',
                         '</div>',
                         '<p align="center">',
                         'Version {version}',
@@ -135,7 +135,7 @@ Ext.define('Fpos.controller.MainCtrl', {
        } else {
            infoTmpl = Ext.create('Ext.XTemplate', 
                         '<div style="width:512px;height:512px;margin:auto;">',
-                          '<img src="/resources/icons/AppInfo_512x512.png">',
+                          '<img src="resources/icons/AppInfo_512x512.png">',
                         '</div>',
                         '<p align="center">',
                         'Version {version}',
