@@ -54,6 +54,12 @@ Ext.define('Fpos.controller.MainCtrl', {
         }).then(function(profile) {
             profile_rev = profile._rev; 
         })['catch'](function(err) {
+            if ( err === 'Offline' ) {
+               throw {
+                 name: "Offline",
+                 message: "Es konnte keine Verbindung zur Cloud hergestellt werden!"
+               };           
+            }
             // no profile        
         }).then(function() {
             // load profile
