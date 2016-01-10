@@ -48,6 +48,16 @@
                         }
                     ]
                 }
+            },
+            "config.xml": {
+                "parents": {
+                    "/*": [
+                        {
+                            "xml": "<feature name=\"PosHw\"><param name=\"android-package\" value=\"at.oerp.pos.cordova.PosHwPlugin\" /></feature>",
+                            "count": 1
+                        }
+                    ]
+                }
             }
         }
     },
@@ -56,6 +66,9 @@
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
         "cordova-plugin-crosswalk-webview": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
@@ -66,10 +79,19 @@
             "id": "cordova-plugin-whitelist.whitelist",
             "pluginId": "cordova-plugin-whitelist",
             "runs": true
+        },
+        {
+            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+            "id": "cordova-plugin-poshw.PosHw",
+            "pluginId": "cordova-plugin-poshw",
+            "clobbers": [
+                "PosHw"
+            ]
         }
     ],
     "plugin_metadata": {
         "cordova-plugin-whitelist": "1.2.0",
-        "cordova-plugin-crosswalk-webview": "1.4.0"
+        "cordova-plugin-crosswalk-webview": "1.4.0",
+        "cordova-plugin-poshw": "0.99"
     }
 }

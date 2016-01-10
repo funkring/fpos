@@ -12,6 +12,9 @@
         },
         "cordova-plugin-crosswalk-webview": {
             "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-poshw": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
     "dependent_plugins": {}

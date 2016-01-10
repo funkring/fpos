@@ -10,6 +10,9 @@
     <preference default="--disable-pull-to-refresh-effect" name="xwalkCommandLine" />
     <preference default="embedded" name="xwalkMode" />
     <preference default="true" name="xwalkMultipleApk" />
+    <feature name="PosHw">
+        <param name="android-package" value="at.oerp.pos.cordova.PosHwPlugin" />
+    </feature>
     <allow-intent href="market:*" />
     <name>Fpos</name>
     <description>
