@@ -5,35 +5,20 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import com.ctrl.gpio.Ioctl;
-
 import android.util.Log;
 import android_serialport_api.SerialPort;
+import at.oerp.pos.CtrlBytes;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.util.HtmlLinePrinter;
 import at.oerp.util.IObjectResolver;
 import at.oerp.util.LinePrintDriver;
 
-public class Printer58mm extends PosHwPrinter implements LinePrintDriver {
+public class Printer58mm extends PosHwPrinter implements LinePrintDriver, CtrlBytes {
 
 	// Printer Service Constants
 	private final static String TAG = "Printer58mm";
 	public final  double DOT_WIDTH_MM = 0.125; //mm
 	
-	public static final byte HT = 0x9; 
-	public static final byte LF = 0x0A; 
-	public static final byte CR = 0x0D; 
-	public static final byte ESC = 0x1B;
-	public static final byte DLE = 0x10;
-	public static final byte GS = 0x1D;
-	public static final byte FS = 0x1C;
-	public static final byte STX = 0x02;
-	public static final byte US = 0x1F;
-	public static final byte CAN = 0x18;
-	public static final byte CLR = 0x0C;
-	public static final byte EOT = 0x04;
-	public static final byte M = 0x4D;
-
 	public static final byte[] ESC_FONT_COLOR_DEFAULT = new byte[] { ESC, 'r', 0x00 };
 	public static final byte[] ESC_FONT_LARGE =  new byte[] {ESC, M, 0};
 	public static final byte[] ESC_FONT_MEDIUM = new byte[] {ESC, M, 1};
@@ -60,8 +45,6 @@ public class Printer58mm extends PosHwPrinter implements LinePrintDriver {
 	 * @throws IOException
 	 */
 	public Printer58mm() throws SecurityException, IOException {
-		if ( Ioctl.convertPrinter() != 0 )
-			throw new IOException("No printer available");
 		unicode = Charset.forName("unicode");
 		port = new SerialPort(new File("/dev/ttyS3"), 115200, 0, 2);
 		output = port.getOutputStream();

@@ -2,14 +2,6 @@ cordova.define("cordova-plugin-poshw.PosHw", function(require, exports, module) 
 
 module.exports = {
     
-    test: function(callback) {
-       cordova.exec(callback, callback, "PosHw", "test", []);  
-    },
-    
-    testload: function(callback) {
-       cordova.exec(callback, callback, "PosHw", "testload", []);  
-    },
-    
     getStatus: function(successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "getStatus", []);
     },
@@ -22,16 +14,16 @@ module.exports = {
         cordova.exec(successCallback, errorCallback, "PosHw", "openCashDrawer", []);
     },
     
-    setLineDisplay: function(value, successCallback, errorCallback) {
-        cordova.exec(successCallback, errorCallback, "PosHw", "setLineDisplay", [value]);
+    scaleInit: function(price, tara, successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "scaleInit", [price, tara]);
     },
     
-    startWeighing: function(config, successCallback, errorCallback ) {
-        cordova.exec(successCallback, errorCallback, "PosHw", "startWeighing", [config]);
+    scaleRead: function(successCallback, errorCallback ) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "scaleRead", []);
     },
     
-    stopWeighing: function(weightCallback, successCallback, errorCallback ) {
-        cordova.exec(successCallback, errorCallback, "PosHw", "stopWeighing");
+    display: function(lines, successCallback, errorCallback ) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "display", [lines]);
     }
     
 };

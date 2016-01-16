@@ -1,5 +1,7 @@
 package at.oerp.pos;
 
+import java.io.IOException;
+
 import at.oerp.pos.hw.t508aq.T508AQService;
 
 public abstract class PosHwService {
@@ -64,12 +66,6 @@ public abstract class PosHwService {
 	}
 	
 	/**
-	 * 
-	 * @return printer or null if printer wasn't supported
-	 */
-	public abstract PosHwPrinter getPrinter();
-	
-	/**
 	 * init service hook
 	 */
 	protected abstract void initService();
@@ -78,5 +74,39 @@ public abstract class PosHwService {
 	 * destroy service hook
 	 */
 	protected abstract void destroyService();
+	
+	
+	
+	/**
+	 * @return serial port iface for number
+	 */
+	public abstract PosHwRS232 getSerialPort(int inPort);
+	
+	/**
+	 * @return serial port count
+	 */
+	public abstract int getSerialPortCount();
+	
+	/**
+	 * @return hw scale
+	 */
+	public abstract PosHwScale getScale();
+	
+	/**
+	 * 
+	 * @return printer or null if printer wasn't supported
+	 */
+	public abstract PosHwPrinter getPrinter();
+	
+	/**
+	 * @return customer display
+	 */
+	public abstract PosHwDisplay getCustomerDisplay();
+
+	/**
+	 * @return true if cashdrawer was opened
+	 */
+	public abstract boolean openCashDrawer()
+						throws IOException;
 }
 	

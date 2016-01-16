@@ -50,11 +50,20 @@
         <source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi-v7a/" />
         
         <source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
+		<source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/ReadConfig.java" target-dir="src/at/oerp/pos/" />
 		<source-file src="src/at/oerp/pos/PosHwService.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/WeightResult.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/CtrlBytes.java" target-dir="src/at/oerp/pos/" />
 		<source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/PosHwDisplay.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/PosHwScale.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/pos/hw/t508aq/T508AQService.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/StringUtil.java" target-dir="src/at/oerp/util/" />
 		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
 		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
 		<source-file src="src/android_serialport_api/SerialPort.java" target-dir="src/android_serialport_api/" />
@@ -79,10 +88,6 @@
             <uses-permission android:name="android.permission.WAKE_LOCK" />
             <uses-permission android:name="android.permission.INTERNET" />
         </config-file>
-
-    
-        
-        
          
     </platform>
 </plugin>

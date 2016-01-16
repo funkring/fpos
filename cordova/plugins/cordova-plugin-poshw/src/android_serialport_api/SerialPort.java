@@ -42,7 +42,7 @@ public class SerialPort {
 			int stop, int flags) throws SecurityException, IOException {
 		// if (isInfrared)
 		// else
-		// System.loadLibrary("serial_port");
+		System.loadLibrary("serial_port");
 		if (!device.canRead() || !device.canWrite()) {
 			try {
 				Process su;
