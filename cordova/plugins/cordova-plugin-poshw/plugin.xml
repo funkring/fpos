@@ -3,7 +3,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-poshw"
-        version="0.99">
+        version="1.0.3">
 
     <name>POS Hardware Plugin</name>
     <description>
@@ -19,42 +19,70 @@
         <engine name="cordova-android" version=">=4"/>
     </engines>
     
+    <!--  declarate js files/api -->
+    <asset src="cordova/www/PosHw.js" target="js/PosHw.js"/>
+    
+    <!-- register entry point -->
     <js-module src="cordova/www/PosHw.js" name="PosHw">
         <clobbers target="PosHw" />
     </js-module>
-
+    
     <!-- android -->
     <platform name="android">
         <framework src="com.android.support:support-v4:+" />
         
-        <source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs" />
-		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs" />
-		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs" />
-		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi" />
-		<source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi" />
-		<source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi" />
-		<source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi" />
-		<source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi" />
-		<source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi" />
+        <source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs/" />
+		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs/" />
+		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs/" />
+		
+		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi/" />
+		
+		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi-v7a/" />
+        <source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi-v7a/" />
+        <source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi-v7a/" />
+        <source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi-v7a/" />
+        <source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi-v7a/" />
+        <source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi-v7a/" />
         
-        <source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova" />
-		<source-file src="src/at/oerp/pos/PosHwService.java" target-dir="src/at/oerp/pos" />
-		<source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/T508AQService.java" target-dir="src/at/oerp/pos/hw/t508aq" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq" />
-		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util" />
-		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util" />
-		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util" />
-		<source-file src="src/android_serialport_api/SerialPort.java" target-dir="src/android_serialport_api" />
-		<source-file src="src/com/ctrl/gpio/Ioctl.java" target-dir="src/com/ctrl/gpio" />
-		<source-file src="src/com/ctrl/gpio/GpioControl.java" target-dir="src/com/ctrl/gpio" />
-		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio" />
+        <source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
+		<source-file src="src/at/oerp/pos/PosHwService.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/T508AQService.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/android_serialport_api/SerialPort.java" target-dir="src/android_serialport_api/" />
+		<source-file src="src/com/ctrl/gpio/Ioctl.java" target-dir="src/com/ctrl/gpio/" />
+		<source-file src="src/com/ctrl/gpio/GpioControl.java" target-dir="src/com/ctrl/gpio/" />
+		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio/" />
 
         <config-file target="config.xml" parent="/*">
             <feature name="PosHw">
                 <param name="android-package" value="at.oerp.pos.cordova.PosHwPlugin"/>
-            </feature>
+            </feature>            
         </config-file>
+        
+         <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+            <uses-permission android:name="android.permission.BATTERY_STATS" />
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.NFC" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="android.permission.INTERNET" />
+        </config-file>
+
+    
+        
+        
          
     </platform>
 </plugin>

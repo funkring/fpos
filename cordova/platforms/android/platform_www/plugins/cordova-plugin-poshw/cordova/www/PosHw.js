@@ -1,34 +1,38 @@
-cordova.define("cordova-plugin-poshw.PosHw", function(require, exports, module) { /*global require:false, module:false*/
+cordova.define("cordova-plugin-poshw.PosHw", function(require, exports, module) { /*global cordova:false, module:false*/
 
-var exec = require('cordova/exec');
-
-var PosHw = {
+module.exports = {
+    
+    test: function(callback) {
+       cordova.exec(callback, callback, "PosHw", "test", []);  
+    },
+    
+    testload: function(callback) {
+       cordova.exec(callback, callback, "PosHw", "testload", []);  
+    },
     
     getStatus: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "PosHw", "getStatus", []);
+        cordova.exec(successCallback, errorCallback, "PosHw", "getStatus", []);
     },
         
     printHtml: function(html, successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "PosHw", "printHtml", [html]);
+        cordova.exec(successCallback, errorCallback, "PosHw", "printHtml", [html]);
     },
     
     openCashDrawer: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "PosHw", "openCashDrawer", []);
+        cordova.exec(successCallback, errorCallback, "PosHw", "openCashDrawer", []);
     },
     
     setLineDisplay: function(value, successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "PosHw", "setLineDisplay", [value]);
+        cordova.exec(successCallback, errorCallback, "PosHw", "setLineDisplay", [value]);
     },
     
     startWeighing: function(config, successCallback, errorCallback ) {
-        exec(successCallback, errorCallback, "PosHw", "startWeighing", [config]);
+        cordova.exec(successCallback, errorCallback, "PosHw", "startWeighing", [config]);
     },
     
     stopWeighing: function(weightCallback, successCallback, errorCallback ) {
-        exec(successCallback, errorCallback, "PosHw", "stopWeighing");
+        cordova.exec(successCallback, errorCallback, "PosHw", "stopWeighing");
     }
     
 };
-
-module.exports = PosHw;
 });

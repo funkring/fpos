@@ -23,6 +23,15 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=editConfig]' : {
                 tap: 'editConfig'
             },
+            'button[action=showHwTest]' : {
+                tap: 'showHwTest'
+            },
+            'button[action=testPrint]' : {
+                tap: 'testPrint'  
+            },
+            'button[action=testSetup]' : {
+                tap: 'testSetup'  
+            },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
@@ -149,10 +158,20 @@ Ext.define('Fpos.controller.MainCtrl', {
             html: infoTmpl.apply({"version" : Config.getVersion()})       
        });
        
+       // load main view
        var mainView = self.getMainView();
        mainView.reset();
        mainView.push(mainPanel);
-       self.loadConfig();       
+       
+       // load hardware
+       Config.setupHardware().then(function() {
+            self.loadConfig();  
+       })['catch'](function(err) {
+            ViewManager.handleError(err, {
+                name: "Unerwarteter Fehler", 
+                message: "Hardware konnte nicht initialisiert werden"
+            }, false);          
+       });
     },
     
     openPos: function() {
@@ -188,10 +207,58 @@ Ext.define('Fpos.controller.MainCtrl', {
                         flex: 1,
                         text: 'Einstellungen',
                         action: 'editConfig'             
+                    },
+                    {
+                        xtype: 'button',
+                        flext: 1,
+                        text: 'Test',
+                        action: 'showHwTest'
                     }
                 ]    
             });
         return menu;
+    },
+    
+    
+    /**
+     * show hw test
+     */
+    showHwTest: function() {
+        var self = this;
+        self.getMainView().push({
+            title: "Test",
+            xtype: 'container',
+            defaults: {
+               cls: 'TestButton'  
+            },
+            items: [
+                {
+                    xtype: 'button',
+                    text: 'Setup',
+                    action: 'testSetup'
+                },
+                {
+                    xtype: 'button',
+                    text: 'Test Print',
+                    action: 'testPrint'
+                }
+            ]            
+        });
+    },
+    
+    /**
+     * test setup
+     */
+    testSetup: function() {
+        Config.setupHardware();   
+    },
+    
+    /**
+     * test print
+     */
+    testPrint: function() {
+       var html = "<br/><br/>Hello World<br/><br/>";
+       Config.printHtml(html);
     },
     
     /**

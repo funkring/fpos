@@ -17,12 +17,33 @@ public class PosHwPlugin extends CordovaPlugin {
 	
 	@Override
 	public boolean execute(final String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException {
+		// test
+		if ( action.equals("test") ) {
+			callbackContext.success("Test OK!");
+			return true;
+		} else if ( action.equals("testload")) {
+			try {
+				synchronized (this) {
+					if ( service == null ) {
+						service = PosHwService.create();
+					}
+				}
+				callbackContext.success("Load Successful!");
+			} catch ( Throwable e) {
+				callbackContext.error(e.getMessage());
+			}
+			return true;
+		}
+		
 		try {
 
+			// create service
 			synchronized ( this ) {
 				if ( service == null ) {
 					service = PosHwService.create();	
-					service.open();
+					if ( service != null ) {
+						service.open();
+					}
 				}
 			}
 			
@@ -31,31 +52,41 @@ public class PosHwPlugin extends CordovaPlugin {
 				String html = args.getString(0);
 				service.getPrinter().printHtml(html);
 				callbackContext.success();
+				return true;
 			} 
 			// status
 			else if ( action.equals("getStatus") ) {
-				JSONObject status = new JSONObject();
-				
-				PosHwPrinter printer = service.getPrinter();
-				if ( printer != null ) {
-					JSONObject printerStatus = new JSONObject();
-					printerStatus.put("installed", "true");
-					printerStatus.put("type", printer.getType());
-					status.put("printer", printerStatus);
+				if ( service != null ) {
+					JSONObject status = new JSONObject();
+					PosHwPrinter printer = service.getPrinter();
+					if ( printer != null ) {
+						JSONObject printerStatus = new JSONObject();
+						printerStatus.put("installed", "true");
+						printerStatus.put("type", printer.getType());
+						status.put("printer", printerStatus);
+					}
+					callbackContext.success(status);
+				} else {
+					callbackContext.error("No Service");
 				}
-				
-				callbackContext.success(status);
+				return true;
+			} else {
+				return false;
 			}
 			
-			
-		} catch ( Exception e) {
+		} catch ( Throwable e) {
+			// log error
 			Log.e(TAG, e.getMessage());
-			if ( e instanceof JSONException )
+			
+			// throw before return
+			if ( e instanceof JSONException ) {				
 				throw (JSONException) e;
+			}
+			
+			// return error via callback
 			callbackContext.error(e.getMessage());
+			return true;
 		}
-		
-		return false;
 	}
 	
 	

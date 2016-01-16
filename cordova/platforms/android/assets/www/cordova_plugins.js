@@ -20,7 +20,7 @@ module.exports.metadata =
 {
     "cordova-plugin-whitelist": "1.2.0",
     "cordova-plugin-crosswalk-webview": "1.4.0",
-    "cordova-plugin-poshw": "0.99"
+    "cordova-plugin-poshw": "1.0.3"
 }
 // BOTTOM OF METADATA
 });

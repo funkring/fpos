@@ -6,7 +6,8 @@ Ext.define('Fpos.Config', {
     requires: [
         'Ext.proxy.PouchDBUtil',
         'Ext.store.LogStore',
-        'Ext.client.OdooClient'
+        'Ext.client.OdooClient',
+        'Ext.ux.Deferred'
     ],
     config : {       
         version : '1.2.1',
@@ -18,11 +19,65 @@ Ext.define('Fpos.Config', {
         settings : null,
         user : null,
         profile: null,
-        admin: false
+        admin: false,
+        hwStatus: { err: null },
+        hwStatusId: null
     },
     
     constructor: function(config) {
         this.initConfig(config);
+    },
+    
+    
+    testSetup: function() {
+        window.PosHw.test(function(res) {
+            //debugger;
+            window.PosHw.testload(function(res) {
+                //debugger; 
+            }); 
+        });
+    },
+    
+    
+    setupHardware: function() {      
+        var self = this;  
+        var deferred = Ext.create('Ext.ux.Deferred');
+    
+        // check for poshw plugin
+        if ( window.PosHw ) {
+            window.PosHw.getStatus(function(hwstatus) {
+                // set first status            
+                self.setHwStatus(hwstatus);
+                
+                // init interval
+                self.setHwStatusId(setInterval(function() {
+                    window.PosHw.getStatus(function(hwstatus) {
+                       self.setHwStatus(hwstatus); 
+                    }, function(err) {
+                       self.setHwStatus({ err : err});
+                    });
+                 }, 1000));
+                 
+                 // resolve
+                 deferred.resolve(hwstatus);
+                 
+            }, function(err) {
+                self.setHwStatus({ err : err });
+                deferred.reject(err);
+            });
+        } else {
+            setTimeout(function() {
+                deferred.resolve();
+            },0);
+        }
+        return deferred.promise();
+    },
+    
+    printHtml: function(html) {
+        var hwstatus = this.getHwStatus();
+        if ( hwstatus.printer.installed ) {
+            window.PosHw.printHtml(html);
+        }          
     },
  
     applyLog: function(store) {
@@ -58,5 +113,5 @@ Ext.define('Fpos.Config', {
         
         
         return client;
-    }    
+    }  
 });
