@@ -1,7 +1,6 @@
 package at.oerp.pos.hw.t508aq;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.ctrl.gpio.Ioctl;
 
@@ -30,7 +29,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	
 	// rs232
 	private SerialPortAdapter 	serial;
-	private boolean		    serialFail;
+	private boolean		    	serialFail;
 	
 	// scale
 	private PosHwScale		scale;
@@ -45,7 +44,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	}
 
 	@Override
-	public PosHwPrinter getPrinter() {
+	public synchronized PosHwPrinter getPrinter() {
 		if ( printer == null && !printerFail ) {
 			// check if printer available
 			if ( Ioctl.convertPrinter() == 0 ) {
@@ -68,7 +67,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	}
 
 	@Override
-	protected void destroyService() {
+	protected synchronized void destroyService() {
 		if ( printer != null) {
 			printer.close();
 			printer = null;
@@ -91,7 +90,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	}
 
 	@Override
-	public PosHwRS232 getSerialPort(int inPort) {
+	public synchronized PosHwRS232 getSerialPort(int inPort) {
 		if ( inPort == 0 ) {
 			if ( serial == null && !serialFail ) {
 				// check if port available
@@ -116,7 +115,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	}
 
 	@Override
-	public PosHwScale getScale() {
+	public synchronized  PosHwScale getScale() {
 		if ( scale == null && !scaleFail ) {
 			try {
 				scale = new PosHwScale(getSerialPort(0));
@@ -129,11 +128,11 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	}
 
 	@Override
-	public PosHwDisplay getCustomerDisplay() {
+	public synchronized PosHwDisplay getCustomerDisplay() {
 		if ( display == null && !displayFail ) {
 			if ( Ioctl.convertLed() == 0 ) {
 				try {
-					display = new LedDisplayImpl( new SerialPortAdapter(new File("/dev/ttyS3"), 0));
+					display = new LedDisplayImpl((Printer58mm) getPrinter());
 				} catch (Exception e) {
 					scaleFail = true;
 					Log.e(TAG, e.getMessage());
@@ -146,7 +145,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	}
 
 	@Override
-	public boolean openCashDrawer() {
+	public synchronized boolean openCashDrawer() {
 		Ioctl.activate(16, 1);
 		try {
 			Thread.sleep(66);

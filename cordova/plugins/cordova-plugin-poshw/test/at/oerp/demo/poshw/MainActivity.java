@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+import at.oerp.pos.PosHwDisplay;
 import at.oerp.pos.PosHwScale;
 import at.oerp.pos.PosHwService;
 import at.oerp.pos.R;
@@ -25,6 +26,7 @@ public class MainActivity extends Activity {
 
 	private TextView infoTextView;
 	private PosHwService posHw;
+	private int displayClick;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +72,33 @@ public class MainActivity extends Activity {
 					e.printStackTrace();
 				} 
 				
+			}
+		});
+		
+		Button displayButton = (Button) findViewById(R.id.displayButton);
+		displayButton.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				displayClick++;
+				PosHwDisplay disp = posHw.getCustomerDisplay();
+				try {
+					disp.setDisplay(Integer.toString(displayClick));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}				
+			}
+		});
+		
+		Button openButton = (Button) findViewById(R.id.openButton);
+		openButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				try {
+					posHw.openCashDrawer();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}				
 			}
 		});
 		

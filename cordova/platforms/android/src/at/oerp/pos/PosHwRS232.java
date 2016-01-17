@@ -83,6 +83,14 @@ public abstract class PosHwRS232 {
 	}
 	
 	/**
+	 * flush
+	 * @throws IOException 
+	 */
+	public void flush() throws IOException {
+		getOutputSream().flush();
+	}
+	
+	/**
 	 * write data
 	 * @param inBytes
 	 * @throws IOException

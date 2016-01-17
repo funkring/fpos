@@ -52,5 +52,9 @@ public class SerialPortAdapter extends PosHwRS232 {
 			}
 		}		
 	}
+	
+	public boolean isOpen() {
+		return port != null;
+	}
 
 }

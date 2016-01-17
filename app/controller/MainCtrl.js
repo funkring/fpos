@@ -410,32 +410,55 @@ Ext.define('Fpos.controller.MainCtrl', {
             items: [
                 {
                     xtype: 'button',
-                    text: 'Setup',
-                    action: 'testSetup'
+                    text: 'Test Interface',
+                    action: 'testInterface'
                 },
                 {
                     xtype: 'button',
                     text: 'Test Print',
                     action: 'testPrint'
+                },
+                {
+                    xtype: 'button',
+                    text: 'Test Display',
+                    action: 'testDisplay'
                 }
             ]            
         });
     },
     
-    /**
-     * test setup
-     */
-    testSetup: function() {
-        Config.setupHardware();   
+    // TESTS
+    
+    testInterface: function() {
+       var valid = window.PosHw.test(function(res) {
+           debugger;
+       }, 
+       function(err) {
+           debugger;
+       });  
     },
     
-    /**
-     * test print
-     */
+    
     testPrint: function() {
        var html = "<br/><br/>Hello World<br/><br/>";
-       Config.printHtml(html);
+       var valid = window.PosHw.printHtml(html, function(res) {
+           debugger;
+       }, 
+       function(err) {
+           debugger;
+       });
     },
+    
+    testDisplay: function() {
+        window.PosHw.display("23", function(res) {
+            debugger;
+        },
+        function(err) {
+            debugger;
+        })
+    },
+    
+    
     
     /**
      * edit configuration

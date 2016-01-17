@@ -10,10 +10,6 @@ module.exports = {
         cordova.exec(successCallback, errorCallback, "PosHw", "printHtml", [html]);
     },
     
-    openCashDrawer: function(successCallback, errorCallback) {
-        cordova.exec(successCallback, errorCallback, "PosHw", "openCashDrawer", []);
-    },
-    
     scaleInit: function(price, tara, successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "scaleInit", [price, tara]);
     },
@@ -24,6 +20,14 @@ module.exports = {
     
     display: function(lines, successCallback, errorCallback ) {
         cordova.exec(successCallback, errorCallback, "PosHw", "display", [lines]);
+    },
+    
+    openCashDrawer: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "openCashDrawer", []);
+    },
+    
+    test: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "test", []);
     }
     
 };
