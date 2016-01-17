@@ -12,6 +12,8 @@ Ext.define('Ext.view.NumberInputView', {
         layout: 'vbox', 
         
         firstReplace: true,
+        
+        autoRemoveHandler: false, 
             
         handler: null,
         
@@ -525,8 +527,10 @@ Ext.define('Ext.view.NumberInputView', {
     },
     
     removeHandler: function() {
-        this.setHandler(null); 
-        this.setEditHandler(null);
+        if ( this.getAutoRemoveHandler() ) {
+            this.setHandler(null); 
+            this.setEditHandler(null);
+        }
     },
     
     showBy: function(component, alignment, animation, value, handler, editHandler) {

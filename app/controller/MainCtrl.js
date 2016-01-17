@@ -495,6 +495,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         self.getLoginButton().setText("Anmelden");
         
         if ( !self.pinInput ) {
+            // create
             self.pinInput = Ext.create('Ext.view.NumberInputView', {
                     hideOnMaskTap: false,
                     hideOnInputDone: false, 
@@ -505,48 +506,51 @@ Ext.define('Fpos.controller.MainCtrl', {
                     emptyValue: "----",
                     title : "PIN für die Anmeldung"
                 });
-        }
                 
-        
-        self.pinInput.setHandler(function(view, pin) {
-            var settings = Config.getSettings();
-            var profile = Config.getProfile();
-            var user = null;
-
-            // check profile and search user            
-            if ( profile ) {
-                Ext.each(profile.user_ids, function(pos_user) {
-                    if ( pos_user.pin === pin ) {
-                        user = pos_user;                        
-                        return false;
-                    }
-                });
-            }
-            
-            if ( !user ) {
-                // check admin                
-                if ( settings && settings.pin === pin && !self.posPanel) {
-                    Config.setAdmin(true);
-                    view.hide();
-                } else {
-                    // user not found
-                    view.setError("Ungültiger PIN");
-                }
-            } else {
-                // setup user user
-                Config.setUser(user);
-                Config.setAdmin(user.pos_admin);
-                self.getLoginButton().setText(user.name);
-                
-                // hide view and open pos
-                view.hide(); 
-                self.openPos();
-            }
-            
-        });
-            
-        self.pinInput.show();      
-    }
+            // add handler
+            self.pinInput.setHandler(function(view, pin) {
+                var settings = Config.getSettings();
+                var profile = Config.getProfile();
+                var user = null;
     
+                // check profile and search user            
+                if ( profile ) {
+                    Ext.each(profile.user_ids, function(pos_user) {
+                        if ( pos_user.pin === pin ) {
+                            user = pos_user;                        
+                            return false;
+                        }
+                    });
+                }
+                
+                if ( !user ) {
+                    // check admin                
+                    if ( settings && settings.pin === pin && !self.posPanel) {
+                        Config.setAdmin(true);
+                        view.hide();
+                    } else {
+                        // user not found
+                        view.setError("Ungültiger PIN");
+                    }
+                } else {
+                    // setup user user
+                    Config.setUser(user);
+                    Config.setAdmin(user.pos_admin);
+                    self.getLoginButton().setText(user.name);
+                    
+                    // hide view and open pos
+                    view.hide(); 
+                    self.openPos();
+                }
+                
+            });
+            
+            // show
+            Ext.Viewport.add( self.pinInput );
+        } else {
+            self.pinInput.show();   
+        }
+          
+    }
     
 });
