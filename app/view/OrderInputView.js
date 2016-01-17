@@ -148,15 +148,6 @@ Ext.define('Fpos.view.OrderInputView', {
                             },
                             {
                                 xtype: 'button',
-                                text: '%',
-                                action: 'inputDiscount',
-                                width: '77px',
-                                height: '77px',  
-                                ui: 'posInputButtonGray',
-                                cls : 'PosInputButton'
-                            },
-                            {
-                                xtype: 'button',
                                 text: '*',    
                                 action: 'inputAmount',
                                 width: '77px',
@@ -164,6 +155,15 @@ Ext.define('Fpos.view.OrderInputView', {
                                 ui: 'posInputButtonGray',
                                 cls : 'PosInputButton'
                             },
+                            {
+                                xtype: 'button',
+                                text: '%',
+                                action: 'inputDiscount',
+                                width: '77px',
+                                height: '77px',  
+                                ui: 'posInputButtonGray',
+                                cls : 'PosInputButton'
+                            },                            
                             {
                                 xtype: 'button',
                                 text: '€',    
@@ -177,16 +177,7 @@ Ext.define('Fpos.view.OrderInputView', {
                     },
                     {
                         layout: 'vbox',
-                        items: [
-                            {
-                                xtype: 'button',
-                                iconCls: 'list',
-                                action: 'inputMenu',
-                                width: '77px',
-                                height: '77px',  
-                                ui: 'posInputButtonBlack',
-                                cls : 'PosInputButton'
-                            },
+                        items: [                            
                             {
                                 xtype: 'button',
                                 iconCls: 'delete',
@@ -194,6 +185,15 @@ Ext.define('Fpos.view.OrderInputView', {
                                 width: '77px',
                                 height: '77px',  
                                 ui: 'posInputButtonRed',
+                                cls : 'PosInputButton'
+                            },
+                            {
+                                xtype: 'button',
+                                iconCls: 'action',
+                                action: 'inputMenu',
+                                width: '77px',
+                                height: '77px',  
+                                ui: 'posInputButtonOrange',
                                 cls : 'PosInputButton'
                             },
                             {

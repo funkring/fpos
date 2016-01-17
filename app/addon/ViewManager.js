@@ -66,9 +66,10 @@ Ext.define('Ext.form.ViewManager', {
         }
         
         var menu = view.menu || view.config.menu;
+        var menuSide = items.menuSide || 'left';
         if ( menu ) {
              Ext.Viewport.setMenu(menu, {
-                 side: 'left',
+                 side: menuSide,
                  reveal: true
              });
              if ( items.menuButton ) {
@@ -76,7 +77,7 @@ Ext.define('Ext.form.ViewManager', {
              }             
         } else if ( items.menuButton )  {
             items.menuButton.hide();
-            Ext.Viewport.removeMenu("left");
+            Ext.Viewport.removeMenu(menuSide);
         }        
     },
     

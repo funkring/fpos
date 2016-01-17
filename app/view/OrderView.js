@@ -4,15 +4,29 @@ Ext.define('Fpos.view.OrderView', {
     extend: 'Ext.Panel',    
     xtype: 'fpos_order',
     requires: [
-      'Ext.view.ScrollList'
+      'Ext.view.ScrollList',
+      'Ext.Label'
     ],
-    config: {
-        cls: 'Receipt',
+    config: {        
         layout: 'vbox',
         items: [
+             {
+                xtype: 'toolbar',
+                ui: 'posStatusBar',
+                cls: 'PosStatusBar',
+                items: [
+                    {
+                       xtype: 'label',
+                       html: '0 €',
+                       cls: 'PosDisplayLabel',
+                       flex: 1
+                    }
+                ]                 
+            },            
             {
                 xtype: 'scrolllist',
-                flex : 1,   
+                cls: 'Receipt',
+                flex : 1
             }
         ]
     }    

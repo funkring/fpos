@@ -4,12 +4,13 @@ Ext.define('Fpos.view.ProductView', {
     extend: 'Ext.Panel',    
     xtype: 'fpos_product',
     requires: [
+        'Ext.field.Search'
     ],
     config: {
+        layout: 'vbox',
         items: [
             {
                 xtype: 'toolbar',
-                docked : 'top',
                 items: [
                     {
                         xtype: 'button',
@@ -28,14 +29,15 @@ Ext.define('Fpos.view.ProductView', {
             },
             {
                  xtype: 'toolbar',
-                 docked: 'top',
-                 hidden: 'true',
+                 hidden: 'true',                 
                  items: [
                  
                  ]                 
             }, 
             {
-                xtype: 'panel'
+                cls: 'ProductContainer',
+                xtype: 'panel',
+                flex: 1
             }
         ]
     }

@@ -322,7 +322,6 @@ Ext.define('Fpos.controller.MainCtrl', {
             } else {                        
                 // big pos
                 self.posPanel = Ext.create("Ext.Panel", {
-                    xtype: 'container',
                     layout: 'hbox',
                     items: [
                         {
@@ -330,7 +329,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                             flex: 1   
                         },
                         {
-                            xtype: 'container',
+                            xtype: 'panel',
                             layout: 'vbox',
                             items: [
                                 {
@@ -393,7 +392,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         // update buttons
         ViewManager.updateButtonState(newCard, { saveButton: this.getSaveRecordButton(), 
                                                  deleteButton: this.getDeleteRecordButton(),
-                                                 menuButton: this.getMainMenuButton() });
+                                                 menuButton: this.getMainMenuButton(),
+                                                 menuSide: Config.getMenuSide() });
     },
     
     /**
@@ -471,16 +471,16 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     hideMainMenu: function() {
-        if ( !Ext.Viewport.getMenus().left.isHidden() ) {
-            Ext.Viewport.hideMenu('left');
+        if ( !Ext.Viewport.getMenus().right.isHidden() ) {
+            Ext.Viewport.hideMenu(Config.getMenuSide());
         }
     },
    
     showMainMenu: function() {
-        if ( Ext.Viewport.getMenus().left.isHidden() ) {
-            Ext.Viewport.showMenu('left');
+        if ( Ext.Viewport.getMenus().right.isHidden() ) {
+            Ext.Viewport.showMenu(Config.getMenuSide());
         } else {
-            Ext.Viewport.hideMenu('left');
+            Ext.Viewport.hideMenu(Config.getMenuSide());
         }
     },
     

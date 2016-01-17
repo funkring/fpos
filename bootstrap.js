@@ -807,6 +807,7 @@ Ext.ClassManager.addNameAlternateMappings({
     "Config"
   ],
   "Fpos.controller.MainCtrl": [],
+  "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.view.ConfigView": [],
   "Fpos.view.Main": [],
@@ -1791,6 +1792,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.viewport.WindowsPhone": [],
   "Fpos.Config": [],
   "Fpos.controller.MainCtrl": [],
+  "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.view.ConfigView": [
     "widget.fpos_config"

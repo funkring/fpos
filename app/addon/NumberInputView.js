@@ -149,7 +149,7 @@ Ext.define('Ext.view.NumberInputView', {
                                 }, 
                                 {
                                     xtype: 'button',
-                                    text: 'CE',
+                                    iconCls: 'delete',
                                     width: bSpecialWidth,
                                     height: bHeight,          
                                     ui: 'numInputButtonRed',                      
@@ -247,10 +247,10 @@ Ext.define('Ext.view.NumberInputView', {
                                 },
                                 {
                                     xtype: 'button',
-                                    text: 'OK',
+                                    iconCls: 'action',   
                                     width: bSpecialWidth,
                                     height: bTripleHeight,
-                                    ui: 'numInputButtonBlack',
+                                    ui: 'numInputButtonGreen',
                                     cls: 'NumInputButton',
                                     action: 'numInputDone'
                                 }

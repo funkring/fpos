@@ -52,6 +52,7 @@
 
 @include sencha-button-ui('numInputButtonRed', #e06b5e,'matt');
 @include sencha-button-ui('numInputButtonBlack', #525252,'matt');
+@include sencha-button-ui('numInputButtonGreen', #3c9d53,'matt');
 
 .NumInputButton {
     margin: 2px;
@@ -79,7 +80,6 @@
 // ******************************************************************
 
 .Receipt {
-    margin-top: 1px;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
@@ -92,6 +92,7 @@
 @include sencha-button-ui('posInputButtonBlack', #525252,'matt');
 @include sencha-button-ui('posInputButtonGray', #777777,'matt');
 @include sencha-button-ui('posInputButtonGreen', #3c9d53,'matt');
+@include sencha-button-ui('posInputButtonOrange', #ff7f2a,'matt');
 
 .PosInputButton {
     margin: 1px;
@@ -102,4 +103,27 @@
 .PosInputContainer {
     background-color: #525252 !important;
     padding: 2px;
+}
+
+// ******************************************************************
+// PosStatusBar 
+// ******************************************************************
+
+@include sencha-toolbar-ui('posStatusBar', #525252, 'bevel');
+
+.PosDisplayLabel {
+    padding: 5px;    
+    font-size: 1.5em; 
+    text-align: right;
+}
+
+.PosStatusBar {
+    
+}
+
+// ******************************************************************
+// ProductContainer 
+// ******************************************************************
+
+.ProductContainer {
 }
