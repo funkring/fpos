@@ -2594,6 +2594,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.ux.parse.association.Relation": [],
   "Ext.view.NumDisplay": [],
   "Ext.view.NumberInputView": [],
+  "Ext.view.ScrollList": [],
   "Ext.viewport.AndroidStock": [
     "Ext.viewport.Android"
   ],
@@ -2607,8 +2608,13 @@ Ext.ClassManager.addNameAlternateMappings({
     "Config"
   ],
   "Fpos.controller.MainCtrl": [],
+  "Fpos.controller.OrderViewCtrl": [],
+  "Fpos.controller.ProductViewCtrl": [],
   "Fpos.view.ConfigView": [],
-  "Fpos.view.Main": []
+  "Fpos.view.Main": [],
+  "Fpos.view.OrderInputView": [],
+  "Fpos.view.OrderView": [],
+  "Fpos.view.ProductView": []
 });
 
 Ext.ClassManager.addNameAliasMappings({
@@ -3575,6 +3581,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.view.NumberInputView": [
     "widget.numberinput"
   ],
+  "Ext.view.ScrollList": [
+    "widget.scrolllist"
+  ],
   "Ext.viewport.AndroidStock": [],
   "Ext.viewport.Default": [
     "widget.viewport"
@@ -3584,11 +3593,22 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.viewport.WindowsPhone": [],
   "Fpos.Config": [],
   "Fpos.controller.MainCtrl": [],
+  "Fpos.controller.OrderViewCtrl": [],
+  "Fpos.controller.ProductViewCtrl": [],
   "Fpos.view.ConfigView": [
     "widget.fpos_config"
   ],
   "Fpos.view.Main": [
     "widget.main"
+  ],
+  "Fpos.view.OrderInputView": [
+    "widget.fpos_order_input"
+  ],
+  "Fpos.view.OrderView": [
+    "widget.fpos_order"
+  ],
+  "Fpos.view.ProductView": [
+    "widget.fpos_product"
   ]
 });
 
