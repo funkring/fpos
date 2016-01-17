@@ -10,14 +10,19 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Fpos.view.ConfigView',
         'Ext.view.NumberInputView',
         'Ext.proxy.PouchDBUtil',
-        'Ext.XTemplate'
+        'Ext.XTemplate',
+        'Ext.Panel',
+        'Fpos.view.ProductView',
+        'Fpos.view.OrderView',
+        'Fpos.view.OrderInputView'
     ],
     config: {
         refs: {
             mainView: '#mainView',
             mainMenuButton: '#mainMenuButton',
             saveRecordButton: '#saveRecordButton',
-            deleteRecordButton: '#deleteRecordButton'
+            deleteRecordButton: '#deleteRecordButton',
+            loginButton: '#loginButton'
         },
         control: {     
             'button[action=editConfig]' : {
@@ -32,6 +37,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=testSetup]' : {
                 tap: 'testSetup'  
             },
+            'button[action=sync]' : {
+                tap: 'sync'
+            },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
@@ -41,6 +49,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             saveRecordButton: {
                 tap: 'saveRecord'
+            },
+            loginButton: {
+                tap: 'showLogin'
             }
         }
     },
@@ -52,7 +63,10 @@ Ext.define('Fpos.controller.MainCtrl', {
         var profile_rev = null;
         var sync_err = null;
         
-        // reload config
+        // hide menu of shown
+        self.hideMainMenu();
+        
+        // reload config        
         ViewManager.startLoading("Synchronisiere Datenbank");
         return db.get('_local/config').then(function(config) {
             // connect                    
@@ -94,8 +108,40 @@ Ext.define('Fpos.controller.MainCtrl', {
                name: 'fpos',
                models: [
                    {
+                        model: 'res.partner.title'
+                   },
+                   {
+                        model: 'pos.category',
+                        view:  '_fpos_category'
+                   },
+                   {
+                        model: 'product.product',
+                        view:  '_fpos_product',
+                        domain: [['available_in_pos','=',true]]
+                   },
+                   {
                         model: 'res.partner',
-                        domain: [['active','=',true]]   
+                        domain: [['active','=',true]],
+                        fields: ['name',
+                                 'title',
+                                 'parent_id',
+                                 'parent_name',
+                                 'ref',
+                                 'website',
+                                 'comment',
+                                 'customer',
+                                 'supplier',
+                                 'employee',
+                                 'function',
+                                 'street',
+                                 'street2',
+                                 'zip',
+                                 'city',
+                                 'email',
+                                 'fax',
+                                 'phone',
+                                 'mobile',
+                                 'is_company']
                    }
                ] 
             });
@@ -151,17 +197,38 @@ Ext.define('Fpos.controller.MainCtrl', {
                         '</p>');
        }
        
-       // create main panel
-       var mainPanel = Ext.create("Ext.Component",{
-            menu: self.createMainMenu(),
-            title: '',
-            html: infoTmpl.apply({"version" : Config.getVersion()})       
-       });
-       
-       // load main view
+       // get main 
        var mainView = self.getMainView();
-       mainView.reset();
-       mainView.push(mainPanel);
+       
+       // create base panel
+       if ( !self.basePanel ) {
+           self.basePanel = Ext.create("Ext.Panel", {
+                menu: self.getBaseMenu(),
+                title: '',
+                showLogin: true,
+                layout: 'card',
+                items: [
+                    {
+                        xtype: 'component',
+                        html: infoTmpl.apply({"version" : Config.getVersion()})                    
+                    }
+                ]      
+           });
+           
+            // load main view           
+           mainView.push(self.basePanel);
+       } else {       
+          // set active item and menu
+          self.basePanel.setActiveItem(0);
+          
+          // reset menu
+          var menu = self.getBaseMenu();
+          self.basePanel.config.menu = menu;
+          self.basePanel.menu = menu;
+         
+          // notify change        
+          self.mainActiveItemChange(self.getMainPanel(), self.basePanel);
+        }
        
        // load hardware
        Config.setupHardware().then(function() {
@@ -174,32 +241,10 @@ Ext.define('Fpos.controller.MainCtrl', {
        });
     },
     
-    openPos: function() {
-        var self = this;
-        var mainView = self.getMainView();
-        mainView.reset();
-          
-    },
-    
-    // basic save record
-    saveRecord: function() {
-        var mainView = this.getMainView();
-        ViewManager.saveRecord(mainView);
-    },
-    
-    // basic item change
-    mainActiveItemChange: function(view, newCard) {
-        ViewManager.updateButtonState(newCard, { saveButton: this.getSaveRecordButton(), 
-                                                 deleteButton: this.getDeleteRecordButton(),
-                                                 menuButton: this.getMainMenuButton() });
-    },
-    
-    /**
-     * main menu
-     */
-    createMainMenu: function() {
-        var menu =  Ext.create('Ext.Menu', {
-                width: 250,
+    getBaseMenu: function() {
+       if (!this.baseMenu ) {
+          this.baseMenu =  Ext.create('Ext.Menu', {
+                width: Config.getLeftMenuWidth(),
                 scrollable: 'vertical',
                 items: [
                     {
@@ -210,15 +255,146 @@ Ext.define('Fpos.controller.MainCtrl', {
                     },
                     {
                         xtype: 'button',
-                        flext: 1,
+                        flex: 1,
                         text: 'Test',
                         action: 'showHwTest'
                     }
                 ]    
-            });
-        return menu;
+         });
+       }
+       return this.baseMenu;
     },
     
+    getUserMenu: function() {
+       if (!this.userMenu ) {
+          this.userMenu =  Ext.create('Ext.Menu', {
+                width: Config.getLeftMenuWidth(),
+                scrollable: 'vertical',
+                items: [
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Synchronisieren',
+                        action: 'sync'             
+                    }
+                ]    
+         });
+       }
+       return this.userMenu;
+    },
+    
+    getManagerMenu: function() {
+       /*
+       if (!this.managerMenu ) {
+          this.managerMenu =  Ext.create('Ext.Menu', {
+                width: Config.getLeftMenuWidth(),
+                scrollable: 'vertical',
+                items: [
+                ]    
+         });
+       }
+       return this.managerMenu;*/
+       return this.getUserMenu();
+    },
+    
+    getAdminMenu: function() {
+        /*
+        if (!this.adminMenu ) {
+          this.adminMenu =  Ext.create('Ext.Menu', {
+                width: Config.getLeftMenuWidth(),
+                scrollable: 'vertical',
+                items: [
+                ]    
+         });
+       }
+       return this.adminMenu;*/
+       return this.getUserMenu();
+    }, 
+    
+    openPos: function() {
+        var self = this;
+        if ( !self.posPanel ) {
+            if ( futil.hasSmallRes() ) {
+                // small pos
+                self.posPanel = Ext.create("Ext.Panel", {
+                               
+                });
+            } else {                        
+                // big pos
+                self.posPanel = Ext.create("Ext.Panel", {
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        {
+                            xtype: 'fpos_product',
+                            flex: 1   
+                        },
+                        {
+                            xtype: 'container',
+                            layout: 'vbox',
+                            items: [
+                                {
+                                    xtype: 'fpos_order',
+                                    flex: 1                        
+                                },
+                                {
+                                    xtype: 'fpos_order_input'  
+                                }
+                            
+                            ]          
+                        }              
+                    ]
+                });
+            }
+            
+            // add view
+            self.basePanel.add(self.posPanel);
+        }
+        
+        // set view
+        self.basePanel.setActiveItem(1);
+        
+        // set menu
+        var user = Config.getUser();
+        var menu = null;
+        if ( user.pos_role === 'admin') {
+            menu = self.getAdminMenu();
+        } else if ( user.pos_role === 'manager' ) {
+            menu = self.getManagerMenu();
+        } else {
+            menu = self.getUserMenu();
+        }
+        
+        // set menu
+        self.basePanel.config.menu = menu;
+        self.basePanel.menu = menu;
+                
+        // notify change        
+        self.mainActiveItemChange(self.getMainView(), self.basePanel);
+    },
+    
+    // basic save record
+    saveRecord: function() {
+        var mainView = this.getMainView();
+        ViewManager.saveRecord(mainView);
+    },
+    
+    // basic item change
+    mainActiveItemChange: function(view, newCard) {    
+        // show login
+        var loginButton = this.getLoginButton();
+        var showLogin = newCard.showLogin || newCard.config.showLogin;
+        if ( showLogin ) {
+            loginButton.show();            
+        } else {
+            loginButton.hide();
+        }
+        
+        // update buttons
+        ViewManager.updateButtonState(newCard, { saveButton: this.getSaveRecordButton(), 
+                                                 deleteButton: this.getDeleteRecordButton(),
+                                                 menuButton: this.getMainMenuButton() });
+    },
     
     /**
      * show hw test
@@ -314,38 +490,40 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         Config.setAdmin(false);
         Config.setUser(null);
+        self.getLoginButton().setText("Anmelden");
         
         if ( !self.pinInput ) {
             self.pinInput = Ext.create('Ext.view.NumberInputView', {
-                hideOnMaskTap: false,
-                hideOnInputDone: false, 
-                centered : true,
-                ui: "pin",
-                maxlen: 4,
-                minlen: 4,
-                emptyValue: "----",
-                title : "PIN für die Anmeldung"
-            });
+                    hideOnMaskTap: false,
+                    hideOnInputDone: false, 
+                    centered : true,
+                    ui: "pin",
+                    maxlen: 4,
+                    minlen: 4,
+                    emptyValue: "----",
+                    title : "PIN für die Anmeldung"
+                });
         }
+                
+        
         self.pinInput.setHandler(function(view, pin) {
-          
             var settings = Config.getSettings();
             var profile = Config.getProfile();
             var user = null;
 
-            // check profile            
+            // check profile and search user            
             if ( profile ) {
                 Ext.each(profile.user_ids, function(pos_user) {
                     if ( pos_user.pin === pin ) {
-                        user = pos_user;
+                        user = pos_user;                        
                         return false;
                     }
                 });
             }
             
             if ( !user ) {
-                // check admin
-                if ( settings && settings.pin === pin ) {
+                // check admin                
+                if ( settings && settings.pin === pin && !self.posPanel) {
                     Config.setAdmin(true);
                     view.hide();
                 } else {
@@ -353,14 +531,19 @@ Ext.define('Fpos.controller.MainCtrl', {
                     view.setError("Ungültiger PIN");
                 }
             } else {
-                // pos user
+                // setup user user
                 Config.setUser(user);
-                view.hide();
-                self.openPos();                
+                Config.setAdmin(user.pos_admin);
+                self.getLoginButton().setText(user.name);
+                
+                // hide view and open pos
+                view.hide(); 
+                self.openPos();
             }
             
         });
-        Ext.Viewport.add(this.pinInput);
+            
+        self.pinInput.show();      
     }
     
     

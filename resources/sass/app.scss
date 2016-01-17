@@ -50,8 +50,8 @@
 // NumberInput 
 // ******************************************************************
 
-@include sencha-button-ui('numInputButtonRed', #e06b5e,'glossy');
-@include sencha-button-ui('numInputButtonBlack', #525252,'glossy');
+@include sencha-button-ui('numInputButtonRed', #e06b5e,'matt');
+@include sencha-button-ui('numInputButtonBlack', #525252,'matt');
 
 .NumInputButton {
     margin: 2px;
@@ -74,3 +74,32 @@
     margin: 10px;
 }
 
+// ******************************************************************
+// Receipt
+// ******************************************************************
+
+.Receipt {
+    margin-top: 1px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+
+// ******************************************************************
+// PosInput 
+// ******************************************************************
+
+@include sencha-button-ui('posInputButtonRed', #e06b5e,'matt');
+@include sencha-button-ui('posInputButtonBlack', #525252,'matt');
+@include sencha-button-ui('posInputButtonGray', #777777,'matt');
+@include sencha-button-ui('posInputButtonGreen', #3c9d53,'matt');
+
+.PosInputButton {
+    margin: 1px;
+    color: #ffffff !important; 
+    font-size: 1.4em;    
+}
+
+.PosInputContainer {
+    background-color: #525252 !important;
+    padding: 2px;
+}

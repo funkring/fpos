@@ -32,7 +32,15 @@ Ext.define('Fpos.view.Main', {
                     align: 'right',
                     action: 'saveRecord',
                     hidden: true                
-                }                    
+                },
+                 {
+                    xtype: 'button',
+                    id: 'loginButton',
+                    text: 'Anmelden',                                  
+                    align: 'right',
+                    action: 'switchUser',
+                    hidden: true                
+                }                         
             ]
         }
     }

@@ -15,6 +15,7 @@ Ext.define('Fpos.Config', {
         databaseName : 'fpos',  
         searchDelay : 500,
         searchLimit : 100,
+        leftMenuWidth: 250,
         maxRows : 10,
         settings : null,
         user : null,
