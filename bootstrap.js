@@ -809,11 +809,13 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.controller.MainCtrl": [],
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
+  "Fpos.controller.TestCtrl": [],
   "Fpos.view.ConfigView": [],
   "Fpos.view.Main": [],
   "Fpos.view.OrderInputView": [],
   "Fpos.view.OrderView": [],
-  "Fpos.view.ProductView": []
+  "Fpos.view.ProductView": [],
+  "Fpos.view.TestView": []
 });
 
 Ext.ClassManager.addNameAliasMappings({
@@ -1794,6 +1796,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.controller.MainCtrl": [],
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
+  "Fpos.controller.TestCtrl": [],
   "Fpos.view.ConfigView": [
     "widget.fpos_config"
   ],
@@ -1808,6 +1811,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.ProductView": [
     "widget.fpos_product"
+  ],
+  "Fpos.view.TestView": [
+    "widget.fpos_test"
   ]
 });
 

@@ -14,7 +14,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Ext.Panel',
         'Fpos.view.ProductView',
         'Fpos.view.OrderView',
-        'Fpos.view.OrderInputView'
+        'Fpos.view.OrderInputView',
+        'Fpos.view.TestView'
     ],
     config: {
         refs: {
@@ -30,12 +31,6 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             'button[action=showHwTest]' : {
                 tap: 'showHwTest'
-            },
-            'button[action=testPrint]' : {
-                tap: 'testPrint'  
-            },
-            'button[action=testSetup]' : {
-                tap: 'testSetup'  
             },
             'button[action=sync]' : {
                 tap: 'sync'
@@ -403,62 +398,9 @@ Ext.define('Fpos.controller.MainCtrl', {
         var self = this;
         self.getMainView().push({
             title: "Test",
-            xtype: 'container',
-            defaults: {
-               cls: 'TestButton'  
-            },
-            items: [
-                {
-                    xtype: 'button',
-                    text: 'Test Interface',
-                    action: 'testInterface'
-                },
-                {
-                    xtype: 'button',
-                    text: 'Test Print',
-                    action: 'testPrint'
-                },
-                {
-                    xtype: 'button',
-                    text: 'Test Display',
-                    action: 'testDisplay'
-                }
-            ]            
+            xtype: 'fpos_test'        
         });
     },
-    
-    // TESTS
-    
-    testInterface: function() {
-       var valid = window.PosHw.test(function(res) {
-           debugger;
-       }, 
-       function(err) {
-           debugger;
-       });  
-    },
-    
-    
-    testPrint: function() {
-       var html = "<br/><br/>Hello World<br/><br/>";
-       var valid = window.PosHw.printHtml(html, function(res) {
-           debugger;
-       }, 
-       function(err) {
-           debugger;
-       });
-    },
-    
-    testDisplay: function() {
-        window.PosHw.display("23", function(res) {
-            debugger;
-        },
-        function(err) {
-            debugger;
-        })
-    },
-    
-    
     
     /**
      * edit configuration

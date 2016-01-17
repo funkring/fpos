@@ -4,6 +4,7 @@ Ext.define('Fpos.view.OrderInputView', {
     extend: 'Ext.Panel',    
     xtype: 'fpos_order_input',
     requires: [
+        'Ext.Button'
     ],
     config: {
         cls: 'PosInputContainer',

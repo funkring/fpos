@@ -23,7 +23,8 @@ Ext.application({
     ],
     
     controllers: [
-        'MainCtrl'
+        'MainCtrl',
+        'TestCtrl'
     ],
 
     icon: {

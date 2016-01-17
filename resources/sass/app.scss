@@ -66,13 +66,13 @@
 }
 
 // ******************************************************************
-// Test Button
+// TestButton
 // ******************************************************************
 
 .TestButton {
-    width: 120px;
-    height: 80px;
-    margin: 10px;
+    margin: 1px;
+    color: #ffffff !important; 
+    font-size: 1.4em;    
 }
 
 // ******************************************************************
@@ -126,4 +126,24 @@
 // ******************************************************************
 
 .ProductContainer {
+}
+
+// ******************************************************************
+// Test Container
+// ******************************************************************
+
+.TestContainer {
+    padding: 10px;
+    margin-left: 10px;
+}
+
+.TestInfo {
+    background-color: #ffffff !important;
+    margin: 10px; 
+}
+
+.TestButton {
+    margin: 6px;
+    color: #ffffff !important; 
+    font-size: 1.4em;
 }
