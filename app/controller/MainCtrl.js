@@ -453,7 +453,9 @@ Ext.define('Fpos.controller.MainCtrl', {
                     return db.put(newValues);
                 },
                 savedHandler: function() {                    
-                    return self.sync()['catch'](function(err) {
+                    return self.sync().then(function(err) {
+                        self.loadConfig();  
+                    })['catch'](function(err) {
                         self.editConfig();
                     });
                 }
