@@ -81,7 +81,10 @@ public class PosHwPlugin extends CordovaPlugin {
 						@Override
 						boolean execute(JSONArray args, CallbackContext callbackContext) throws JSONException, IOException {
 							String html = args.getString(0);
-							service.getPrinter().printHtml(html);
+							if ( html != null && html.length() > 0) {
+								service.getPrinter().printHtml(html);
+								callbackContext.success(html);
+							}
 							callbackContext.success();
 							return true;
 						}

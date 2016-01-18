@@ -75,8 +75,6 @@ public abstract class PosHwService {
 	 */
 	protected abstract void destroyService();
 	
-	
-	
 	/**
 	 * @return serial port iface for number
 	 */

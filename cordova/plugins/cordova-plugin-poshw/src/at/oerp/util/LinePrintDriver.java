@@ -16,13 +16,7 @@ public interface LinePrintDriver {
 	 * print text
 	 * @param inText
 	 */
-	void printText(String inText) throws IOException;
-	
-	/**
-	 * print line feed
-	 * @throws IOException
-	 */
-	void lf() throws IOException;
+	void writeln(String inText) throws IOException;
 	
 	/**
 	 * set style

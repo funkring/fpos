@@ -16,7 +16,7 @@ import at.oerp.util.HtmlLinePrinter;
 import at.oerp.util.IObjectResolver;
 import at.oerp.util.LinePrintDriver;
 
-public class Printer58mm extends PosHwPrinter implements CtrlBytes {
+public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDriver  {
 
 	// Printer Service Constants
 	private final static String TAG = "Printer58mm";
@@ -50,7 +50,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes {
 	
 	private OutputStream output;
 	private Charset unicode;
-	private LinePrinterImpl linePrinterImpl;
+	private T508AQService service;
 	
 	
 	/**
@@ -58,14 +58,11 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes {
 	 * @throws SecurityException
 	 * @throws IOException
 	 */
-	public Printer58mm() throws SecurityException, IOException {
-		linePrinterImpl = new LinePrinterImpl();
+	public Printer58mm(T508AQService inService) throws SecurityException, IOException {
+		service = inService;
 		unicode = Charset.forName("unicode");
-
 		dev =  new File("/dev/ttyS3");
 		displayPort = new SerialPortAdapter(dev, 0);
-		
-		switchToPrinter();
 	}
 	
 	/**
@@ -86,7 +83,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes {
 	 * switch to printer
 	 * @throws IOException
 	 */
-	protected void switchToPrinter() throws IOException {
+	protected boolean switchToPrinter() throws IOException {
 		if ( displayPort.isOpen() ) {
 			// double check disable
 			if ( GpioControl.LED_CTL(false) != 0 ) {
@@ -104,12 +101,16 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes {
 			}		
 		}
 		
-		// open again
-		if ( port == null ) {
-			Ioctl.convertPrinter();
-			port = new SerialPort(dev, 115200, 0, 2);
-			output = port.getOutputStream();
+		// enable printer
+		if ( Ioctl.convertPrinter() == 0 ) {
+			// open again
+			if ( port == null ) {			
+				port = new SerialPort(dev, 115200, 0, 2);
+				output = port.getOutputStream();
+			}
+			return true;
 		}
+		return false;
 	}
 	
 	
@@ -150,30 +151,36 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes {
 	}
 	
 	@Override
-	public synchronized void printHtml(String inHtml, IObjectResolver inResolver) throws IOException {
-		if ( port != null ) {
-			HtmlLinePrinter printer = new HtmlLinePrinter(linePrinterImpl, inResolver);
-			printer.print(inHtml);
+	public void printHtml(String inHtml, IObjectResolver inResolver) throws IOException {
+		synchronized ( service ) {
+			if ( switchToPrinter() ) {
+				HtmlLinePrinter printer = new HtmlLinePrinter(this, inResolver);
+				printer.print(inHtml);
+			}
 		}
 	}
 	
 
 	@Override
 	public void printTest() throws IOException {
-		print(ESC_ENTER);
-		print(ESC_ENTER);
-		print(ESC_FONT_SMALL);
-		printUnicode("Fetter Text!");
-		printUnicode(" Und jetzt wieder normal");
-		print(ESC_ENTER);
-		print(ESC_ENTER);
+		synchronized ( service ) {
+			if ( switchToPrinter() ) {
+				print(ESC_ENTER);
+				print(ESC_ENTER);
+				print(ESC_FONT_SMALL);
+				printUnicode("Fetter Text!");
+				printUnicode(" Und jetzt wieder normal");
+				print(ESC_ENTER);
+				print(ESC_ENTER);
+			}
+		}
 	}
 	
 	protected void printUnicode(String data) throws IOException {
 		if ( data == null )
 			data = "";
 		
-		print(SET_LEFT);
+		//print(SET_LEFT);
 		
 		byte[] bData = data.getBytes(unicode);
 		byte[] buf = new byte[2];
@@ -229,71 +236,43 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes {
 			}
 		}		
 	}
-
-	/**
-	 * Line Printer Interface implementation
-	 * @author funkring
-	 *
-	 */
-	class LinePrinterImpl implements LinePrintDriver {
-		@Override
-		public void printText(String inText) throws IOException {
-			printUnicode(inText);
-		}
-
-		@Override
-		public void lf() throws IOException {
-			print(ESC_ENTER);
-		}
-
-		@Override
-		public void reset() throws IOException {
-			print(ESC_FONT_COLOR_DEFAULT);
-			print(FS_FONT_ALIGN);
-			print(ESC_ALIGN_LEFT);
-			print(ESC_CANCEL_BOLD);
-			print(LF);		
-		}
-
-
-		@Override
-		public double getWidth_mm() throws IOException {
-			return 48.0;
-		}
-
-		@Override
-		public double getCharWidth_mm(int inFont, int inStyle) {
-			switch ( inFont ) {
-			case FONT_LARGE:
-				return 24*DOT_WIDTH_MM;
-			case FONT_DEFAULT: //medium
-				return 16*DOT_WIDTH_MM;
-			case FONT_SMALL:
-				return 12*DOT_WIDTH_MM;
-			}
-			throw new IllegalArgumentException();
-		}
-
-		@Override
-		public void setFont(int inFont) throws IOException {		
-			switch ( inFont ) {
-			case FONT_LARGE:
-				print(ESC_FONT_LARGE);
-				break;
-			case FONT_DEFAULT:
-				print(ESC_FONT_MEDIUM);
-				break;
-			case FONT_SMALL:
-				print(ESC_FONT_SMALL);
-				break;
-			}
-		}
-
-		@Override
-		public void setStyle(int inStyle) throws IOException {
-		}
-	}
 	
+	// LINE PRINTER
+	
+	@Override
+	public void reset() throws IOException {
+		print(ESC_ALIGN_LEFT);	
+		/*
+		print(ESC_FONT_COLOR_DEFAULT);
+		print(FS_FONT_ALIGN);
+		print(ESC_ALIGN_LEFT);
+		print(ESC_CANCEL_BOLD);
+		print(LF);*/		
+	}
 
+
+	@Override
+	public double getWidth_mm() throws IOException {
+		return 48.0;
+	}
+
+	@Override
+	public double getCharWidth_mm(int inFont, int inStyle) {
+		return 1.5;
+	}
+
+	@Override
+	public void setFont(int inFont) throws IOException {		
+	}
+
+	@Override
+	public void setStyle(int inStyle) throws IOException {
+	}
+
+	@Override
+	public void writeln(String inText) throws IOException {			
+		printUnicode(inText);
+		print(LF);
+	}
 	
 }

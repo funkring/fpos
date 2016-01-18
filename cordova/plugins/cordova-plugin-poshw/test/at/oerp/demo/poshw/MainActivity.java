@@ -2,8 +2,6 @@ package at.oerp.demo.poshw;
 
 import java.io.IOException;
 
-import org.apache.cordova.LOG;
-
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -27,6 +25,7 @@ public class MainActivity extends Activity {
 	private TextView infoTextView;
 	private PosHwService posHw;
 	private int displayClick;
+	private ScaleTask scaleTask;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +46,12 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				try {
-					//posHw.getPrinter().printHtml("TEST<br>Test<br><br>");
-					posHw.getPrinter().printTest();
+					String test = "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
+			                   "<br>um zu testen ob der Druck" +
+			                   "<br>funktioniert"+
+			                   "<br><br><br><br><br><br>";
+					posHw.getPrinter().printHtml(test);
+					//posHw.getPrinter().printTest();
 				} catch (IOException e) {
 					e.printStackTrace();
 				};				
@@ -63,10 +66,10 @@ public class MainActivity extends Activity {
 				PosHwScale scale = posHw.getScale();
 				try {
 					if ( scale.init(11.99f, 0.0f) ) {
-						infoTextView.setText("Weighing successful");
-						Thread.sleep(2000);
-						//showWeighResult();
-						new ScaleTask().execute();
+						if ( scaleTask == null ) {
+							scaleTask = new ScaleTask();
+							scaleTask.execute();
+						}
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -122,7 +125,11 @@ public class MainActivity extends Activity {
 		protected void onProgressUpdate(WeightResult... values) {
 			super.onProgressUpdate(values);
 			try {
-				showWeighResult(values != null && values.length == 1 ? values[0] : null);
+				if ( values != null) {
+					for ( WeightResult value : values) {
+						showWeighResult(value);
+					}
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -130,24 +137,18 @@ public class MainActivity extends Activity {
 		
 		@Override
 		protected Void doInBackground(Void... params) {
-			int fail = 0;
 			WeightResult result = new WeightResult();
-			try {
-				while ( fail < 100) {
+			try {				
+				while ( !isCancelled() ) {
 					boolean successful =  posHw.getScale().readResult(result);
 					if ( successful) {
-						fail = 0;
 						publishProgress(result);
-					} else {
-						fail++;
-					}
-					Thread.sleep(100);
+					} 
+					Thread.sleep(200);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			
-			publishProgress(result);
 			return null;
 		}
 		

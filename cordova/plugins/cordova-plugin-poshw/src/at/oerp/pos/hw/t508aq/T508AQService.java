@@ -49,7 +49,7 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 			// check if printer available
 			if ( Ioctl.convertPrinter() == 0 ) {
 				try {
-					printer = new Printer58mm();
+					printer = new Printer58mm(this);
 				} catch (Exception e) {
 					printerFail = true;
 					Log.e(TAG, e.getMessage());				
@@ -118,12 +118,12 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 	public synchronized  PosHwScale getScale() {
 		if ( scale == null && !scaleFail ) {
 			try {
-				scale = new PosHwScale(getSerialPort(0));
+				scale = new ScaleServiceImpl(this, getSerialPort(0));
 			} catch (Exception e) {
 				scaleFail = true;
 				Log.e(TAG, e.getMessage());	
 			}
-		}
+		}		
 		return scale;
 	}
 

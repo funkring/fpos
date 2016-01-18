@@ -27,7 +27,7 @@ Ext.define('Fpos.controller.TestCtrl', {
     
     // TESTS
     beforeTest: function() {
-        self.getTestLabel().setHtml('');
+        this.getTestLabel().setHtml('');
     },
     
     testInterface: function() {
@@ -44,9 +44,12 @@ Ext.define('Fpos.controller.TestCtrl', {
     testPrint : function() {        
         var self = this;
         self.beforeTest();
-        var html = "<br/><br/>Hello World<br/><br/>";
+        var html = "<br>Hier ein paar Zeilen" +
+                   "<br>um zu testen ob der Druck" +
+                   "<br>funktioniert"+
+                   "<br><br><br><br><br><br>";
         var valid = window.PosHw.printHtml(html, function(res) {
-            self.getTestLabel().setHtml("OK!");
+            self.getTestLabel().setHtml(res || '');
         }, 
         function(err) {
             self.getTestLabel().setHtml(err);
@@ -56,7 +59,7 @@ Ext.define('Fpos.controller.TestCtrl', {
     testDisplay : function() {
         var self = this;
         self.beforeTest();
-        var valid = window.PosHw.setDisplay("23",function(res) {
+        var valid = window.PosHw.display("23",function(res) {
             self.getTestLabel().setHtml("OK!");
         }, 
         function(err) {

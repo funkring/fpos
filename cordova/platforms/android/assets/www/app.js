@@ -64862,7 +64862,6 @@ Ext.define('Fpos.view.OrderView', {
 Ext.define('Fpos.view.OrderInputView', {
     extend: Ext.Panel,
     xtype: 'fpos_order_input',
-    requires: [],
     config: {
         cls: 'PosInputContainer',
         items: [
@@ -65071,6 +65070,66 @@ Ext.define('Fpos.view.OrderInputView', {
     }
 });
 
+/*global Ext:false*/
+Ext.define('Fpos.view.TestView', {
+    extend: Ext.Panel,
+    xtype: 'fpos_test',
+    config: {
+        layout: 'hbox',
+        items: [
+            {
+                xtype: 'panel',
+                layout: 'vbox',
+                cls: 'TestContainer',
+                items: [
+                    {
+                        xtype: 'button',
+                        text: 'Test Interface',
+                        action: 'testInterface',
+                        width: '250px',
+                        height: '77px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Test Print',
+                        action: 'testPrint',
+                        width: '250px',
+                        height: '77px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Test Display',
+                        action: 'testDisplay',
+                        width: '250px',
+                        height: '77px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Test Cashdrawer',
+                        action: 'testCashdrawer',
+                        width: '250px',
+                        height: '77px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    }
+                ]
+            },
+            {
+                xtype: 'label',
+                id: 'testLabel',
+                cls: 'TestInfo',
+                flex: 1
+            }
+        ]
+    }
+});
+
 /*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
 Ext.define('Fpos.controller.MainCtrl', {
     extend: Ext.app.Controller,
@@ -65088,12 +65147,6 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             'button[action=showHwTest]': {
                 tap: 'showHwTest'
-            },
-            'button[action=testPrint]': {
-                tap: 'testPrint'
-            },
-            'button[action=testSetup]': {
-                tap: 'testSetup'
             },
             'button[action=sync]': {
                 tap: 'sync'
@@ -65438,36 +65491,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         var self = this;
         self.getMainView().push({
             title: "Test",
-            xtype: 'container',
-            defaults: {
-                cls: 'TestButton'
-            },
-            items: [
-                {
-                    xtype: 'button',
-                    text: 'Setup',
-                    action: 'testSetup'
-                },
-                {
-                    xtype: 'button',
-                    text: 'Test Print',
-                    action: 'testPrint'
-                }
-            ]
+            xtype: 'fpos_test'
         });
-    },
-    /**
-     * test setup
-     */
-    testSetup: function() {
-        Config.setupHardware();
-    },
-    /**
-     * test print
-     */
-    testPrint: function() {
-        var html = "<br/><br/>Hello World<br/><br/>";
-        Config.printHtml(html);
     },
     /**
      * edit configuration
@@ -65568,6 +65593,71 @@ Ext.define('Fpos.controller.MainCtrl', {
         } else {
             self.pinInput.show();
         }
+    }
+});
+
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
+Ext.define('Fpos.controller.TestCtrl', {
+    extend: Ext.app.Controller,
+    config: {
+        refs: {
+            testLabel: '#testLabel'
+        },
+        control: {
+            'button[action=testInterface]': {
+                tap: 'testInterface'
+            },
+            'button[action=testPrint]': {
+                tap: 'testPrint'
+            },
+            'button[action=testDisplay]': {
+                tap: 'testDisplay'
+            },
+            'button[action=testCashdrawer]': {
+                tap: 'testCashdrawer'
+            }
+        }
+    },
+    // TESTS
+    beforeTest: function() {
+        this.getTestLabel().setHtml('');
+    },
+    testInterface: function() {
+        var self = this;
+        self.beforeTest();
+        var valid = window.PosHw.test(function(res) {
+                self.getTestLabel().setHtml(res);
+            }, function(err) {
+                self.getTestLabel().setHtml(err);
+            });
+    },
+    testPrint: function() {
+        var self = this;
+        self.beforeTest();
+        var html = "<br>Hier ein paar Zeilen" + "<br>um zu testen ob der Druck" + "<br>funktioniert" + "<br><br><br><br><br><br>";
+        var valid = window.PosHw.printHtml(html, function(res) {
+                self.getTestLabel().setHtml(res || '');
+            }, function(err) {
+                self.getTestLabel().setHtml(err);
+            });
+    },
+    testDisplay: function() {
+        var self = this;
+        self.beforeTest();
+        var valid = window.PosHw.display("23", function(res) {
+                self.getTestLabel().setHtml("OK!");
+            }, function(err) {
+                self.getTestLabel().setHtml(err);
+            });
+    },
+    testCashdrawer: function() {
+        var self = this;
+        self.beforeTest();
+        var valid = window.PosHw.openCashDrawer(function() {
+                self.getTestLabel().setHtml("OK!");
+            }, function(err) {
+                self.getTestLabel().setHtml(err);
+            });
     }
 });
 
@@ -75517,7 +75607,8 @@ Ext.application({
         'Main'
     ],
     controllers: [
-        'MainCtrl'
+        'MainCtrl',
+        'TestCtrl'
     ],
     icon: {
         '57': 'resources/icons/Icon.png',

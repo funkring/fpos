@@ -125,6 +125,7 @@ public class HtmlLinePrinter  {
 	 * @throws IOException 
 	 */
 	public void print(String inHtml) throws IOException {
+		driver.reset();
 		Grid grid = parseGrid(inHtml);
 		grid.print();
 	}
@@ -164,7 +165,10 @@ public class HtmlLinePrinter  {
 				TextElement tElement = (TextElement) child;
 				inGrid.setValue(inRow, inCol, tElement.format());
 			} else {	
+				// create cell
+				inGrid.setValue(inRow, inCol, "");
 				
+				// fill childs
 				inRow = fillGrid(child, inGrid, inRow, col);
 				
 				// check new col
@@ -219,9 +223,7 @@ public class HtmlLinePrinter  {
 		
 		public void print() throws IOException {
 			for ( int i=0; i<lines.size(); i++) {
-				if (i>0) 
-					driver.lf();
-				driver.printText(lines.get(i).toString());
+				driver.writeln(lines.get(i).toString());
 			}
 		}
 	}
