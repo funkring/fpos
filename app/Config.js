@@ -21,6 +21,7 @@ Ext.define('Fpos.Config', {
         settings : null,
         user : null,
         profile: null,
+        currency: "€",
         admin: false,
         hwStatus: { err: null },
         hwStatusId: null

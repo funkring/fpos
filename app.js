@@ -22,9 +22,21 @@ Ext.application({
         'Main'
     ],
     
+    models: [
+        'Category',
+        'Product'
+    ],
+    
+    
+    stores: [
+        'CategoryStore',
+        'ProductStore'
+    ],
+    
     controllers: [
         'MainCtrl',
-        'TestCtrl'
+        'TestCtrl',
+        'ProductViewCtrl'
     ],
 
     icon: {

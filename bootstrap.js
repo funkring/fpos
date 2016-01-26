@@ -810,10 +810,16 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
+  "Fpos.model.Category": [],
+  "Fpos.model.Product": [],
+  "Fpos.store.CategoryStore": [],
+  "Fpos.store.ProductStore": [],
+  "Fpos.view.CategoryItem": [],
   "Fpos.view.ConfigView": [],
   "Fpos.view.Main": [],
   "Fpos.view.OrderInputView": [],
   "Fpos.view.OrderView": [],
+  "Fpos.view.ProductItem": [],
   "Fpos.view.ProductView": [],
   "Fpos.view.TestView": []
 });
@@ -1797,6 +1803,13 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
+  "Fpos.model.Category": [],
+  "Fpos.model.Product": [],
+  "Fpos.store.CategoryStore": [],
+  "Fpos.store.ProductStore": [],
+  "Fpos.view.CategoryItem": [
+    "widget.fpos_category_item"
+  ],
   "Fpos.view.ConfigView": [
     "widget.fpos_config"
   ],
@@ -1808,6 +1821,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.OrderView": [
     "widget.fpos_order"
+  ],
+  "Fpos.view.ProductItem": [
+    "widget.fpos_product_item"
   ],
   "Fpos.view.ProductView": [
     "widget.fpos_product"

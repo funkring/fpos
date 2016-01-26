@@ -12,7 +12,7 @@ Ext.define('Fpos.view.OrderView', {
         items: [
              {
                 xtype: 'toolbar',
-                ui: 'posStatusBar',
+                ui: 'posStatusBar',                
                 cls: 'PosStatusBar',
                 items: [
                     {

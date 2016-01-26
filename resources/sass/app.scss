@@ -80,7 +80,7 @@
 // ******************************************************************
 
 .Receipt {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 
@@ -93,6 +93,7 @@
 @include sencha-button-ui('posInputButtonGray', #777777,'matt');
 @include sencha-button-ui('posInputButtonGreen', #3c9d53,'matt');
 @include sencha-button-ui('posInputButtonOrange', #ff7f2a,'matt');
+@include sencha-button-ui('posInputButtonWhite', #ffffff,'matt');
 
 .PosInputButton {
     margin: 1px;
@@ -118,14 +119,7 @@
 }
 
 .PosStatusBar {
-    
-}
-
-// ******************************************************************
-// ProductContainer 
-// ******************************************************************
-
-.ProductContainer {
+    //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 // ******************************************************************
@@ -146,4 +140,70 @@
     margin: 6px;
     color: #ffffff !important; 
     font-size: 1.4em;
+}
+
+
+// ******************************************************************
+// ProductView
+// ******************************************************************
+
+@include sencha-toolbar-ui('categoryToolbar', #777777, 'matt');
+
+.CategoryToolbar {
+}
+
+.ProductContainer {   
+    //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.ProductCategoryButton {
+   width: 77px;
+   height: 77px;
+   margin: 2px;
+   color: #ffffff !important; 
+   font-size: 1em;
+}
+
+.CategoryDataView {
+    width: 82px;
+    background-color: #777777 !important;
+}
+
+.SelectedCategoryButton {
+    width: 70px;
+}
+
+.ProductDataView {
+    margin: 2px;
+}
+
+.ProductButton {
+    float: left;
+    margin: 2px;
+    min-width: 100px;
+    max-width: 120px;
+    height: 110px;
+    font-size: 0.7em;
+}
+
+.ProductPrice {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    vertical-align: top;
+    line-height: 13px;
+    color: #ffffff !important; 
+    background-color: #777777 !important;
+    padding: 2px 5px;
+    border-radius: 2px;
+}
+
+.ProductImage  {
+    position: relative;
+    background-color: #ffffff !important;
+    text-align: center;   
+}
+
+.ProductText {
+    text-align: left;
 }
