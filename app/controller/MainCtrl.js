@@ -33,10 +33,10 @@ Ext.define('Fpos.controller.MainCtrl', {
                 tap: 'showHwTest'
             },
             'button[action=sync]' : {
-                tap: 'sync'
+                tap: 'onSyncTap'
             },
             mainView: {
-                initialize: 'mainViewInitialize',
+                initialize: 'resetConfig',
                 activeitemchange : 'mainActiveItemChange'                   
             },
             mainMenuButton: {
@@ -50,8 +50,17 @@ Ext.define('Fpos.controller.MainCtrl', {
             }
         }
     },
+       
+    init: function() {
+        this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
+        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+    },
     
-    sync: function() {               
+    onSyncTap: function() {
+        this.sync();
+    },
+    
+    sync: function(resync) {               
         var self = this;
         var db = Config.getDB();
         var client = null;
@@ -101,9 +110,21 @@ Ext.define('Fpos.controller.MainCtrl', {
             ViewManager.startLoading("Synchronisiere Daten");
             return DBUtil.syncWithOdoo(db, client, {
                name: 'fpos',
+               resync: typeof(resync) === "boolean" && resync || false,
                models: [
                    {
                         model: 'res.partner.title'
+                   },                   
+                   {
+                        model: 'account.tax',
+                        fields: ['name',
+                                 'amount',
+                                 'type',
+                                 'price_include',
+                                 'sequence']  
+                   },
+                   {
+                        model: 'product.uom'  
                    },
                    {
                         model: 'pos.category',
@@ -116,7 +137,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                    },
                    {
                         model: 'res.partner',
-                        domain: [['active','=',true]],
                         fields: ['name',
                                  'title',
                                  'parent_id',
@@ -142,12 +162,14 @@ Ext.define('Fpos.controller.MainCtrl', {
             });
         }).then(function() {
             ViewManager.stopLoading(); 
+            self.resetConfig();
         })['catch'](function(err) {
             ViewManager.stopLoading();
             ViewManager.handleError(err,{
                 name: "Unerwarteter Fehler", 
                 message: "Synchronisation konnte nicht durchgeführt werden"
             }, true);
+            self.resetConfig();
         });
     },
     
@@ -162,41 +184,58 @@ Ext.define('Fpos.controller.MainCtrl', {
         })
         .then(function(profile) {
             Config.setProfile(profile);  
-            self.showLogin();            
+            
+            // reload
+            
+            // load tax
+            self.taxStore.load({
+                callback: function() {
+                
+                    // load product units
+                    self.unitStore.load({
+                        callback: function() {
+                            // fire reload
+                            Ext.Viewport.fireEvent("reloadData");
+                            // ... and show login
+                            self.showLogin();                                    
+                        }
+                    });                                        
+                }
+            });            
         })
         ['catch'](function (error) {
             self.editConfig();
         }); 
     },
             
-    mainViewInitialize: function() {
+    resetConfig: function() {
        var self = this;
-       
-       // info template       
-       var infoTmpl = null;
-       if ( futil.hasSmallRes() ) { 
-           infoTmpl = Ext.create('Ext.XTemplate', 
-                        '<div style="width:120px;height:120px;margin:auto;">',
-                          '<img src="resources/icons/AppInfo_120x120.png">',
-                        '</div>',
-                        '<p align="center">',
-                        'Version {version}',
-                        '</p>');
-       } else {
-           infoTmpl = Ext.create('Ext.XTemplate', 
-                        '<div style="width:512px;height:512px;margin:auto;">',
-                          '<img src="resources/icons/AppInfo_512x512.png">',
-                        '</div>',
-                        '<p align="center">',
-                        'Version {version}',
-                        '</p>');
-       }
-       
-       // get main 
        var mainView = self.getMainView();
        
        // create base panel
        if ( !self.basePanel ) {
+       
+           // info template       
+           var infoTmpl = null;
+           if ( futil.hasSmallRes() ) { 
+               infoTmpl = Ext.create('Ext.XTemplate', 
+                            '<div style="width:120px;height:120px;margin:auto;">',
+                              '<img src="resources/icons/AppInfo_120x120.png">',
+                            '</div>',
+                            '<p align="center">',
+                            'Version {version}',
+                            '</p>');
+           } else {
+               infoTmpl = Ext.create('Ext.XTemplate', 
+                            '<div style="width:512px;height:512px;margin:auto;">',
+                              '<img src="resources/icons/AppInfo_512x512.png">',
+                            '</div>',
+                            '<p align="center">',
+                            'Version {version}',
+                            '</p>');
+           }
+            
+           // base panel    
            self.basePanel = Ext.create("Ext.Panel", {
                 menu: self.getBaseMenu(),
                 title: '',
@@ -222,7 +261,7 @@ Ext.define('Fpos.controller.MainCtrl', {
           self.basePanel.menu = menu;
          
           // notify change        
-          self.mainActiveItemChange(self.getMainPanel(), self.basePanel);
+          self.mainActiveItemChange(mainView, self.basePanel);
         }
        
        // load hardware
@@ -324,7 +363,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                             flex: 1   
                         },
                         {
-                            xtype: 'panel',
                             layout: 'vbox',
                             items: [
                                 {
@@ -418,7 +456,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     return db.put(newValues);
                 },
                 savedHandler: function() {                    
-                    return self.sync().then(function(err) {
+                    return self.sync(true).then(function(err) {
                         self.loadConfig();  
                     })['catch'](function(err) {
                         self.editConfig();

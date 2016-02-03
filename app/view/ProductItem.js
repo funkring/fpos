@@ -8,8 +8,7 @@ Ext.define("Fpos.view.ProductItem", {
             cls: 'ProductButton',
             xtype: 'button',
             action: 'selectProduct',
-            productId: null,
-            ui: 'posInputButtonWhite',
+            ui: 'posInputButtonWhite'
         }]
     },
     

@@ -184,6 +184,7 @@
     max-width: 120px;
     height: 110px;
     font-size: 0.7em;
+    word-wrap:break-word;
 }
 
 .ProductPrice {
@@ -205,5 +206,15 @@
 }
 
 .ProductText {
-    text-align: left;
+    text-align: center;
+}
+
+.ProductTextOnly {
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.ProductTextOnlyBig {
+    text-align: center;
+    font-size: 2em;
 }

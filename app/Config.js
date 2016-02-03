@@ -41,13 +41,12 @@ Ext.define('Fpos.Config', {
         });
     },
     
-    
     setupHardware: function() {      
         var self = this;  
         var deferred = Ext.create('Ext.ux.Deferred');
     
         // check for poshw plugin
-        if ( window.PosHw ) {
+        if ( window.PosHw && !self.getHwStatusId() ) {
             window.PosHw.getStatus(function(hwstatus) {
                 // set first status            
                 self.setHwStatus(hwstatus);

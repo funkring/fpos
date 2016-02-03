@@ -24,19 +24,27 @@ Ext.application({
     
     models: [
         'Category',
-        'Product'
+        'Product',        
+        'PosOrder',
+        'PosLine',
+        'AccountTax',
+        'ProductUnit'
     ],
-    
-    
+        
     stores: [
         'CategoryStore',
-        'ProductStore'
+        'ProductStore',        
+        'PosOrderStore',
+        'PosLineStore',
+        'AccountTaxStore',
+        'ProductUnitStore'
     ],
     
     controllers: [
         'MainCtrl',
         'TestCtrl',
-        'ProductViewCtrl'
+        'ProductViewCtrl',
+        'OrderViewCtrl'
     ],
 
     icon: {

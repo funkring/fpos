@@ -84,15 +84,6 @@ Ext.define('Fpos.view.ProductView', {
                 ]
             }
         ]
-    },
-    
-    updateRecord: function(oldRecord, newRecord) {
-        var self = this;
-        self.callParent(arguments);
-    },
-    
-    search: function() {
-        
     }
     
 });

@@ -3,9 +3,11 @@
 Ext.define('Fpos.view.OrderView', {
     extend: 'Ext.Panel',    
     xtype: 'fpos_order',
+    id: 'orderView',
     requires: [
       'Ext.view.ScrollList',
-      'Ext.Label'
+      'Ext.Label',
+      'Ext.Toolbar' 
     ],
     config: {        
         layout: 'vbox',
@@ -17,7 +19,7 @@ Ext.define('Fpos.view.OrderView', {
                 items: [
                     {
                        xtype: 'label',
-                       html: '0 €',
+                       id: 'posDisplayLabel',                       
                        cls: 'PosDisplayLabel',
                        flex: 1
                     }
