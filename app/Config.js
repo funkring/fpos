@@ -23,6 +23,8 @@ Ext.define('Fpos.Config', {
         profile: null,
         currency: "€",
         admin: false,
+        decimals: 2,
+        qtyDecimals: 3,
         hwStatus: { err: null },
         hwStatusId: null
     },

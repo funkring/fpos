@@ -173,7 +173,6 @@ Ext.define('Ext.form.ViewManager', {
         self.startLoading("Daten validieren...");             
 
         var deferred = Ext.create('Ext.ux.Deferred');
-        var promise = deferred.promise();
         
         //invoke asynchronly
         setTimeout(function() {            
@@ -244,7 +243,8 @@ Ext.define('Ext.form.ViewManager', {
                     // otherwise try to store record
                     record = view.getRecord();
                     if ( record !== null ) {
-                        var values = view.getValues(); 
+                        var values = view.getValues();
+                        // convert records to id
                         record.set(values);
                         record.save({
                            callback: function() {
@@ -255,18 +255,19 @@ Ext.define('Ext.form.ViewManager', {
                         reloadHandler();
                     }
                 }
-            } else {                
-                deferred.reject("invalidField");
+            } else {      
+                deferred.reject();
             }
         },0);
       
         // return promise
-        return deferred.promise()
-            .then(function(result) {
-                self.stopLoading();
-            })
+        var promise = deferred.promise(); 
+        return promise
             ['catch'](function(err) {
                 self.stopLoading();
+            })
+            .then(function(result) {
+                self.stopLoading();                
             });
     },
     

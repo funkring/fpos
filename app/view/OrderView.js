@@ -19,6 +19,11 @@ Ext.define('Fpos.view.OrderView', {
                 items: [
                     {
                        xtype: 'label',
+                       id: 'posDisplayState',
+                       cls: 'PosDisplayState'                      
+                    },
+                    {
+                       xtype: 'label',
                        id: 'posDisplayLabel',                       
                        cls: 'PosDisplayLabel',
                        flex: 1
@@ -27,8 +32,11 @@ Ext.define('Fpos.view.OrderView', {
             },            
             {
                 xtype: 'scrolllist',
+                id: 'orderItemList',
                 cls: 'Receipt',
-                flex : 1
+                itemCls: 'PosOrderItem',
+                flex : 1,
+                allowDeselect: true
             }
         ]
     }    

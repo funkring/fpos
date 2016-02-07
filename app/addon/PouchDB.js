@@ -87,12 +87,12 @@ Ext.define('Ext.proxy.PouchDB', {
      /**
      * Creates the proxy, throws an error if local storage is not supported in the current browser.
      * @param {Object} config (optional) Config object.
-     
+     */
     constructor: function(config) {
         var self = this;
-        self.callParent(arguments);                
-        
-    },*/
+        self.resolveFields = null;
+        self.callParent(arguments);
+    },
     
     applyResModel: function(resModel) {
         var self = this;
@@ -331,14 +331,37 @@ Ext.define('Ext.proxy.PouchDB', {
     },
     
     /**
+     * @return get fields to resolve
+     */
+    getResolveFields: function() {
+        var self = this;
+        if ( self.resolveFields === null) {
+            self.resolveFields = [];
+            var fields = this.getModel().getFields().items;
+            Ext.each(fields, function(field) {
+               var resModel = field.resModel || field.config.resModel;
+               var foreignKey = field.foreignKey || field.config.foreignKey;
+               if ( resModel ) {
+                    self.resolveFields.push({
+                        "resModel" : resModel,
+                        "name" : field.getName(),
+                        "foreignKey" : foreignKey
+                    });
+               } 
+            });
+        }
+        return self.resolveFields;
+    },
+    
+    /**
      * @private 
      * @param {Object} record
      * create Document
-     * @return Documetn
+     * @return Document
      */
     createDocument: function(record, defaults) {
-        var Model   = this.getModel();
-        var fields  = Model.getFields().items;
+        var model   = this.getModel();
+        var fields  = model.getFields().items;
         var length  = fields.length;
         var data    = record.data;
         var doc     = {};
@@ -423,11 +446,8 @@ Ext.define('Ext.proxy.PouchDB', {
         var sorters = operation.getSorters() || defaultSorters;
         var filters = operation.getFilters() || defaultFilters;
         
-        // get associations
-        var associations = self.getModel().getAssociations().items;
-        
         // resolve fields
-            
+        var resolveFields = self.getResolveFields();
         
         // PREPARE PARAMS                    
         var operation_params = operation.getParams();
@@ -503,33 +523,23 @@ Ext.define('Ext.proxy.PouchDB', {
                 // GET ROWS
                 rows = response.rows;
                 
-                // INSPECT ASSOCIATIONS
-                if ( associations && associations.length > 0 ) {
+                // RESOLVE FIELDS
+                if ( resolveFields.length > 0 ) {
                 
                     Ext.each(rows, function(row) {
-                        
-                        Ext.each(associations, function(assoc) {     
-                            var foreign_key = assoc.getForeignKey();
-                            var assoc_key = assoc.getAssociationKey();
-                                                    
-                            if ( foreign_key && assoc_key ) {
-                                var foreign_uuid = row.doc[foreign_key];
-                                if ( foreign_uuid ) {
-                                    
-                                    //NEW QUERY                                
-                                    queryCount++;
-                                    
-                                    db.get(foreign_uuid, function(err, doc) {
-                                        if (err===null) {
-                                            row.doc[assoc_key] = doc;
-                                        }    
-                                        
-                                        //COMPLETE                                 
-                                        complete();                                    
-                                    });    
-                                }  
-                            }                         
-                            
+                        Ext.each(resolveFields, function(resolve) {     
+                            var foreign_uuid = row.doc[resolve.foreignKey];
+                            if ( foreign_uuid ) {
+                                //NEW QUERY                                
+                                queryCount++;
+                                db.get(foreign_uuid, function(err, doc) {
+                                    if (err===null) {
+                                        row.doc[resolve.name] = doc;
+                                    }                                        
+                                    //COMPLETE                                 
+                                    complete();                                    
+                                });    
+                            }                              
                         });                        
                     });
                     
@@ -554,7 +564,7 @@ Ext.define('Ext.proxy.PouchDB', {
         
         var records = operation.getRecords();                   
         var operationCount = records.length+1;
-        var associations = self.getModel().getAssociations().items;
+        var resolveFields = self.getResolveFields();
         
         
         Ext.each(operation.getRecords(), function(record) {
@@ -562,6 +572,8 @@ Ext.define('Ext.proxy.PouchDB', {
            db.get(record.getId(), function(err, doc) {
                 // get defaults
                 var defaults;
+                var resolvedValues = [];
+                
                 if (!err) {
                     defaults = doc;
                 } else {
@@ -574,60 +586,63 @@ Ext.define('Ext.proxy.PouchDB', {
                 db.put(nextDoc, function(err,response) {
                      
                      var finishUpdate = function() {
-                         debugger;
                          // set error or null
                          self.setException(operation, err);
                          if ( !err ) {
                              // update current record
                              nextDoc._rev = response.rev;
                              self.createRecord(nextDoc, record);
-                             record.commit();     
+
+                             // fire listener for resolved values
+                             Ext.each(resolvedValues, function(field){
+                                 record.set(field, record.get(field));
+                             });
+                             
+                             record.commit();    
                          }
                          
                          //check if finished
                          if ( --operationCount <= 0 ) {
-                            debugger;
                              self.setCompleted(operation);
                              self.tryCallback(operation, callback, scope);
                          }
                      };
 
                      // check for associations update
-                     if ( !err && associations && associations.length > 0) {
+                     if ( !err && resolveFields.length > 0) {
                          var assocQueryCount=1;
                          
-                         Ext.each(associations, function(assoc) {     
-                            var foreign_key = assoc.getForeignKey();
-                            var assoc_key = assoc.getAssociationKey();
-                            if ( foreign_key && assoc_key ) {
-                                // foreign uuid
-                                var foreign_uuid = nextDoc[foreign_key];
-                                // check current assoc value
-                                var assoc_value = record.get(assoc_key);
-                                if ( foreign_uuid ) {                                    
-                                    //NEW QUERY     
-                                    if ( (!assoc_value || assoc_value._id != foreign_uuid) ) {       
-                                        assocQueryCount++;                                    
-                                        db.get(foreign_uuid, function(err, doc) {
-                                            if (err===null) {
-                                                nextDoc[assoc_key] = doc;
-                                            }
-                                            if ( --assocQueryCount <= 0) {
-                                                finishUpdate();
-                                            }
-                                        });    
-                                    } else {
-                                        nextDoc[assoc_key] = assoc_value;
-                                    }
+                         Ext.each(resolveFields, function(resolve) {     
+                            // foreign uuid
+                            var foreign_uuid = nextDoc[resolve.foreignKey];
+                            // check current value
+                            var curValue = record.get(resolve.name);
+                            if ( foreign_uuid ) {                                    
+                                //NEW QUERY     
+                                if ( (!curValue || curValue._id != foreign_uuid) ) {       
+                                    assocQueryCount++;                                    
+                                    db.get(foreign_uuid, function(err, doc) {
+                                        if (err===null) {                                            
+                                            nextDoc[resolve.name] = doc;
+                                            resolvedValues.push(resolve.name);
+                                        }
+                                        if ( --assocQueryCount <= 0) {
+                                            finishUpdate();
+                                        }
+                                    });    
                                 } else {
-                                    nextDoc[assoc_key] = null;
+                                    nextDoc[resolve.name] = curValue;
                                 }
-                            }     
+                            } else {
+                                if ( curValue )
+                                    resolvedValues.push(resolve.name); 
+                                nextDoc[resolve.name] = null;
+                            }
                           });
                           
                         if ( --assocQueryCount <= 0) {
                             finishUpdate();
-                        }            
+                        }
                         
                      } else {
                          finishUpdate();
@@ -638,7 +653,6 @@ Ext.define('Ext.proxy.PouchDB', {
         });
         
         if ( --operationCount <= 0 ) {
-             debugger;
              self.setCompleted(operation);
              self.tryCallback(operation, callback, scope);
         }

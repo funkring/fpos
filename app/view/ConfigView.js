@@ -28,35 +28,49 @@ Ext.define('Fpos.view.ConfigView', {
                         name: 'host',
                         label: 'Server',
                         placeHolder: 'fpos.oerp.at',
-                        required: true
+                        required: true,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'port',
                         label: 'Port',
                         placeHolder: '443',
-                        required: true
+                        required: true,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'database',
                         label: 'Datenbank',
                         placeHolder: 'odoo_fpos_xxx',
-                        required: true
+                        required: true,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'login',
                         label: 'Benutzer',
                         required: true,
-                        autocomplete: false
+                        autocomplete: false,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'passwordfield',
                         name: 'password',
                         label: 'Passwort',
                         required: true,
-                        autocomplete: false
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     }                    
                 ]   
             },
@@ -70,7 +84,10 @@ Ext.define('Fpos.view.ConfigView', {
                         placeHolder: '0000',
                         label: 'PIN',
                         required: true,
-                        pattern:'[0-9]{4,4}'
+                        pattern:'[0-9]{4,4}',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     }                
                 ]
             }

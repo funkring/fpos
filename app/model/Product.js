@@ -17,7 +17,7 @@ Ext.define('Fpos.model.Product', {
                 'expense_pdt',
                 'to_weight',
                 'taxes_id',
-                'price',
+                'price',                
                 'brutto_price'],
        identifier: 'uuid',
        proxy: {

@@ -35,6 +35,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.device.sqlite.SQLResultSetRowList": "touch/src/device/sqlite/Sencha.js",
   "Ext.device.sqlite.SQLTransaction": "touch/src/device/sqlite/Sencha.js",
   "Ext.draw.engine.SvgContext.Gradient": "touch/src/draw/engine/SvgContext.js",
+  "Ext.field.ListSelect": "app/addon/ListSelect.js",
   "Ext.field.PatternText": "app/addon/PatternText.js",
   "Ext.form": "app/addon",
   "Ext.form.FieldSet": "touch/src/form/FieldSet.js",
@@ -557,6 +558,7 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.form.Hidden"
   ],
   "Ext.field.Input": [],
+  "Ext.field.ListSelect": [],
   "Ext.field.Number": [
     "Ext.form.Number"
   ],
@@ -808,16 +810,19 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Fpos.controller.MainCtrl": [],
   "Fpos.controller.OrderViewCtrl": [],
+  "Fpos.controller.PartnerCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
+  "Fpos.model.Partner": [],
   "Fpos.model.PosLine": [],
   "Fpos.model.PosOrder": [],
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
   "Fpos.store.AccountTaxStore": [],
   "Fpos.store.CategoryStore": [],
+  "Fpos.store.PartnerStore": [],
   "Fpos.store.PosLineStore": [],
   "Fpos.store.PosOrderStore": [],
   "Fpos.store.ProductStore": [],
@@ -825,8 +830,12 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.CategoryItem": [],
   "Fpos.view.ConfigView": [],
   "Fpos.view.Main": [],
+  "Fpos.view.OrderFormView": [],
   "Fpos.view.OrderInputView": [],
+  "Fpos.view.OrderLineFormView": [],
   "Fpos.view.OrderView": [],
+  "Fpos.view.PartnerListSelect": [],
+  "Fpos.view.PartnerView": [],
   "Fpos.view.ProductItem": [],
   "Fpos.view.ProductView": [],
   "Fpos.view.TestView": []
@@ -1484,6 +1493,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.field.Input": [
     "widget.input"
   ],
+  "Ext.field.ListSelect": [
+    "widget.listselect"
+  ],
   "Ext.field.Number": [
     "widget.numberfield"
   ],
@@ -1809,16 +1821,19 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.Config": [],
   "Fpos.controller.MainCtrl": [],
   "Fpos.controller.OrderViewCtrl": [],
+  "Fpos.controller.PartnerCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
+  "Fpos.model.Partner": [],
   "Fpos.model.PosLine": [],
   "Fpos.model.PosOrder": [],
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
   "Fpos.store.AccountTaxStore": [],
   "Fpos.store.CategoryStore": [],
+  "Fpos.store.PartnerStore": [],
   "Fpos.store.PosLineStore": [],
   "Fpos.store.PosOrderStore": [],
   "Fpos.store.ProductStore": [],
@@ -1832,11 +1847,23 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.view.Main": [
     "widget.main"
   ],
+  "Fpos.view.OrderFormView": [
+    "widget.fpos_order_form"
+  ],
   "Fpos.view.OrderInputView": [
     "widget.fpos_order_input"
   ],
+  "Fpos.view.OrderLineFormView": [
+    "widget.fpos_line_form"
+  ],
   "Fpos.view.OrderView": [
     "widget.fpos_order"
+  ],
+  "Fpos.view.PartnerListSelect": [
+    "widget.fpos_partner_select"
+  ],
+  "Fpos.view.PartnerView": [
+    "widget.fpos_partner_form"
   ],
   "Fpos.view.ProductItem": [
     "widget.fpos_product_item"

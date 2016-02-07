@@ -44,77 +44,162 @@ Ext.define('Ext.proxy.PouchDBUtil',{
       
       var name = 'index';
       var keys = [];   
-      var keyValues = [];
-      var tupl, op, value, field;
-      var foundKey;
-                    
-      for (var i=0; i<domain.length;i++) {
+      var keyValues = [];      
+      var tupl, op, value, field, i;
+      var onlyKeys = true;
+               
+      // check if only keys     
+      for (i=0; i<domain.length && onlyKeys;i++) {
           tupl = domain[i];
-          foundKey = false;
           
           if ( tupl.constructor === Array && tupl.length == 3) {
               field = tupl[0];
               op = tupl[1];
               value = tupl[2];   
-              name = name + "_" + field;
                               
-              if ( op === '=') {         
+              if ( op === '=') {
+                  name = name + "_" + field;
+                  
+                  // field or expression
+                  if ( !field.startsWith("(") ) {
+                       // it's an field
+                       field="doc." + field;
+                  }
+                  
                   keys.push(field);      
                   keyValues.push(value || null);     
-                  foundKey = true;                                    
+              } else {
+                  onlyKeys = false;
               }
           } 
-          
-          if ( !foundKey ) {
-              continue;
+      }
+      
+      // if only keys
+      // create index
+      if ( onlyKeys ) {
+          if ( keys.length === 1) {
+              return {
+                  name: name,
+                  key: keyValues[0] || null,
+                  index: {
+                    map: "function(doc) { \n"+
+                         "  var val = " + keys[keyI] +"; \n" +
+                         "  if (val)  { \n" +
+                         "    emit(val); \n" +
+                         "  } else { \n" +
+                         "    emit(null); " +
+                         "  }" +
+                         "}"
+                  }                    
+              };
+          } else if ( keys.length > 0 ) {
+              var fct = "function(doc) { \n" +
+                        "  var key = []; \n" +
+                        "  var val;\n";
+                        
+              for ( var keyI=0; keyI < keys.length; keyI++) {
+                 fct +=
+                   "  val = " + keys[keyI] +"; \n" +
+                   "  if (val) { \n" +
+                   "    key.push(val); \n" +
+                   "  } else { \n" +
+                   "    key.push(null); \n" +
+                   "  } \n" +
+                   "  \n";               
+              }
+              
+              fct += "  emit(key);\n";
+              fct += "}\n";
+              
+              return {
+                  name: name,
+                  key: keyValues,
+                  index: {
+                    map: fct
+                  }       
+              };
           }
       }
-      if ( keys.length === 1) {
-          return {
-              name: name,
-              key: keyValues[0] || null,
-              index: {
-                map: "function(doc) { \n"+
-                     "  if (doc." + keys[0] + ")  { \n" +
-                     "    emit(doc." + keys[0]+"); \n" +
-                     "  } else { \n" +
-                     "    emit(null); " +
-                     "  }" +
-                     "}"
-              }                    
-          };
-      } else if ( keys.length > 0 ) {
-          var fct = "function(doc) { \n" +
-                    "  var key = [];\n";
-                    
-          for ( var keyI=0; keyI < keys.length; keyI++) {
-             fct +=
-               "  if (doc." + keys[keyI] + ")  { \n" +
-               "    key.push(doc." + keys[keyI]+"); \n" +
-               "  } else { \n" +
-               "    key.push(null); \n" +
-               "  } \n" +
-               "  \n";               
+      /*
+      else {
+          // TODO TEST !!!
+          
+          // build search
+          var search = [];
+          var paramIndex = 0;
+          
+          // link
+          var link;
+          var linkStack = [];
+          var stmtCount = 0;
+          
+          // check if only keys     
+          for (i=0; i<domain.length;i++) {
+              tupl = domain[i];
+              
+              if ( tupl.constructor === Array && tupl.length == 3) {
+                  // get link
+                  if ( linkStack.length > 0 ) {
+                      link = linkStack.pop();
+                  } else {
+                      link = "&&";
+                  }
+              
+                  // get values
+                  field = tupl[0];
+                  op = tupl[1];
+                  value = tupl[2];   
+                
+                  // start new statement
+                  if ( search.length > 0 ) {
+                      search.push(link);
+                  } 
+                  search.push("(");
+                  stmtCount++;
+                  
+                  // evalute operator
+                  if ( op === '=') {     
+                      search.push("doc." + field + " === " + JSON.stringify(value));
+                      //keys.push(value[field]);
+                  } else if (op === 'ilike' ) {
+                      search.push("doc." + field + ".lower().indexOf(" + JSON.stringify(value.lower()) +") >= 0");
+                      //keys.push(value[field]);
+                  } else {
+                      // operator not found
+                      search.push("1==1");
+                  }
+              } else if ( tupl == '|' )  {
+                  linkStack.push('||');
+              } else if ( tupl == '&') {
+                  linkStack.push('&&');
+              }
           }
           
-          fct += "  emit(key);\n";
-          fct += "}\n";
-          
-          return {
-              name: name,
-              key: keyValues,
-              index: {
-                map: fct
-              }       
-          };
-      }
+          if ( stmtCount > 0 ) {
+              for ( i=0; i<stmtCount; i++ ) {
+                    search.push(")");
+              }
+              
+              var condition = search.join(" "); 
+              var fun = new Function('doc',
+                     "if " + condition + " {\n" +
+                     "  emit(doc._id)\n" +
+                     "}\n"
+                    );
+                     
+              return {
+                  name: 'search',
+                  fun: fun                 
+              };
+        }
+      }*/
 
       return null;
     },  
     
     search: function(db, domain, params, callback) {    
         var self = this;
-        var view = self.buildView(domain);
+        var view = params.view || self.buildView(domain);
         
         var deferred = null;
         if ( !callback ) {
@@ -131,37 +216,46 @@ Ext.define('Ext.proxy.PouchDBUtil',{
         }
         
         if (view !== null) {
-            params.key = view.key;
-            db.query(view.name, params, function(err, res) {                
-                if ( !err ) {
-                    // no error result was successfull
-                    if (callback) {
-                        callback(err, res);
-                    }
-                } else {
-                    //create view doc
-                    var doc = {
-                        _id: "_design/" + view.name,
-                        views: {                            
+            if ( view.name == 'search' ) {
+                // default query
+                db.query(view.fun, params, callback);
+            } else {
+                // index based query
+                // copy params
+                params = JSON.parse(JSON.stringify(params));
+                params.key = view.key;
+                db.query(view.name, params, function(err, res) {                
+                    if ( !err ) {
+                        // no error result was successfull
+                        if (callback) {
+                            callback(err, res);
                         }
-                    };
-                    doc.views[view.name]=view.index;
-                    //put doc
-                    db.put(doc, function(err, res) {
-                        if (err) {
-                            // error on create index
-                            if (callback) {
-                                callback(err, null);
+                    } else {
+                        //create view doc
+                        var doc = {
+                            _id: "_design/" + view.name,
+                            views: {                            
                             }
-                        } else {
-                            // query again
-                            db.query(view.name, params, callback);
-                        }
-                    });          
-                }
-                    
-            });       
+                        };
+                        doc.views[view.name]=view.index;
+                        //put doc
+                        db.put(doc, function(err, res) {
+                            if (err) {
+                                // error on create index
+                                if (callback) {
+                                    callback(err, null);
+                                }
+                            } else {
+                                // query again
+                                db.query(view.name, params, callback);
+                            }
+                        });          
+                    }
+                        
+                });       
+            }
         } else {
+           // query all
            db.allDocs(params, callback);
         } 
 

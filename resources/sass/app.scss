@@ -118,6 +118,12 @@
     text-align: right;
 }
 
+.PosDisplayState {
+    padding: 5px;    
+    font-size: 1.5em; 
+    text-align: left;
+}
+
 .PosStatusBar {
     //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
@@ -218,3 +224,75 @@
     text-align: center;
     font-size: 2em;
 }
+
+
+// ******************************************************************
+// PosOrder
+// ******************************************************************
+
+.PosOrderItem {
+    display: table;
+    font-size: 0.9em;
+}
+
+.PosOrderLineDescription {
+    width: 100%;
+    align: left;
+    display: table-cell;
+}
+
+.PosOrderLineName {
+    font-weight: bold;
+}
+
+.PosOrderLineAmount {
+}
+
+.PosOrderLineDiscount {
+}
+
+div.PosOrderItem > div.x-innerhtml > div.PosOrderLineDescription > div.PosOrderLineAmount {
+    color: gray;
+}
+
+div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription > div.PosOrderLineAmount {
+    color: white;
+}
+
+.PosOrderLinePrice {
+    display: table-cell;
+    font-size: 1.3em;
+    vertical-align: middle;
+    align: right;
+}
+
+
+// ******************************************************************
+// PosOrderState
+// ******************************************************************
+
+.PosOrderState {
+    display: table;
+}
+
+.PosOrderCurrency {
+    display: table-cell;
+    vertical-align: middle;    
+}
+
+.PosOrderInfo {
+    display: table-cell;    
+    padding-left: 5px;
+    height: 100%;
+}
+
+.PosOrderInfo1 {
+    font-size: 0.5em;
+    vertical-align: middle;
+}
+
+.PosOrderInfo2 {
+    font-size: 0.5em;
+    vertical-align: middle;
+}
+         

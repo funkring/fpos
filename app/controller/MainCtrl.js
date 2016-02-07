@@ -36,7 +36,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 tap: 'onSyncTap'
             },
             mainView: {
-                initialize: 'resetConfig',
+                initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
             },
             mainMenuButton: {
@@ -53,7 +53,20 @@ Ext.define('Fpos.controller.MainCtrl', {
        
     init: function() {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
-        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");     
+    },
+    
+    mainViewInitialize: function() {
+        var self = this;
+        
+        // show form event
+        Ext.Viewport.on({
+            scope: self,
+            showForm: self.showForm
+        });
+
+        // reset config
+        self.resetConfig();
     },
     
     onSyncTap: function() {
@@ -204,6 +217,10 @@ Ext.define('Fpos.controller.MainCtrl', {
             });            
         })
         ['catch'](function (error) {
+            ViewManager.handleError(error,{
+                name: "Fehler beim Laden", 
+                message: "Konfiguration konnte nicht geladen werden"
+            }, true);
             self.editConfig();
         }); 
     },
@@ -439,6 +456,14 @@ Ext.define('Fpos.controller.MainCtrl', {
             xtype: 'fpos_test'        
         });
     },
+    
+    /**
+     * show form
+     */
+    showForm: function(view) {
+        this.getMainView().push(view);
+    },
+    
     
     /**
      * edit configuration

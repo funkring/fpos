@@ -28,7 +28,8 @@ Ext.application({
         'PosOrder',
         'PosLine',
         'AccountTax',
-        'ProductUnit'
+        'ProductUnit',
+        'Partner'
     ],
         
     stores: [
@@ -37,14 +38,16 @@ Ext.application({
         'PosOrderStore',
         'PosLineStore',
         'AccountTaxStore',
-        'ProductUnitStore'
+        'ProductUnitStore',
+        'PartnerStore'
     ],
     
     controllers: [
         'MainCtrl',
         'TestCtrl',
         'ProductViewCtrl',
-        'OrderViewCtrl'
+        'OrderViewCtrl',
+        'PartnerCtrl'
     ],
 
     icon: {

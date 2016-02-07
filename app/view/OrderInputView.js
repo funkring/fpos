@@ -45,7 +45,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 text: '+/-',    
-                                action: 'inputPlusMinus',
+                                action: 'inputNumber',
                                 width: '77px',
                                 height: '77px',  
                                 ui: 'posInputButtonBlack',
@@ -127,7 +127,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 text: '.',    
-                                action: 'addComma',
+                                action: 'inputNumber',
                                 width: '77px',
                                 height: '77px',  
                                 ui: 'posInputButtonBlack',
@@ -141,7 +141,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 iconCls: 'compose',
-                                action: 'inputMenu',
+                                action: 'editOrder',
                                 width: '77px',
                                 height: '77px',  
                                 ui: 'posInputButtonBlack',
@@ -150,28 +150,31 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 text: '*',    
-                                action: 'inputAmount',
+                                action: 'inputModeSwitch',
                                 width: '77px',
                                 height: '77px',  
                                 ui: 'posInputButtonGray',
+                                id: 'inputButtonAmount',
                                 cls : 'PosInputButton'
                             },
                             {
                                 xtype: 'button',
                                 text: '%',
-                                action: 'inputDiscount',
+                                action: 'inputModeSwitch',
                                 width: '77px',
                                 height: '77px',  
-                                ui: 'posInputButtonGray',
+                                ui: 'posInputButtonBlack',
+                                id: 'inputButtonDiscount',
                                 cls : 'PosInputButton'
                             },                            
                             {
                                 xtype: 'button',
                                 text: '€',    
-                                action: 'inputPrice',
+                                action: 'inputModeSwitch',
                                 width: '77px',
                                 height: '77px',  
-                                ui: 'posInputButtonGray',
+                                ui: 'posInputButtonBlack',
+                                id: 'inputButtonPrice',
                                 cls : 'PosInputButton'
                             }
                         ]
