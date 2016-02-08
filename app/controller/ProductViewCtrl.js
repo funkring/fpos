@@ -133,12 +133,17 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         var self = this;
         self.categoryId = categoryId;
 
-        // domain
+        // options
         var options = {
-            params : {
-                domain : [['pos_categ_id','=',categoryId]]
-            }        
         };
+
+        // category        
+        if ( self.categoryId ) {
+            options.params = {
+                domain : [['pos_categ_id','=',categoryId]]
+            };
+        } 
+
                 
         // search text or not
         if ( !search ) {

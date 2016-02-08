@@ -422,19 +422,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     // validates and stop loading
     finalValidate: function() {
-        this.validateLines().then(function() {
-            ViewManager.stopLoading();                    
-        })['catch'](function() {
+        this.validateLines()['catch'](  function(err) {
             ViewManager.stopLoading();
-        }); 
+            throw err;
+        }).then(function() {
+            ViewManager.stopLoading();                    
+        });
     },
     
     onInputCancelTap: function() {
         var self = this;
         this.resetInputText();
-        
         if ( self.isEditable() ) {
-                    
+            
             ViewManager.startLoading("Zurücksetzen");
 
             var records = self.getOrderItemList().getSelection();
@@ -451,6 +451,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             self.finalValidate();                            
                         })['catch'](function(err) {
                             ViewManager.stopLoading();
+                            throw err;
                         });              
                     } else {
                         record.set('brutto_price',0.0);

@@ -1,5 +1,5 @@
 /*global Ext:false, Config:false*/
-Ext.define('Fpos.model.PosLine', {
+Ext.define('Fpos.model.PosPayment', {
    extend: 'Ext.data.Model',
    requires: [
        'Ext.proxy.PouchDB'

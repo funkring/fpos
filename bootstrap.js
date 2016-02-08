@@ -45,8 +45,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.ux.Deferred": "app/addon/Deferred.js",
   "Ext.ux.Promise": "app/addon/Promise.js",
   "Ext.view": "app/addon",
-  "Fpos": "app",
-  "Fpos.model.PosLine": "app/model/PosPayment.js"
+  "Fpos": "app"
 });
 
 Ext.ClassManager.addNameAlternateMappings({
@@ -819,6 +818,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.model.Partner": [],
   "Fpos.model.PosLine": [],
   "Fpos.model.PosOrder": [],
+  "Fpos.model.PosPayment": [],
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
   "Fpos.store.AccountTaxStore": [],
@@ -1830,6 +1830,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.model.Partner": [],
   "Fpos.model.PosLine": [],
   "Fpos.model.PosOrder": [],
+  "Fpos.model.PosPayment": [],
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
   "Fpos.store.AccountTaxStore": [],
