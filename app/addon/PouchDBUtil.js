@@ -83,7 +83,7 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                   key: keyValues[0] || null,
                   index: {
                     map: "function(doc) { \n"+
-                         "  var val = " + keys[keyI] +"; \n" +
+                         "  var val = " + keys[0] +"; \n" +
                          "  if (val)  { \n" +
                          "    emit(val); \n" +
                          "  } else { \n" +
@@ -447,19 +447,33 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                     .password(password)
                     .toString()+couchdb_config.db;
                                 
-                // sync
+                // sync with couchdb
                 db.sync(target_url)
-                    .then(function(sync_res) {
-                        // invoke after sync
-                        client.invoke("jdoc.jdoc","jdoc_couchdb_after",[sync_config]) 
-                            .then(function(couchdb_config) {
-                                deferred.resolve(sync_res);
-                            })['catch'](function(err) {
-                                deferred.reject(err);
-                            });
-                                                   
-                    })['catch'](function(err) {
+                    ['catch'](function(err) {
                         deferred.reject(err); 
+                    }).then(function(sync_res) {
+
+                        // invoke database sync
+                        client.invoke("jdoc.jdoc","jdoc_couchdb_sync",[sync_config])
+                            ['catch'](function(err) {
+                                deferred.reject(err);
+                            }).then(function(couchdb_config) {
+
+                                // sync again with couchdb                            
+                                db.sync(target_url)
+                                    ['catch'](function(err) {
+                                        deferred.reject(err); 
+                                    }).then(function(sync_res) {
+                                            
+                                        // finish database sync
+                                        client.invoke("jdoc.jdoc","jdoc_couchdb_after",[sync_config])
+                                            ['catch'](function(err) {
+                                                deferred.reject(err);
+                                            }).then(function(couchdb_config) {
+                                                deferred.resolve(sync_res); 
+                                            });
+                                    });                                
+                            });                                                
                     });
             });
 

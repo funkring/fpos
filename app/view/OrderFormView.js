@@ -8,6 +8,7 @@ Ext.define('Fpos.view.OrderFormView', {
         'Ext.field.Text',
         'Ext.field.Hidden',
         'Ext.field.TextArea',
+        'Ext.field.Toggle',
         'Fpos.view.PartnerListSelect'
     ],
     config: {
@@ -22,11 +23,16 @@ Ext.define('Fpos.view.OrderFormView', {
                         xtype: 'textfield',
                         name: 'ref',
                         label: 'Beleg/Referenz'
-                    },
+                    },                 
                     {
                         xtype: 'fpos_partner_select',
                         name: 'partner_id',
                         label: 'Kunde'
+                    },
+                    {
+                        xtype: 'togglefield',
+                        name: 'send_invoice',
+                        label: 'Rechnung senden'  
                     },
                     { 
                         xtype: 'textareafield',

@@ -45,7 +45,8 @@ Ext.Loader.addClassPathMappings({
   "Ext.ux.Deferred": "app/addon/Deferred.js",
   "Ext.ux.Promise": "app/addon/Promise.js",
   "Ext.view": "app/addon",
-  "Fpos": "app"
+  "Fpos": "app",
+  "Fpos.model.PosLine": "app/model/PosPayment.js"
 });
 
 Ext.ClassManager.addNameAlternateMappings({

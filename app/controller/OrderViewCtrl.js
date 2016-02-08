@@ -77,7 +77,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '{name} <tpl if="ref"> / {ref}</tpl>',
                   '</div>',
                   '<div class="PosOrderInfo1">',
+                    '<tpl if="partner">',
                     '{partner.name}',
+                    '</tpl>',
                   '</div>',
                '</div>',
             '</div>'
@@ -162,7 +164,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'name' : product.get('name'),
                     'product_id' : product.getId(),
                     'uom_id' : product.get('uom_id'),
-                    'tax_ids' : product.get('tax_ids'),
+                    'tax_ids' : product.get('taxes_id'),
                     'brutto_price' : product.get('brutto_price'),
                     'qty' : 1.0,
                     'subtotal_incl' : 0.0,
@@ -194,40 +196,44 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
        var total = qty * price * discount;
        var tax_ids = line.get('tax_ids');
 
-       if ( taxes ) 
+       if ( !taxes ) 
             taxes = {};
-            
+        
        var tax_percent = 0.0;
        var tax_fixed = 0.0;
        var total_tax = 0.0;
        
        Ext.each(tax_ids, function(tax_id) {
-            var tax = taxes.get(tax_id);
+            var tax = taxes[tax_id];
             if ( !tax ) {
                 var taxDef = self.taxStore.getById(tax_id);
-                
-                var taxsum = {
-                    tax_id : tax_id,
-                    name : taxDef.get('name'), 
-                    amount_tax : 0.0
-                };
-                
-                if (taxlist)
-                    taxlist.push(taxsum);
-                
-                tax = {                    
-                    type : taxDef.get('type'),
-                    amount : taxDef.get('amount'),
-                    sum : taxsum                    
-                };
-                taxes[tax_id] = tax;
+                if ( taxDef ) {
+                    var taxsum = {
+                        fdoo__ir_model: 'fpos.order.tax',
+                        tax_id : tax_id,                    
+                        name : taxDef.get('name'), 
+                        amount_tax : 0.0
+                    };
+                    
+                    if (taxlist)
+                        taxlist.push(taxsum);
+                    
+                    tax = {                    
+                        type : taxDef.get('type'),
+                        amount : taxDef.get('amount'),
+                        sum : taxsum                    
+                    };
+                    taxes[tax_id] = tax;
+                }
             }
             
-            if (tax.type === 'percent') {
-                tax_percent += tax.amount;
-            } else if (tax.type === 'fixed') {
-                tax_fixed += (tax.amount * qty);
-            }                  
+            if ( tax ) {
+                if (tax.type === 'percent') {
+                    tax_percent += tax.amount;
+                } else if (tax.type === 'fixed') {
+                    tax_fixed += (tax.amount * qty);
+                }                  
+           }
         });
                
         // subtotal without tax
@@ -235,10 +241,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
 
         // sum tax
         Ext.each(tax_ids, function(tax_id) {
-            var tax = taxes.get(tax_id);
+            var tax = taxes[tax_id];
             var amount_tax = 0.0;       
             if (tax.type === 'percent') {
-                amount_tax = total_netto * (1.0 + tax.amount);
+                amount_tax = (total_netto * (1.0 + tax.amount)) - total_netto;
             } else if (tax.type === 'fixed') {
                 amount_tax = (tax.amount * qty);
             }   
@@ -270,7 +276,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var amount_total = 0.0;
             var amount_tax = 0.0;
             self.lineStore.each(function(line) {
-                var total_line = self.validateLine(line, tax_group, tax_ids);
+                var total_line = self.validateLine(line, tax_group, tax_ids);                
                 amount_total += total_line.subtotal_incl;
                 amount_tax += total_line.amount_tax;
                 
@@ -574,11 +580,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( lines.length > 0) {
                 form =  Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
                 form.setRecord(lines[0]);
-                Ext.Viewport.fireEvent("showForm", form);            
             } else {
                 form =  Ext.create("Fpos.view.OrderFormView", {'title' : 'Verkauf'});
                 form.setRecord(this.order);
-                Ext.Viewport.fireEvent("showForm", form);  
+            }
+            
+            if ( form ) {
+                if ( self.order.get('state') != 'draft') 
+                    form.setDisabled(true);                
+                Ext.Viewport.fireEvent("showForm", form); 
             }
         }
     }

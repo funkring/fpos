@@ -433,7 +433,7 @@ Ext.define('Ext.proxy.PouchDB', {
         var param;
         var params = {'include_docs':true};
         var filter_domain = self.getDefaultDomain();
-        
+
         // get sorters from store
         var defaultSorters = null;
         var defaultFilters = null;

@@ -126,26 +126,31 @@ Ext.define('Fpos.controller.MainCtrl', {
                resync: typeof(resync) === "boolean" && resync || false,
                models: [
                    {
-                        model: 'res.partner.title'
+                        model: 'res.partner.title',
+                        readonly: true
                    },                   
-                   {
+                   {    
                         model: 'account.tax',
                         fields: ['name',
                                  'amount',
                                  'type',
                                  'price_include',
-                                 'sequence']  
+                                 'sequence'],
+                        readonly: true  
                    },
                    {
-                        model: 'product.uom'  
+                        model: 'product.uom',
+                        readonly: true 
                    },
                    {
                         model: 'pos.category',
-                        view:  '_fpos_category'
+                        view:  '_fpos_category',
+                        readonly: true
                    },
                    {
                         model: 'product.product',
                         view:  '_fpos_product',
+                        readonly: true,
                         domain: [['available_in_pos','=',true]]
                    },
                    {
@@ -170,6 +175,12 @@ Ext.define('Fpos.controller.MainCtrl', {
                                  'phone',
                                  'mobile',
                                  'is_company']
+                   },
+                   {
+                       model: 'fpos.order'                     
+                   },
+                   {
+                       model: 'fpos.order.line'                       
                    }
                ] 
             });
@@ -217,11 +228,14 @@ Ext.define('Fpos.controller.MainCtrl', {
             });            
         })
         ['catch'](function (error) {
-            ViewManager.handleError(error,{
-                name: "Fehler beim Laden", 
-                message: "Konfiguration konnte nicht geladen werden"
-            }, true);
-            self.editConfig();
+            if ( error.name === 'not_found') {
+                self.editConfig();   
+            } else {
+                ViewManager.handleError(error,{
+                    name: "Fehler beim Laden", 
+                    message: "Konfiguration konnte nicht geladen werden"
+                }, true);
+            }
         }); 
     },
             
