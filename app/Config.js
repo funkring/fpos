@@ -7,7 +7,8 @@ Ext.define('Fpos.Config', {
         'Ext.proxy.PouchDBUtil',
         'Ext.store.LogStore',
         'Ext.client.OdooClient',
-        'Ext.ux.Deferred'
+        'Ext.ux.Deferred',
+        'Ext.util.Format'
     ],
     config : {       
         version : '1.2.1',
@@ -26,7 +27,8 @@ Ext.define('Fpos.Config', {
         decimals: 2,
         qtyDecimals: 3,
         hwStatus: { err: null },
-        hwStatusId: null
+        hwStatusId: null,
+        cashJournal: null
     },
     
     constructor: function(config) {
@@ -77,9 +79,13 @@ Ext.define('Fpos.Config', {
         return deferred.promise();
     },
     
-    printHtml: function(html) {
+    hasPrinter: function() {
         var hwstatus = this.getHwStatus();
-        if ( hwstatus.printer.installed ) {
+        return hwstatus.printer && hwstatus.printer.installed; 
+    },
+    
+    printHtml: function(html) {
+        if ( this.hasPrinter() ) {
             window.PosHw.printHtml(html);
         }          
     },
@@ -91,6 +97,28 @@ Ext.define('Fpos.Config', {
             }
         }
         return store;
+    },
+      
+    formatSeq: function(seq) {
+        var profile = this.getProfile();
+        var seqStr = Ext.util.Format.leftPad(seq.toString(), profile.sequence_id.padding, '0');
+        if ( profile.fpos_prefix ) {
+            seqStr =  profile.fpos_prefix + seqStr; 
+        }
+        return seqStr;
+     },
+      
+    updateProfile: function(profile) {
+        var self = this;
+        if (profile) {
+            // set cash journal
+            Ext.each(profile.journal_ids, function(journal) {
+                if ( journal.type == 'cash') {
+                    self.setCashJournal(journal); 
+                    return false;
+                }
+            }); 
+        }
     },
       
     getDB: function() {
@@ -117,5 +145,6 @@ Ext.define('Fpos.Config', {
         
         
         return client;
-    }  
+    }
+    
 });
