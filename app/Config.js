@@ -28,7 +28,8 @@ Ext.define('Fpos.Config', {
         qtyDecimals: 3,
         hwStatus: { err: null },
         hwStatusId: null,
-        cashJournal: null
+        cashJournal: null,
+        journalById: {},
     },
     
     constructor: function(config) {
@@ -109,16 +110,25 @@ Ext.define('Fpos.Config', {
      },
       
     updateProfile: function(profile) {
-        var self = this;
+        var self = this;        
         if (profile) {
+            var journalById = self.getJournalById();
             // set cash journal
             Ext.each(profile.journal_ids, function(journal) {
+                journalById[journal._id] = journal;
                 if ( journal.type == 'cash') {
                     self.setCashJournal(journal); 
-                    return false;
                 }
             }); 
         }
+    },
+    
+    getJournal: function(journal_id) {
+        var journalById = this.getJournalById();
+        if ( journalById ) {
+            return journalById[journal_id];
+        }
+        return null;  
     },
       
     getDB: function() {

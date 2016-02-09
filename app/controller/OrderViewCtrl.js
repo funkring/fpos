@@ -685,6 +685,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onCash: function() {
         var self = this;
         if ( self.isEditable() ) {
+            //self.printOrder();
             // add payment
             // and print
             self.postOrder()['catch'](function(err) {
@@ -705,32 +706,36 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     printOrder: function() {
         var self = this;        
-        var profile1 = Config.getProfile();
         if ( !self.printTemplate ) {
             var profile = Config.getProfile();
             self.printTemplate = Ext.create('Ext.XTemplate',
+                '<br/>',
+                '<br/>',
+                '<br/>',
                 profile.receipt_header || '',
-                '<p><b>{o.name}</b></p>',
-                '<p><hr/></p>',
                 '<table width="100%">',
-                '<tr>',
-                '<td width="{attribWidth}">Datum:</td>',
-                '<td>{date:date("d.m.Y H:i:s")}</td>',
-                '</tr>',
-                '<tr>',
-                '<tr>',
-                '<td width="{attribWidth}">Kasse:</td>',
-                '<td>{[Config.getProfile().name]}</td>',
-                '</tr>',
-                '<tr>',
-                '<tr>',
-                '<td width="{attribWidth}">Bediener:</td>',
-                '<td>{[Config.getUser().name]}</td>',
-                '</tr>',
-                '<tpl if="o.ref">',
-                '<td width="{attribWidth}">Referenz:</td>',
-                '<td>{o.ref}</td>',
-                '</tpl>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Beleg:</td>',
+                        '<td>{o.name}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Datum:</td>',
+                        '<td>{date:date("d.m.Y H:i:s")}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Kasse:</td>',
+                        '<td>{[Config.getProfile().name]}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Bediener:</td>',
+                        '<td>{[Config.getUser().name]}</td>',
+                    '</tr>',
+                    '<tpl if="o.ref">',
+                    '<tr>',
+                        '<td width="{attribWidth}">Referenz:</td>',
+                        '<td>{o.ref}</td>',
+                    '</tr>',
+                    '</tpl>',
                 '</table>',
                 '<br/>',
                 '<tpl if="o.partner">',               
@@ -744,8 +749,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '</tpl>',
                 '<table width="100%">',
                 '<tr>',
-                '<td>Bezeichnung</td>',
-                '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>',
+                    '<td>Bezeichnung</td>',
+                    '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>',
                 '</tr>',
                 '<tr>',                
                     '<td colspan="2"><hr/></td>',
@@ -756,7 +761,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
                 '</tr>',
                 '<tr>',
-                    '<td>',
+                    '<td colspan="2">',
                         '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
                         '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
                     '</td>',        
@@ -766,35 +771,38 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="2"><hr/></td>',
                 '</tr>',
                 '<tr>',
-                    '<td align="right"><b>GESAMT</b></td>',
+                    '<td align="right"><b>S U M M E</b></td>',
                     '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]} {[Config.getCurrency()]}</b></td>',        
                 '</tr>',
-                '</table>',
-                '<br/>',
-                '<table width="100%">',
+                '<tpl for="o.payment_ids">',
                 '<tr>',
-                '<td colspan="3">enthaltene Steuern</td>',
+                    '<td align="right">{[this.getJournal(values.journal_id)]}</td>',
+                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]} {[Config.getCurrency()]}</td>',        
                 '</tr>',
+                '</tpl>',
                 '<tr>',                
                     '<td colspan="2"><hr/></td>',
-                    '<td width="{priceColWidth}"></td>',
                 '</tr>',
                 '<tpl for="o.tax_ids">',
                 '<tr>',
-                    '<td>{name}</td>',
-                    '<td align="right">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
-                    '<td width="{priceColWidth}"></td>',
+                    '<td align="right">inkl. {name}</td>',
+                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',        
                 '</tr>',
-                '</tpl>',
+				'</tpl>',
                 '</table>',
                 profile.receipt_footer || '',
+                '<br/>',
+                '<br/>',
+                '<br/>',
+                '<cut/>',
                 {
                     getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
                         return uom && uom.get('name') || '';
                     },
-                    getUser: function(user_id) {
-                        
+                    getJournal: function(journal_id) {
+                        var journal = Config.getJournal(journal_id);
+                        return journal && journal.name || '';
                     }
                 }                
             );
