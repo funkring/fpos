@@ -44,12 +44,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=editOrder]' : {
                 tap: 'onEditOrder'
+            },
+            'button[action=inputCash]' : {
+                tap: 'onCash'
             }
+            
         }
     },
     
     init: function() {
         this.order = null;
+        this.printTemplate = null;
         
         this.mode = '*';
         this.resetInputText();
@@ -390,6 +395,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var db = Config.getDB();
         var user = Config.getUser();
         
+        self.printTemplate = null;
         self.setMode('*');
                 
         if ( user ) {
@@ -592,6 +598,63 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 Ext.Viewport.fireEvent("showForm", form); 
             }
         }
+    },
+    
+    onCash: function() {
+        this.printOrder();  
+    },
+    
+    printOrder: function() {
+        var self = this;        
+        if ( !self.printTemplate && profile ) {
+            var profile = Config.getProfile();
+            self.printTemplate = Ext.create('Ext.XTemplate',
+                profile.receipt_header || '',
+                '<table>',
+                '<tr>',
+                '<td>Produkt</td>',
+                '<td align="right" width="30%">Preis {[Config.getCurrency()]}</td>',
+                '</tr>',
+                '<tr>',                
+                    '<td colspan="2"><hr/></td>',
+                '</tr>',
+                '<tpl for="lines">',
+                '<tr>',
+                    '<td>${name}</td>',
+                    '<td align="right" width="30%">{[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                '</tr>',
+                '<tr>',
+                    '<td>',
+                        '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
+                    '</td>',        
+                '</tr>',
+                '</tpl>',
+                '<tr>',                
+                    '<td colspan="2"><hr/></td>',
+                '</tr>',
+                '<tr>',
+                    '<td align="right">Gesamtsumme</td>',
+                    '<td align="right" width="30%">{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]} {[Config.getCurrency()]}</td>',        
+                '</tr>',
+                '<tpl for="o.tax_ids">',
+                '<tr>',
+                    '<td align="right">inkl. {name}</td>',
+                    '<td align="right" width="30%">{amount_tax} {[Config.getCurrency()]}</td>',
+                '</tr>',
+                '</tpl>',
+                '</table>',
+                profile.receipt_footer || ''                
+            );
+        }
+        
+        var data = {
+            o: this.order,
+            lines: self.lineStore.getData() 
+        };
+        
+        var html = self.printTemplate.apply(data);
+        debugger;
+        
     }
     
 });

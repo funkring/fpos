@@ -52060,6 +52060,257 @@ Ext.define('Ext.data.Validations', {
 });
 
 /**
+ * @author Tommy Maintz
+ *
+ * This class generates UUID's according to RFC 4122. This class has a default id property.
+ * This means that a single instance is shared unless the id property is overridden. Thus,
+ * two {@link Ext.data.Model} instances configured like the following share one generator:
+ *
+ *     Ext.define('MyApp.data.MyModelX', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             identifier: 'uuid'
+ *         }
+ *     });
+ *
+ *     Ext.define('MyApp.data.MyModelY', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             identifier: 'uuid'
+ *         }
+ *     });
+ *
+ * This allows all models using this class to share a commonly configured instance.
+ *
+ * # Using Version 1 ("Sequential") UUID's
+ *
+ * If a server can provide a proper timestamp and a "cryptographic quality random number"
+ * (as described in RFC 4122), the shared instance can be configured as follows:
+ *
+ *     Ext.data.identifier.Uuid.Global.reconfigure({
+ *         version: 1,
+ *         clockSeq: clock, // 14 random bits
+ *         salt: salt,      // 48 secure random bits (the Node field)
+ *         timestamp: ts    // timestamp per Section 4.1.4
+ *     });
+ *
+ *     // or these values can be split into 32-bit chunks:
+ *
+ *     Ext.data.identifier.Uuid.Global.reconfigure({
+ *         version: 1,
+ *         clockSeq: clock,
+ *         salt: { lo: saltLow32, hi: saltHigh32 },
+ *         timestamp: { lo: timestampLow32, hi: timestamptHigh32 }
+ *     });
+ *
+ * This approach improves the generator's uniqueness by providing a valid timestamp and
+ * higher quality random data. Version 1 UUID's should not be used unless this information
+ * can be provided by a server and care should be taken to avoid caching of this data.
+ *
+ * See [http://www.ietf.org/rfc/rfc4122.txt](http://www.ietf.org/rfc/rfc4122.txt) for details.
+ */
+Ext.define('Ext.data.identifier.Uuid', {
+    extend: Ext.data.identifier.Simple,
+    alias: 'data.identifier.uuid',
+    /**
+     * Provides a way to determine if this identifier supports creating unique IDs. Proxies like {@link Ext.data.proxy.LocalStorage}
+     * need the identifier to create unique IDs and will check this property.
+     * @property isUnique
+     * @type Boolean
+     * @private
+     */
+    isUnique: true,
+    config: {
+        /**
+         * The id for this generator instance. By default all model instances share the same
+         * UUID generator instance. By specifying an id other then 'uuid', a unique generator instance
+         * will be created for the Model.
+         */
+        id: undefined,
+        /**
+         * @property {Number/Object} salt
+         * When created, this value is a 48-bit number. For computation, this value is split
+         * into 32-bit parts and stored in an object with `hi` and `lo` properties.
+         */
+        salt: null,
+        /**
+         * @property {Number/Object} timestamp
+         * When created, this value is a 60-bit number. For computation, this value is split
+         * into 32-bit parts and stored in an object with `hi` and `lo` properties.
+         */
+        timestamp: null,
+        /**
+         * @cfg {Number} version
+         * The Version of UUID. Supported values are:
+         *
+         *  * 1 : Time-based, "sequential" UUID.
+         *  * 4 : Pseudo-random UUID.
+         *
+         * The default is 4.
+         */
+        version: 4
+    },
+    applyId: function(id) {
+        if (id === undefined) {
+            return Ext.data.identifier.Uuid.Global;
+        }
+        return id;
+    },
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+        me.parts = [];
+        me.init();
+    },
+    /**
+     * Reconfigures this generator given new config properties.
+     */
+    reconfigure: function(config) {
+        this.setConfig(config);
+        this.init();
+    },
+    generate: function() {
+        var me = this,
+            parts = me.parts,
+            version = me.getVersion(),
+            salt = me.getSalt(),
+            time = me.getTimestamp();
+        /*
+           The magic decoder ring (derived from RFC 4122 Section 4.2.2):
+
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |                          time_low                             |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |           time_mid            |  ver  |        time_hi        |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |res|  clock_hi |   clock_low   |    salt 0   |M|     salt 1    |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |                         salt (2-5)                            |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                     time_mid      clock_hi (low 6 bits)
+            time_low     | time_hi |clock_lo
+                |        |     |   || salt[0]
+                |        |     |   ||   | salt[1..5]
+                v        v     v   vv   v v
+                0badf00d-aced-1def-b123-dfad0badbeef
+                              ^    ^     ^
+                        version    |     multicast (low bit)
+                                   |
+                                reserved (upper 2 bits)
+        */
+        parts[0] = me.toHex(time.lo, 8);
+        parts[1] = me.toHex(time.hi & 65535, 4);
+        parts[2] = me.toHex(((time.hi >>> 16) & 4095) | (version << 12), 4);
+        parts[3] = me.toHex(128 | ((me.clockSeq >>> 8) & 63), 2) + me.toHex(me.clockSeq & 255, 2);
+        parts[4] = me.toHex(salt.hi, 4) + me.toHex(salt.lo, 8);
+        if (version == 4) {
+            me.init();
+        } else // just regenerate all the random values...
+        {
+            // sequentially increment the timestamp...
+            ++time.lo;
+            if (time.lo >= me.twoPow32) {
+                // if (overflow)
+                time.lo = 0;
+                ++time.hi;
+            }
+        }
+        return parts.join('-').toLowerCase();
+    },
+    /**
+     * @private
+     */
+    init: function() {
+        var me = this,
+            salt = me.getSalt(),
+            time = me.getTimestamp();
+        if (me.getVersion() == 4) {
+            // See RFC 4122 (Secion 4.4)
+            //   o  If the state was unavailable (e.g., non-existent or corrupted),
+            //      or the saved node ID is different than the current node ID,
+            //      generate a random clock sequence value.
+            me.clockSeq = me.rand(0, me.twoPow14 - 1);
+            if (!salt) {
+                salt = {};
+                me.setSalt(salt);
+            }
+            if (!time) {
+                time = {};
+                me.setTimestamp(time);
+            }
+            // See RFC 4122 (Secion 4.4)
+            salt.lo = me.rand(0, me.twoPow32 - 1);
+            salt.hi = me.rand(0, me.twoPow16 - 1);
+            time.lo = me.rand(0, me.twoPow32 - 1);
+            time.hi = me.rand(0, me.twoPow28 - 1);
+        } else {
+            // this is run only once per-instance
+            me.setSalt(me.split(me.getSalt()));
+            me.setTimestamp(me.split(me.getTimestamp()));
+            // Set multicast bit: "the least significant bit of the first octet of the
+            // node ID" (nodeId = salt for this implementation):
+            me.getSalt().hi |= 256;
+        }
+    },
+    /**
+     * Some private values used in methods on this class.
+     * @private
+     */
+    twoPow14: Math.pow(2, 14),
+    twoPow16: Math.pow(2, 16),
+    twoPow28: Math.pow(2, 28),
+    twoPow32: Math.pow(2, 32),
+    /**
+     * Converts a value into a hexadecimal value. Also allows for a maximum length
+     * of the returned value.
+     * @param {String} value
+     * @param {Number} length
+     * @private
+     */
+    toHex: function(value, length) {
+        var ret = value.toString(16);
+        if (ret.length > length) {
+            ret = ret.substring(ret.length - length);
+        }
+        // right-most digits
+        else if (ret.length < length) {
+            ret = Ext.String.leftPad(ret, length, '0');
+        }
+        return ret;
+    },
+    /**
+     * Generates a random value with between a low and high.
+     * @param {Number} low
+     * @param {Number} high
+     * @private
+     */
+    rand: function(low, high) {
+        var v = Math.random() * (high - low + 1);
+        return Math.floor(v) + low;
+    },
+    /**
+     * Splits a number into a low and high value.
+     * @param {Number} bignum
+     * @private
+     */
+    split: function(bignum) {
+        if (typeof (bignum) == 'number') {
+            var hi = Math.floor(bignum / this.twoPow32);
+            return {
+                lo: Math.floor(bignum - hi * this.twoPow32),
+                hi: hi
+            };
+        }
+        return bignum;
+    }
+}, function() {
+    this.Global = new this({
+        id: 'uuid'
+    });
+});
+
+/**
  * @author Ed Spencer
  * @class Ext.data.reader.Array
  *
@@ -54308,6 +54559,145 @@ Ext.define('Ext.dataview.List', {
             items[i].destroy();
         }
         me.listItems = null;
+    }
+});
+
+/**
+ * The DelayedTask class provides a convenient way to "buffer" the execution of a method,
+ * performing `setTimeout` where a new timeout cancels the old timeout. When called, the
+ * task will wait the specified time period before executing. If during that time period,
+ * the task is called again, the original call will be canceled. This continues so that
+ * the function is only called a single time for each iteration.
+ *
+ * This method is especially useful for things like detecting whether a user has finished
+ * typing in a text field. An example would be performing validation on a keypress. You can
+ * use this class to buffer the keypress events for a certain number of milliseconds, and
+ * perform only if they stop for that amount of time.
+ *
+ * Using {@link Ext.util.DelayedTask} is very simple:
+ *
+ *     //create the delayed task instance with our callback
+ *     var task = Ext.create('Ext.util.DelayedTask', {
+ *          fn: function() {
+ *             console.log('callback!');
+ *          }
+ *     });
+ *
+ *     task.delay(1500); //the callback function will now be called after 1500ms
+ *
+ *     task.cancel(); //the callback function will never be called now, unless we call delay() again
+ *
+ * ## Example
+ *
+ *     @example
+ *     //create a textfield where we can listen to text
+ *     var field = Ext.create('Ext.field.Text', {
+ *         xtype: 'textfield',
+ *         label: 'Length: 0'
+ *     });
+ *
+ *     //add the textfield into a fieldset
+ *     Ext.Viewport.add({
+ *         xtype: 'formpanel',
+ *         items: [{
+ *             xtype: 'fieldset',
+ *             items: [field],
+ *             instructions: 'Type into the field and watch the count go up after 500ms.'
+ *         }]
+ *     });
+ *
+ *     //create our delayed task with a function that returns the fields length as the fields label
+ *     var task = Ext.create('Ext.util.DelayedTask', function() {
+ *         field.setLabel('Length: ' + field.getValue().length);
+ *     });
+ *
+ *     // Wait 500ms before calling our function. If the user presses another key
+ *     // during that 500ms, it will be canceled and we'll wait another 500ms.
+ *     field.on('keyup', function() {
+ *         task.delay(500);
+ *     });
+ *
+ * @constructor
+ * The parameters to this constructor serve as defaults and are not required.
+ * @param {Function} fn The default function to call.
+ * @param {Object} scope The default scope (The `this` reference) in which the function is called. If
+ * not specified, `this` will refer to the browser window.
+ * @param {Array} args The default Array of arguments.
+ */
+Ext.define('Ext.util.DelayedTask', {
+    config: {
+        interval: null,
+        delay: null,
+        fn: null,
+        scope: null,
+        args: null
+    },
+    constructor: function(fn, scope, args) {
+        var config = {
+                fn: fn,
+                scope: scope,
+                args: args
+            };
+        this.initConfig(config);
+    },
+    /**
+     * Cancels any pending timeout and queues a new one.
+     * @param {Number} delay The milliseconds to delay
+     * @param {Function} newFn Overrides the original function passed when instantiated.
+     * @param {Object} newScope Overrides the original `scope` passed when instantiated. Remember that if no scope
+     * is specified, `this` will refer to the browser window.
+     * @param {Array} newArgs Overrides the original `args` passed when instantiated.
+     */
+    delay: function(delay, newFn, newScope, newArgs) {
+        var me = this;
+        //cancel any existing queued functions
+        me.cancel();
+        //set all the new configurations
+        if (Ext.isNumber(delay)) {
+            me.setDelay(delay);
+        }
+        if (Ext.isFunction(newFn)) {
+            me.setFn(newFn);
+        }
+        if (newScope) {
+            me.setScope(newScope);
+        }
+        if (newScope) {
+            me.setArgs(newArgs);
+        }
+        //create the callback method for this delayed task
+        var call = function() {
+                me.getFn().apply(me.getScope(), me.getArgs() || []);
+                me.cancel();
+            };
+        me.setInterval(setInterval(call, me.getDelay()));
+    },
+    /**
+     * Cancel the last queued timeout
+     */
+    cancel: function() {
+        this.setInterval(null);
+    },
+    /**
+     * @private
+     * Clears the old interval
+     */
+    updateInterval: function(newInterval, oldInterval) {
+        if (oldInterval) {
+            clearInterval(oldInterval);
+        }
+    },
+    /**
+     * @private
+     * Changes the value into an array if it isn't one.
+     */
+    applyArgs: function(config) {
+        if (!Ext.isArray(config)) {
+            config = [
+                config
+            ];
+        }
+        return config;
     }
 });
 
@@ -57597,6 +57987,1493 @@ Ext.define('Ext.field.Checkbox', {
 });
 
 /**
+ * @private
+ *
+ * A general {@link Ext.picker.Picker} slot class.  Slots are used to organize multiple scrollable slots into
+ * a single {@link Ext.picker.Picker}.
+ *
+ *     {
+ *         name : 'limit_speed',
+ *         title: 'Speed Limit',
+ *         data : [
+ *             {text: '50 KB/s', value: 50},
+ *             {text: '100 KB/s', value: 100},
+ *             {text: '200 KB/s', value: 200},
+ *             {text: '300 KB/s', value: 300}
+ *         ]
+ *     }
+ *
+ * See the {@link Ext.picker.Picker} documentation on how to use slots.
+ */
+Ext.define('Ext.picker.Slot', {
+    extend: Ext.dataview.DataView,
+    xtype: 'pickerslot',
+    alternateClassName: 'Ext.Picker.Slot',
+    /**
+     * @event slotpick
+     * Fires whenever an slot is picked
+     * @param {Ext.picker.Slot} this
+     * @param {Mixed} value The value of the pick
+     * @param {HTMLElement} node The node element of the pick
+     */
+    isSlot: true,
+    config: {
+        /**
+         * @cfg {String} title The title to use for this slot, or `null` for no title.
+         * @accessor
+         */
+        title: null,
+        /**
+         * @private
+         * @cfg {Boolean} showTitle
+         * @accessor
+         */
+        showTitle: true,
+        /**
+         * @private
+         * @cfg {String} cls The main component class
+         * @accessor
+         */
+        cls: Ext.baseCSSPrefix + 'picker-slot',
+        /**
+         * @cfg {String} name (required) The name of this slot.
+         * @accessor
+         */
+        name: null,
+        /**
+         * @cfg {Number} value The value of this slot
+         * @accessor
+         */
+        value: null,
+        /**
+         * @cfg {Number} flex
+         * @accessor
+         * @private
+         */
+        flex: 1,
+        /**
+         * @cfg {String} align The horizontal alignment of the slot's contents.
+         *
+         * Valid values are: "left", "center", and "right".
+         * @accessor
+         */
+        align: 'left',
+        /**
+         * @cfg {String} displayField The display field in the store.
+         * @accessor
+         */
+        displayField: 'text',
+        /**
+         * @cfg {String} valueField The value field in the store.
+         * @accessor
+         */
+        valueField: 'value',
+        /**
+         * @cfg {String} itemTpl The template to be used in this slot.
+         * If you set this, {@link #displayField} will be ignored.
+         */
+        itemTpl: null,
+        /**
+         * @cfg {Object} scrollable
+         * @accessor
+         * @hide
+         */
+        scrollable: {
+            direction: 'vertical',
+            indicators: false,
+            momentumEasing: {
+                minVelocity: 2
+            },
+            slotSnapEasing: {
+                duration: 100
+            }
+        },
+        /**
+         * @cfg {Boolean} verticallyCenterItems
+         * @private
+         */
+        verticallyCenterItems: true
+    },
+    platformConfig: [
+        {
+            theme: [
+                'Windows'
+            ],
+            title: 'choose an item'
+        }
+    ],
+    // verticallyCenterItems: false
+    constructor: function() {
+        /**
+         * @property selectedIndex
+         * @type Number
+         * The current `selectedIndex` of the picker slot.
+         * @private
+         */
+        this.selectedIndex = 0;
+        /**
+         * @property picker
+         * @type Ext.picker.Picker
+         * A reference to the owner Picker.
+         * @private
+         */
+        this.callParent(arguments);
+    },
+    /**
+     * Sets the title for this dataview by creating element.
+     * @param {String} title
+     * @return {String}
+     */
+    applyTitle: function(title) {
+        //check if the title isnt defined
+        if (title) {
+            //create a new title element
+            title = Ext.create('Ext.Component', {
+                cls: Ext.baseCSSPrefix + 'picker-slot-title',
+                docked: 'top',
+                html: title
+            });
+        }
+        return title;
+    },
+    updateTitle: function(newTitle, oldTitle) {
+        if (newTitle) {
+            this.add(newTitle);
+            this.setupBar();
+        }
+        if (oldTitle) {
+            this.remove(oldTitle);
+        }
+    },
+    updateShowTitle: function(showTitle) {
+        var title = this.getTitle(),
+            mode = showTitle ? 'show' : 'hide';
+        if (title) {
+            title.on(mode, this.setupBar, this, {
+                single: true,
+                delay: 50
+            });
+            title[showTitle ? 'show' : 'hide']();
+        }
+    },
+    updateDisplayField: function(newDisplayField) {
+        if (!this.config.itemTpl) {
+            this.setItemTpl('<div class="' + Ext.baseCSSPrefix + 'picker-item {cls} <tpl if="extra">' + Ext.baseCSSPrefix + 'picker-invalid</tpl>">{' + newDisplayField + '}</div>');
+        }
+    },
+    /**
+     * Updates the {@link #align} configuration
+     */
+    updateAlign: function(newAlign, oldAlign) {
+        var element = this.element;
+        element.addCls(Ext.baseCSSPrefix + 'picker-' + newAlign);
+        element.removeCls(Ext.baseCSSPrefix + 'picker-' + oldAlign);
+    },
+    /**
+     * Looks at the {@link #data} configuration and turns it into {@link #store}.
+     * @param {Object} data
+     * @return {Object}
+     */
+    applyData: function(data) {
+        var parsedData = [],
+            ln = data && data.length,
+            i, item, obj;
+        if (data && Ext.isArray(data) && ln) {
+            for (i = 0; i < ln; i++) {
+                item = data[i];
+                obj = {};
+                if (Ext.isArray(item)) {
+                    obj[this.valueField] = item[0];
+                    obj[this.displayField] = item[1];
+                } else if (Ext.isString(item)) {
+                    obj[this.valueField] = item;
+                    obj[this.displayField] = item;
+                } else if (Ext.isObject(item)) {
+                    obj = item;
+                }
+                parsedData.push(obj);
+            }
+        }
+        return data;
+    },
+    // @private
+    initialize: function() {
+        this.callParent();
+        var scroller = this.getScrollable().getScroller();
+        this.on({
+            scope: this,
+            painted: 'onPainted',
+            itemtap: 'doItemTap'
+        });
+        this.element.on({
+            scope: this,
+            touchstart: 'onTouchStart',
+            touchend: 'onTouchEnd'
+        });
+        scroller.on({
+            scope: this,
+            scrollend: 'onScrollEnd'
+        });
+    },
+    // @private
+    onPainted: function() {
+        this.setupBar();
+    },
+    /**
+     * Returns an instance of the owner picker.
+     * @return {Object}
+     * @private
+     */
+    getPicker: function() {
+        if (!this.picker) {
+            this.picker = this.getParent();
+        }
+        return this.picker;
+    },
+    // @private
+    setupBar: function() {
+        if (!this.rendered) {
+            //if the component isnt rendered yet, there is no point in calculating the padding just eyt
+            return;
+        }
+        var element = this.element,
+            innerElement = this.innerElement,
+            picker = this.getPicker(),
+            bar = picker.bar,
+            value = this.getValue(),
+            showTitle = this.getShowTitle(),
+            title = this.getTitle(),
+            scrollable = this.getScrollable(),
+            scroller = scrollable.getScroller(),
+            titleHeight = 0,
+            barHeight, padding;
+        barHeight = bar.dom.getBoundingClientRect().height;
+        if (showTitle && title) {
+            titleHeight = title.element.getHeight();
+        }
+        padding = Math.ceil((element.getHeight() - titleHeight - barHeight) / 2);
+        if (this.getVerticallyCenterItems()) {
+            innerElement.setStyle({
+                padding: padding + 'px 0 ' + padding + 'px'
+            });
+        }
+        scroller.refresh();
+        scroller.setSlotSnapSize(barHeight);
+        this.setValue(value);
+    },
+    // @private
+    doItemTap: function(list, index, item, e) {
+        var me = this;
+        me.selectedIndex = index;
+        me.selectedNode = item;
+        me.scrollToItem(item, true);
+    },
+    // @private
+    scrollToItem: function(item, animated) {
+        var y = item.getY(),
+            parentEl = item.parent(),
+            parentY = parentEl.getY(),
+            scrollView = this.getScrollable(),
+            scroller = scrollView.getScroller(),
+            difference;
+        difference = y - parentY;
+        scroller.scrollTo(0, difference, animated);
+    },
+    // @private
+    onTouchStart: function() {
+        this.element.addCls(Ext.baseCSSPrefix + 'scrolling');
+    },
+    // @private
+    onTouchEnd: function() {
+        this.element.removeCls(Ext.baseCSSPrefix + 'scrolling');
+    },
+    // @private
+    onScrollEnd: function(scroller, x, y) {
+        var me = this,
+            index = Math.round(y / me.picker.bar.dom.getBoundingClientRect().height),
+            viewItems = me.getViewItems(),
+            item = viewItems[index];
+        if (item) {
+            me.selectedIndex = index;
+            me.selectedNode = item;
+            me.fireEvent('slotpick', me, me.getValue(), me.selectedNode);
+        }
+    },
+    /**
+     * Returns the value of this slot
+     * @private
+     */
+    getValue: function(useDom) {
+        var store = this.getStore(),
+            record, value;
+        if (!store) {
+            return;
+        }
+        if (!this.rendered || !useDom) {
+            return this._value;
+        }
+        //if the value is ever false, that means we do not want to return anything
+        if (this._value === false) {
+            return null;
+        }
+        record = store.getAt(this.selectedIndex);
+        value = record ? record.get(this.getValueField()) : null;
+        return value;
+    },
+    /**
+     * Sets the value of this slot
+     * @private
+     */
+    setValue: function(value) {
+        return this.doSetValue(value);
+    },
+    /**
+     * Sets the value of this slot
+     * @private
+     */
+    setValueAnimated: function(value) {
+        return this.doSetValue(value, true);
+    },
+    doSetValue: function(value, animated) {
+        if (!this.rendered) {
+            //we don't want to call this until the slot has been rendered
+            this._value = value;
+            return;
+        }
+        var store = this.getStore(),
+            viewItems = this.getViewItems(),
+            valueField = this.getValueField(),
+            index, item;
+        index = store.findExact(valueField, value);
+        if (index == -1) {
+            index = 0;
+        }
+        item = Ext.get(viewItems[index]);
+        this.selectedIndex = index;
+        if (item) {
+            this.scrollToItem(item, (animated) ? {
+                duration: 100
+            } : false);
+            this.select(this.selectedIndex);
+        }
+        this._value = value;
+    }
+});
+
+/**
+ * A general picker class. {@link Ext.picker.Slot}s are used to organize multiple scrollable slots into a single picker. {@link #slots} is
+ * the only necessary configuration.
+ *
+ * The {@link #slots} configuration with a few key values:
+ *
+ * - `name`: The name of the slot (will be the key when using {@link #getValues} in this {@link Ext.picker.Picker}).
+ * - `title`: The title of this slot (if {@link #useTitles} is set to `true`).
+ * - `data`/`store`: The data or store to use for this slot.
+ *
+ * Remember, {@link Ext.picker.Slot} class extends from {@link Ext.dataview.DataView}.
+ *
+ * ## Examples
+ *
+ *     @example miniphone preview
+ *     var picker = Ext.create('Ext.Picker', {
+ *         slots: [
+ *             {
+ *                 name : 'limit_speed',
+ *                 title: 'Speed',
+ *                 data : [
+ *                     {text: '50 KB/s', value: 50},
+ *                     {text: '100 KB/s', value: 100},
+ *                     {text: '200 KB/s', value: 200},
+ *                     {text: '300 KB/s', value: 300}
+ *                 ]
+ *             }
+ *         ]
+ *     });
+ *     Ext.Viewport.add(picker);
+ *     picker.show();
+ *
+ * You can also customize the top toolbar on the {@link Ext.picker.Picker} by changing the {@link #doneButton} and {@link #cancelButton} configurations:
+ *
+ *     @example miniphone preview
+ *     var picker = Ext.create('Ext.Picker', {
+ *         doneButton: 'I\'m done!',
+ *         cancelButton: false,
+ *         slots: [
+ *             {
+ *                 name : 'limit_speed',
+ *                 title: 'Speed',
+ *                 data : [
+ *                     {text: '50 KB/s', value: 50},
+ *                     {text: '100 KB/s', value: 100},
+ *                     {text: '200 KB/s', value: 200},
+ *                     {text: '300 KB/s', value: 300}
+ *                 ]
+ *             }
+ *         ]
+ *     });
+ *     Ext.Viewport.add(picker);
+ *     picker.show();
+ *
+ * Or by passing a custom {@link #toolbar} configuration:
+ *
+ *     @example miniphone preview
+ *     var picker = Ext.create('Ext.Picker', {
+ *         doneButton: false,
+ *         cancelButton: false,
+ *         toolbar: {
+ *             ui: 'light',
+ *             title: 'My Picker!'
+ *         },
+ *         slots: [
+ *             {
+ *                 name : 'limit_speed',
+ *                 title: 'Speed',
+ *                 data : [
+ *                     {text: '50 KB/s', value: 50},
+ *                     {text: '100 KB/s', value: 100},
+ *                     {text: '200 KB/s', value: 200},
+ *                     {text: '300 KB/s', value: 300}
+ *                 ]
+ *             }
+ *         ]
+ *     });
+ *     Ext.Viewport.add(picker);
+ *     picker.show();
+ */
+Ext.define('Ext.picker.Picker', {
+    extend: Ext.Sheet,
+    alias: 'widget.picker',
+    alternateClassName: 'Ext.Picker',
+    isPicker: true,
+    /**
+     * @event pick
+     * Fired when a slot has been picked
+     * @param {Ext.Picker} this This Picker.
+     * @param {Object} The values of this picker's slots, in `{name:'value'}` format.
+     * @param {Ext.Picker.Slot} slot An instance of Ext.Picker.Slot that has been picked.
+     */
+    /**
+     * @event change
+     * Fired when the value of this picker has changed the Done button has been pressed.
+     * @param {Ext.picker.Picker} this This Picker.
+     * @param {Object} value The values of this picker's slots, in `{name:'value'}` format.
+     */
+    /**
+     * @event cancel
+     * Fired when the cancel button is tapped and the values are reverted back to
+     * what they were.
+     * @param {Ext.Picker} this This Picker.
+     */
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'picker',
+        /**
+         * @cfg {String/Mixed} doneButton
+         * Can be either:
+         *
+         * - A {String} text to be used on the Done button.
+         * - An {Object} as config for {@link Ext.Button}.
+         * - `false` or `null` to hide it.
+         * @accessor
+         */
+        doneButton: true,
+        /**
+         * @cfg {String/Mixed} cancelButton
+         * Can be either:
+         *
+         * - A {String} text to be used on the Cancel button.
+         * - An {Object} as config for {@link Ext.Button}.
+         * - `false` or `null` to hide it.
+         * @accessor
+         */
+        cancelButton: true,
+        /**
+         * @cfg {Boolean} useTitles
+         * Generate a title header for each individual slot and use
+         * the title configuration of the slot.
+         * @accessor
+         */
+        useTitles: false,
+        /**
+         * @cfg {Array} slots
+         * An array of slot configurations.
+         *
+         * - `name` {String} - Name of the slot
+         * - `data` {Array} - An array of text/value pairs in the format `{text: 'myKey', value: 'myValue'}`
+         * - `title` {String} - Title of the slot. This is used in conjunction with `useTitles: true`.
+         *
+         * @accessor
+         */
+        slots: null,
+        /**
+         * @cfg {String/Number} value The value to initialize the picker with.
+         * @accessor
+         */
+        value: null,
+        /**
+         * @cfg {Number} height
+         * The height of the picker.
+         * @accessor
+         */
+        height: 220,
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        layout: {
+            type: 'hbox',
+            align: 'stretch'
+        },
+        /**
+         * @cfg
+         * @hide
+         */
+        centered: false,
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        left: 0,
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        right: 0,
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        bottom: 0,
+        // @private
+        defaultType: 'pickerslot',
+        toolbarPosition: 'top',
+        /**
+         * @cfg {Ext.TitleBar/Ext.Toolbar/Object} toolbar
+         * The toolbar which contains the {@link #doneButton} and {@link #cancelButton} buttons.
+         * You can override this if you wish, and add your own configurations. Just ensure that you take into account
+         * the {@link #doneButton} and {@link #cancelButton} configurations.
+         *
+         * The default xtype is a {@link Ext.TitleBar}:
+         *
+         *     toolbar: {
+         *         items: [
+         *             {
+         *                 xtype: 'button',
+         *                 text: 'Left',
+         *                 align: 'left'
+         *             },
+         *             {
+         *                 xtype: 'button',
+         *                 text: 'Right',
+         *                 align: 'left'
+         *             }
+         *         ]
+         *     }
+         *
+         * Or to use a {@link Ext.Toolbar instead}:
+         *
+         *     toolbar: {
+         *         xtype: 'toolbar',
+         *         items: [
+         *             {
+         *                 xtype: 'button',
+         *                 text: 'Left'
+         *             },
+         *             {
+         *                 xtype: 'button',
+         *                 text: 'Left Two'
+         *             }
+         *         ]
+         *     }
+         *
+         * @accessor
+         */
+        toolbar: {
+            xtype: 'titlebar'
+        }
+    },
+    platformConfig: [
+        {
+            theme: [
+                'Windows'
+            ],
+            height: '100%',
+            toolbarPosition: 'bottom',
+            toolbar: {
+                xtype: 'toolbar',
+                layout: {
+                    type: 'hbox',
+                    pack: 'center'
+                }
+            },
+            doneButton: {
+                iconCls: 'check2',
+                ui: 'round',
+                text: ''
+            },
+            cancelButton: {
+                iconCls: 'delete',
+                ui: 'round',
+                text: ''
+            }
+        },
+        {
+            theme: [
+                'CupertinoClassic'
+            ],
+            toolbar: {
+                ui: 'black'
+            }
+        },
+        {
+            theme: [
+                'MountainView'
+            ],
+            toolbarPosition: 'bottom',
+            toolbar: {
+                defaults: {
+                    flex: 1
+                }
+            }
+        }
+    ],
+    initialize: function() {
+        var me = this,
+            clsPrefix = Ext.baseCSSPrefix,
+            innerElement = this.innerElement;
+        //insert the mask, and the picker bar
+        this.mask = innerElement.createChild({
+            cls: clsPrefix + 'picker-mask'
+        });
+        this.bar = this.mask.createChild({
+            cls: clsPrefix + 'picker-bar'
+        });
+        me.on({
+            scope: this,
+            delegate: 'pickerslot',
+            slotpick: 'onSlotPick'
+        });
+    },
+    /**
+     * @private
+     */
+    applyToolbar: function(config) {
+        if (config === true) {
+            config = {};
+        }
+        Ext.applyIf(config, {
+            docked: this.getToolbarPosition()
+        });
+        return Ext.factory(config, 'Ext.TitleBar', this.getToolbar());
+    },
+    /**
+     * @private
+     */
+    updateToolbar: function(newToolbar, oldToolbar) {
+        if (newToolbar) {
+            this.add(newToolbar);
+        }
+        if (oldToolbar) {
+            this.remove(oldToolbar);
+        }
+    },
+    /**
+     * Updates the {@link #doneButton} configuration. Will change it into a button when appropriate, or just update the text if needed.
+     * @param {Object} config
+     * @return {Object}
+     */
+    applyDoneButton: function(config) {
+        if (config) {
+            if (Ext.isBoolean(config)) {
+                config = {};
+            }
+            if (typeof config == "string") {
+                config = {
+                    text: config
+                };
+            }
+            Ext.applyIf(config, {
+                ui: 'action',
+                align: 'right',
+                text: 'Done'
+            });
+        }
+        return Ext.factory(config, 'Ext.Button', this.getDoneButton());
+    },
+    updateDoneButton: function(newDoneButton, oldDoneButton) {
+        var toolbar = this.getToolbar();
+        if (newDoneButton) {
+            toolbar.add(newDoneButton);
+            newDoneButton.on('tap', this.onDoneButtonTap, this);
+        } else if (oldDoneButton) {
+            toolbar.remove(oldDoneButton);
+        }
+    },
+    /**
+     * Updates the {@link #cancelButton} configuration. Will change it into a button when appropriate, or just update the text if needed.
+     * @param {Object} config
+     * @return {Object}
+     */
+    applyCancelButton: function(config) {
+        if (config) {
+            if (Ext.isBoolean(config)) {
+                config = {};
+            }
+            if (typeof config == "string") {
+                config = {
+                    text: config
+                };
+            }
+            Ext.applyIf(config, {
+                align: 'left',
+                text: 'Cancel'
+            });
+        }
+        return Ext.factory(config, 'Ext.Button', this.getCancelButton());
+    },
+    updateCancelButton: function(newCancelButton, oldCancelButton) {
+        var toolbar = this.getToolbar();
+        if (newCancelButton) {
+            toolbar.add(newCancelButton);
+            newCancelButton.on('tap', this.onCancelButtonTap, this);
+        } else if (oldCancelButton) {
+            toolbar.remove(oldCancelButton);
+        }
+    },
+    /**
+     * @private
+     */
+    updateUseTitles: function(useTitles) {
+        var innerItems = this.getInnerItems(),
+            ln = innerItems.length,
+            cls = Ext.baseCSSPrefix + 'use-titles',
+            i, innerItem;
+        //add a cls onto the picker
+        if (useTitles) {
+            this.addCls(cls);
+        } else {
+            this.removeCls(cls);
+        }
+        //show the time on each of the slots
+        for (i = 0; i < ln; i++) {
+            innerItem = innerItems[i];
+            if (innerItem.isSlot) {
+                innerItem.setShowTitle(useTitles);
+            }
+        }
+    },
+    applySlots: function(slots) {
+        //loop through each of the slots and add a reference to this picker
+        if (slots) {
+            var ln = slots.length,
+                i;
+            for (i = 0; i < ln; i++) {
+                slots[i].picker = this;
+            }
+        }
+        return slots;
+    },
+    /**
+     * Adds any new {@link #slots} to this picker, and removes existing {@link #slots}
+     * @private
+     */
+    updateSlots: function(newSlots) {
+        var bcss = Ext.baseCSSPrefix,
+            innerItems;
+        this.removeAll();
+        if (newSlots) {
+            this.add(newSlots);
+        }
+        innerItems = this.getInnerItems();
+        if (innerItems.length > 0) {
+            innerItems[0].addCls(bcss + 'first');
+            innerItems[innerItems.length - 1].addCls(bcss + 'last');
+        }
+        this.updateUseTitles(this.getUseTitles());
+    },
+    /**
+     * @private
+     * Called when the done button has been tapped.
+     */
+    onDoneButtonTap: function() {
+        var oldValue = this._value,
+            newValue = this.getValue(true);
+        if (newValue != oldValue) {
+            this.fireEvent('change', this, newValue);
+        }
+        this.hide();
+        Ext.util.InputBlocker.unblockInputs();
+    },
+    /**
+     * @private
+     * Called when the cancel button has been tapped.
+     */
+    onCancelButtonTap: function() {
+        this.fireEvent('cancel', this);
+        this.hide();
+        Ext.util.InputBlocker.unblockInputs();
+    },
+    /**
+     * @private
+     * Called when a slot has been picked.
+     */
+    onSlotPick: function(slot) {
+        this.fireEvent('pick', this, this.getValue(true), slot);
+    },
+    show: function() {
+        if (this.getParent() === undefined) {
+            Ext.Viewport.add(this);
+        }
+        this.callParent(arguments);
+        if (!this.isHidden()) {
+            this.setValue(this._value);
+        }
+        Ext.util.InputBlocker.blockInputs();
+    },
+    /**
+     * Sets the values of the pickers slots.
+     * @param {Object} values The values in a {name:'value'} format.
+     * @param {Boolean} animated `true` to animate setting the values.
+     * @return {Ext.Picker} this This picker.
+     */
+    setValue: function(values, animated) {
+        var me = this,
+            slots = me.getInnerItems(),
+            ln = slots.length,
+            key, slot, loopSlot, i, value;
+        if (!values) {
+            values = {};
+            for (i = 0; i < ln; i++) {
+                //set the value to false so the slot will return null when getValue is called
+                values[slots[i].config.name] = null;
+            }
+        }
+        for (key in values) {
+            slot = null;
+            value = values[key];
+            for (i = 0; i < slots.length; i++) {
+                loopSlot = slots[i];
+                if (loopSlot.config.name == key) {
+                    slot = loopSlot;
+                    break;
+                }
+            }
+            if (slot) {
+                if (animated) {
+                    slot.setValueAnimated(value);
+                } else {
+                    slot.setValue(value);
+                }
+            }
+        }
+        me._values = me._value = values;
+        return me;
+    },
+    setValueAnimated: function(values) {
+        this.setValue(values, true);
+    },
+    /**
+     * Returns the values of each of the pickers slots
+     * @return {Object} The values of the pickers slots
+     */
+    getValue: function(useDom) {
+        var values = {},
+            items = this.getItems().items,
+            ln = items.length,
+            item, i;
+        if (useDom) {
+            for (i = 0; i < ln; i++) {
+                item = items[i];
+                if (item && item.isSlot) {
+                    values[item.getName()] = item.getValue(useDom);
+                }
+            }
+            this._values = values;
+        }
+        return this._values;
+    },
+    /**
+     * Returns the values of each of the pickers slots.
+     * @return {Object} The values of the pickers slots.
+     */
+    getValues: function() {
+        return this.getValue();
+    },
+    destroy: function() {
+        this.callParent();
+        Ext.destroy(this.mask, this.bar);
+    }
+}, function() {});
+
+/**
+ * Simple Select field wrapper. Example usage:
+ *
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         fullscreen: true,
+ *         items: [
+ *             {
+ *                 xtype: 'fieldset',
+ *                 title: 'Select',
+ *                 items: [
+ *                     {
+ *                         xtype: 'selectfield',
+ *                         label: 'Choose one',
+ *                         options: [
+ *                             {text: 'First Option',  value: 'first'},
+ *                             {text: 'Second Option', value: 'second'},
+ *                             {text: 'Third Option',  value: 'third'}
+ *                         ]
+ *                     }
+ *                 ]
+ *             }
+ *         ]
+ *     });
+ *
+ * For more information regarding forms and fields, please review [Using Forms in Sencha Touch Guide](../../../components/forms.html)
+ */
+Ext.define('Ext.field.Select', {
+    extend: Ext.field.Text,
+    xtype: 'selectfield',
+    alternateClassName: 'Ext.form.Select',
+    /**
+     * @event change
+     * Fires when an option selection has changed
+     * @param {Ext.field.Select} this
+     * @param {Mixed} newValue The new value
+     * @param {Mixed} oldValue The old value
+     */
+    /**
+     * @event focus
+     * Fires when this field receives input focus. This happens both when you tap on the field and when you focus on the field by using
+     * 'next' or 'tab' on a keyboard.
+     *
+     * Please note that this event is not very reliable on Android. For example, if your Select field is second in your form panel,
+     * you cannot use the Next button to get to this select field. This functionality works as expected on iOS.
+     * @param {Ext.field.Select} this This field
+     * @param {Ext.event.Event} e
+     */
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        ui: 'select',
+        /**
+         * @cfg {Boolean} useClearIcon
+         * @hide
+         */
+        /**
+         * @cfg {String/Number} valueField The underlying {@link Ext.data.Field#name data value name} (or numeric Array index) to bind to this
+         * Select control.
+         * @accessor
+         */
+        valueField: 'value',
+        /**
+         * @cfg {String/Number} displayField The underlying {@link Ext.data.Field#name data value name} (or numeric Array index) to bind to this
+         * Select control. This resolved value is the visibly rendered value of the available selection options.
+         * @accessor
+         */
+        displayField: 'text',
+        /**
+         * @cfg {Ext.data.Store/Object/String} store The store to provide selection options data.
+         * Either a Store instance, configuration object or store ID.
+         * @accessor
+         */
+        store: null,
+        /**
+         * @cfg {Array} options An array of select options.
+         *
+         *     [
+         *         {text: 'First Option',  value: 'first'},
+         *         {text: 'Second Option', value: 'second'},
+         *         {text: 'Third Option',  value: 'third'}
+         *     ]
+         *
+         * __Note:__ Option object member names should correspond with defined {@link #valueField valueField} and {@link #displayField displayField} values.
+         * This config will be ignored if a {@link #store store} instance is provided.
+         * @accessor
+         */
+        options: null,
+        /**
+         * @cfg {String} hiddenName Specify a `hiddenName` if you're using the {@link Ext.form.Panel#standardSubmit standardSubmit} option.
+         * This name will be used to post the underlying value of the select to the server.
+         * @accessor
+         */
+        hiddenName: null,
+        /**
+         * @cfg {Object} component
+         * @accessor
+         * @hide
+         */
+        component: {
+            useMask: true
+        },
+        /**
+         * @cfg {Boolean} clearIcon
+         * @hide
+         * @accessor
+         */
+        clearIcon: false,
+        /**
+         * @cfg {String/Boolean} usePicker
+         * `true` if you want this component to always use a {@link Ext.picker.Picker}.
+         * `false` if you want it to use a popup overlay {@link Ext.List}.
+         * `auto` if you want to show a {@link Ext.picker.Picker} only on phones.
+         */
+        usePicker: 'auto',
+        /**
+         * @cfg {Boolean} autoSelect
+         * `true` to auto select the first value in the {@link #store} or {@link #options} when they are changed. Only happens when
+         * the {@link #value} is set to `null`.
+         */
+        autoSelect: true,
+        /**
+         * @cfg {Object} defaultPhonePickerConfig
+         * The default configuration for the picker component when you are on a phone.
+         */
+        defaultPhonePickerConfig: null,
+        /**
+         * @cfg {Object} defaultTabletPickerConfig
+         * The default configuration for the picker component when you are on a tablet.
+         */
+        defaultTabletPickerConfig: null,
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        name: 'picker',
+        /**
+         * @cfg {String} pickerSlotAlign
+         * The alignment of text in the picker created by this Select
+         * @private
+         */
+        pickerSlotAlign: 'center'
+    },
+    platformConfig: [
+        {
+            theme: [
+                'Windows'
+            ],
+            pickerSlotAlign: 'left'
+        },
+        {
+            theme: [
+                'Tizen'
+            ],
+            usePicker: false
+        }
+    ],
+    // @private
+    initialize: function() {
+        var me = this,
+            component = me.getComponent();
+        me.callParent();
+        component.on({
+            scope: me,
+            masktap: 'onMaskTap'
+        });
+        component.doMaskTap = Ext.emptyFn;
+        if (Ext.browser.is.AndroidStock2) {
+            component.input.dom.disabled = true;
+        }
+        if (Ext.theme.is.Blackberry || Ext.theme.is.Blackberry103) {
+            this.label.on({
+                scope: me,
+                tap: "onFocus"
+            });
+        }
+    },
+    getElementConfig: function() {
+        if (Ext.theme.is.Blackberry || Ext.theme.is.Blackberry103) {
+            var prefix = Ext.baseCSSPrefix;
+            return {
+                reference: 'element',
+                className: 'x-container',
+                children: [
+                    {
+                        reference: 'innerElement',
+                        cls: prefix + 'component-outer',
+                        children: [
+                            {
+                                reference: 'label',
+                                cls: prefix + 'form-label',
+                                children: [
+                                    {
+                                        reference: 'labelspan',
+                                        tag: 'span'
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            };
+        } else {
+            return this.callParent(arguments);
+        }
+    },
+    /**
+     * @private
+     */
+    updateDefaultPhonePickerConfig: function(newConfig) {
+        var picker = this.picker;
+        if (picker) {
+            picker.setConfig(newConfig);
+        }
+    },
+    /**
+     * @private
+     */
+    updateDefaultTabletPickerConfig: function(newConfig) {
+        var listPanel = this.listPanel;
+        if (listPanel) {
+            listPanel.setConfig(newConfig);
+        }
+    },
+    /**
+     * @private
+     * Checks if the value is `auto`. If it is, it only uses the picker if the current device type
+     * is a phone.
+     */
+    applyUsePicker: function(usePicker) {
+        if (usePicker == "auto") {
+            usePicker = (Ext.os.deviceType == 'Phone');
+        }
+        return Boolean(usePicker);
+    },
+    syncEmptyCls: Ext.emptyFn,
+    /**
+     * @private
+     */
+    applyValue: function(value) {
+        var record = value,
+            index, store;
+        //we call this so that the options configruation gets intiailized, so that a store exists, and we can
+        //find the correct value
+        this.getOptions();
+        store = this.getStore();
+        if ((value != undefined && !value.isModel) && store) {
+            index = store.find(this.getValueField(), value, null, null, null, true);
+            if (index == -1) {
+                index = store.find(this.getDisplayField(), value, null, null, null, true);
+            }
+            record = store.getAt(index);
+        }
+        return record;
+    },
+    updateValue: function(newValue, oldValue) {
+        this.record = newValue;
+        this.callParent([
+            (newValue && newValue.isModel) ? newValue.get(this.getDisplayField()) : ''
+        ]);
+    },
+    getValue: function() {
+        var record = this.record;
+        return (record && record.isModel) ? record.get(this.getValueField()) : null;
+    },
+    /**
+     * Returns the current selected {@link Ext.data.Model record} instance selected in this field.
+     * @return {Ext.data.Model} the record.
+     */
+    getRecord: function() {
+        return this.record;
+    },
+    // @private
+    getPhonePicker: function() {
+        var config = this.getDefaultPhonePickerConfig();
+        if (!this.picker) {
+            this.picker = Ext.create('Ext.picker.Picker', Ext.apply({
+                slots: [
+                    {
+                        align: this.getPickerSlotAlign(),
+                        name: this.getName(),
+                        valueField: this.getValueField(),
+                        displayField: this.getDisplayField(),
+                        value: this.getValue(),
+                        store: this.getStore()
+                    }
+                ],
+                listeners: {
+                    change: this.onPickerChange,
+                    scope: this
+                }
+            }, config));
+        }
+        return this.picker;
+    },
+    // @private
+    getTabletPicker: function() {
+        var config = this.getDefaultTabletPickerConfig();
+        if (!this.listPanel) {
+            this.listPanel = Ext.create('Ext.Panel', Ext.apply({
+                left: 0,
+                top: 0,
+                modal: true,
+                cls: Ext.baseCSSPrefix + 'select-overlay',
+                layout: 'fit',
+                hideOnMaskTap: true,
+                width: Ext.os.is.Phone ? '14em' : '18em',
+                height: (Ext.os.is.BlackBerry && Ext.os.version.getMajor() === 10) ? '12em' : (Ext.os.is.Phone ? '12.5em' : '22em'),
+                items: {
+                    xtype: 'list',
+                    store: this.getStore(),
+                    itemTpl: '<span class="x-list-label">{' + this.getDisplayField() + ':htmlEncode}</span>',
+                    listeners: {
+                        select: this.onListSelect,
+                        itemtap: this.onListTap,
+                        scope: this
+                    }
+                }
+            }, config));
+        }
+        return this.listPanel;
+    },
+    // @private
+    onMaskTap: function() {
+        this.onFocus();
+        return false;
+    },
+    /**
+     * Shows the picker for the select field, whether that is a {@link Ext.picker.Picker} or a simple
+     * {@link Ext.List list}.
+     */
+    showPicker: function() {
+        var me = this,
+            store = me.getStore(),
+            value = me.getValue();
+        //check if the store is empty, if it is, return
+        if (!store || store.getCount() === 0) {
+            return;
+        }
+        if (me.getReadOnly()) {
+            return;
+        }
+        me.isFocused = true;
+        if (me.getUsePicker()) {
+            var picker = me.getPhonePicker(),
+                name = me.getName(),
+                pickerValue = {};
+            pickerValue[name] = value;
+            picker.setValue(pickerValue);
+            if (!picker.getParent()) {
+                Ext.Viewport.add(picker);
+            }
+            picker.show();
+        } else {
+            var listPanel = me.getTabletPicker(),
+                list = listPanel.down('list'),
+                index, record;
+            if (!listPanel.getParent()) {
+                Ext.Viewport.add(listPanel);
+            }
+            listPanel.showBy(me.getComponent(), null);
+            if (value || me.getAutoSelect()) {
+                store = list.getStore();
+                index = store.find(me.getValueField(), value, null, null, null, true);
+                record = store.getAt(index);
+                if (record) {
+                    list.select(record, null, true);
+                }
+            }
+        }
+    },
+    // @private
+    onListSelect: function(item, record) {
+        var me = this;
+        if (record) {
+            me.setValue(record);
+        }
+    },
+    onListTap: function() {
+        this.listPanel.hide({
+            type: 'fade',
+            out: true,
+            scope: this
+        });
+    },
+    // @private
+    onPickerChange: function(picker, value) {
+        var me = this,
+            newValue = value[me.getName()],
+            store = me.getStore(),
+            index = store.find(me.getValueField(), newValue, null, null, null, true),
+            record = store.getAt(index);
+        me.setValue(record);
+    },
+    onChange: function(component, newValue, oldValue) {
+        var me = this,
+            store = me.getStore(),
+            index = (store) ? store.find(me.getDisplayField(), oldValue, null, null, null, true) : -1,
+            valueField = me.getValueField(),
+            record = (store) ? store.getAt(index) : null;
+        oldValue = (record) ? record.get(valueField) : null;
+        me.fireEvent('change', me, me.getValue(), oldValue);
+    },
+    /**
+     * Updates the underlying `<options>` list with new values.
+     *
+     * @param {Array} newOptions An array of options configurations to insert or append.
+     *
+     *     selectBox.setOptions([
+     *         {text: 'First Option',  value: 'first'},
+     *         {text: 'Second Option', value: 'second'},
+     *         {text: 'Third Option',  value: 'third'}
+     *     ]).setValue('third');
+     *
+     * __Note:__ option object member names should correspond with defined {@link #valueField valueField} and
+     * {@link #displayField displayField} values.
+     *
+     * @return {Ext.field.Select} this
+     */
+    updateOptions: function(newOptions) {
+        var store = this.getStore();
+        if (!store) {
+            this.setStore(true);
+            store = this._store;
+        }
+        if (!newOptions) {
+            store.clearData();
+        } else {
+            store.setData(newOptions);
+            this.onStoreDataChanged(store);
+        }
+        return this;
+    },
+    applyStore: function(store) {
+        if (store === true) {
+            store = Ext.create('Ext.data.Store', {
+                fields: [
+                    this.getValueField(),
+                    this.getDisplayField()
+                ],
+                autoDestroy: true
+            });
+        }
+        if (store) {
+            store = Ext.data.StoreManager.lookup(store);
+            store.on({
+                scope: this,
+                addrecords: 'onStoreDataChanged',
+                removerecords: 'onStoreDataChanged',
+                updaterecord: 'onStoreDataChanged',
+                refresh: 'onStoreDataChanged'
+            });
+        }
+        return store;
+    },
+    updateStore: function(newStore) {
+        if (newStore) {
+            this.onStoreDataChanged(newStore);
+        }
+        if (this.getUsePicker() && this.picker) {
+            this.picker.down('pickerslot').setStore(newStore);
+        } else if (this.listPanel) {
+            this.listPanel.down('dataview').setStore(newStore);
+        }
+    },
+    /**
+     * Called when the internal {@link #store}'s data has changed.
+     */
+    onStoreDataChanged: function(store) {
+        var initialConfig = this.getInitialConfig(),
+            value = this.getValue();
+        if (value || value == 0) {
+            this.updateValue(this.applyValue(value));
+        }
+        if (this.getValue() === null) {
+            if (initialConfig.hasOwnProperty('value')) {
+                this.setValue(initialConfig.value);
+            }
+            if (this.getValue() === null && this.getAutoSelect()) {
+                if (store.getCount() > 0) {
+                    this.setValue(store.getAt(0));
+                }
+            }
+        }
+    },
+    /**
+     * @private
+     */
+    doSetDisabled: function(disabled) {
+        var component = this.getComponent();
+        if (component) {
+            component.setDisabled(disabled);
+        }
+        Ext.Component.prototype.doSetDisabled.apply(this, arguments);
+    },
+    /**
+     * @private
+     */
+    setDisabled: function() {
+        Ext.Component.prototype.setDisabled.apply(this, arguments);
+    },
+    // @private
+    updateLabelWidth: function() {
+        if (Ext.theme.is.Blackberry || Ext.theme.is.Blackberry103) {
+            return;
+        } else {
+            this.callParent(arguments);
+        }
+    },
+    // @private
+    updateLabelAlign: function() {
+        if (Ext.theme.is.Blackberry || Ext.theme.is.Blackberry103) {
+            return;
+        } else {
+            this.callParent(arguments);
+        }
+    },
+    /**
+     * Resets the Select field to the value of the first record in the store.
+     * @return {Ext.field.Select} this
+     * @chainable
+     */
+    reset: function() {
+        var me = this,
+            record;
+        if (me.getAutoSelect()) {
+            var store = me.getStore();
+            record = (me.originalValue) ? me.originalValue : store.getAt(0);
+        } else {
+            var usePicker = me.getUsePicker(),
+                picker = usePicker ? me.picker : me.listPanel;
+            if (picker) {
+                picker = picker.child(usePicker ? 'pickerslot' : 'dataview');
+                picker.deselectAll();
+            }
+            record = null;
+        }
+        me.setValue(record);
+        return me;
+    },
+    onFocus: function(e) {
+        if (this.getDisabled()) {
+            return false;
+        }
+        var component = this.getComponent();
+        this.fireEvent('focus', this, e);
+        if (Ext.os.is.Android4) {
+            component.input.dom.focus();
+        }
+        component.input.dom.blur();
+        this.isFocused = true;
+        this.showPicker();
+    },
+    destroy: function() {
+        this.callParent(arguments);
+        var store = this.getStore();
+        if (store && store.getAutoDestroy()) {
+            Ext.destroy(store);
+        }
+        Ext.destroy(this.listPanel, this.picker);
+    }
+});
+
+/**
  * Hidden fields allow you to easily inject additional data into a {@link Ext.form.Panel form} without displaying
  * additional fields on the screen. This is often useful for sending dynamic or previously collected data back to the
  * server in the same request as the normal form submission. For example, here is how we might set up a form to send
@@ -58070,6 +59947,1088 @@ Ext.define('Ext.field.Search', {
             }
         }
     ]
+});
+
+/**
+ * @private
+ * Utility class used by Ext.slider.Slider - should never need to be used directly.
+ */
+Ext.define('Ext.slider.Thumb', {
+    extend: Ext.Component,
+    xtype: 'thumb',
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'thumb',
+        /**
+         * @cfg {String} pressedCls
+         * The CSS class to add to the Slider when it is pressed.
+         * @accessor
+         */
+        pressedCls: Ext.baseCSSPrefix + 'thumb-pressing',
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        draggable: {
+            direction: 'horizontal'
+        }
+    },
+    // Strange issue where the thumbs translation value is not being set when it is not visible. Happens when the thumb 
+    // is contained within a modal panel.
+    platformConfig: [
+        {
+            platform: [
+                'ie10'
+            ],
+            draggable: {
+                translatable: {
+                    translationMethod: 'csstransform'
+                }
+            }
+        }
+    ],
+    elementWidth: 0,
+    initialize: function() {
+        this.callParent();
+        this.getDraggable().onBefore({
+            dragstart: 'onDragStart',
+            drag: 'onDrag',
+            dragend: 'onDragEnd',
+            scope: this
+        });
+        this.getDraggable().on({
+            touchstart: 'onPress',
+            touchend: 'onRelease',
+            scope: this
+        });
+        this.element.on('resize', 'onElementResize', this);
+    },
+    getTemplate: function() {
+        if (Ext.theme.is.Blackberry || Ext.theme.is.Blackberry103) {
+            return [
+                {
+                    tag: 'div',
+                    className: Ext.baseCSSPrefix + 'thumb-inner',
+                    reference: 'innerElement'
+                }
+            ];
+        } else {
+            return this.template;
+        }
+    },
+    /**
+     * @private
+     */
+    updatePressedCls: function(pressedCls, oldPressedCls) {
+        var element = this.element;
+        if (element.hasCls(oldPressedCls)) {
+            element.replaceCls(oldPressedCls, pressedCls);
+        }
+    },
+    // @private
+    onPress: function() {
+        var me = this,
+            element = me.element,
+            pressedCls = me.getPressedCls();
+        if (!me.getDisabled()) {
+            element.addCls(pressedCls);
+        }
+    },
+    // @private
+    onRelease: function(e) {
+        this.fireAction('release', [
+            this,
+            e
+        ], 'doRelease');
+    },
+    // @private
+    doRelease: function(me, e) {
+        if (!me.getDisabled()) {
+            me.element.removeCls(me.getPressedCls());
+        }
+    },
+    onDragStart: function() {
+        if (this.isDisabled()) {
+            return false;
+        }
+        this.relayEvent(arguments);
+    },
+    onDrag: function() {
+        if (this.isDisabled()) {
+            return false;
+        }
+        this.relayEvent(arguments);
+    },
+    onDragEnd: function() {
+        if (this.isDisabled()) {
+            return false;
+        }
+        this.relayEvent(arguments);
+    },
+    onElementResize: function(element, info) {
+        this.elementWidth = info.width;
+    },
+    getElementWidth: function() {
+        return this.elementWidth;
+    }
+});
+
+/**
+ * Utility class used by Ext.field.Slider.
+ * @private
+ */
+Ext.define('Ext.slider.Slider', {
+    extend: Ext.Container,
+    xtype: 'slider',
+    /**
+    * @event change
+    * Fires when the value changes
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being changed
+    * @param {Number} newValue The new value
+    * @param {Number} oldValue The old value
+    */
+    /**
+    * @event dragstart
+    * Fires when the slider thumb starts a drag
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged
+    * @param {Array} value The start value
+    * @param {Ext.EventObject} e
+    */
+    /**
+    * @event drag
+    * Fires when the slider thumb starts a drag
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged
+    * @param {Ext.EventObject} e
+    */
+    /**
+    * @event dragend
+    * Fires when the slider thumb starts a drag
+    * @param {Ext.slider.Slider} this
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged
+    * @param {Array} value The end value
+    * @param {Ext.EventObject} e
+    */
+    config: {
+        baseCls: 'x-slider',
+        /**
+         * @cfg {Object} thumbConfig The config object to factory {@link Ext.slider.Thumb} instances
+         * @accessor
+         */
+        thumbConfig: {
+            draggable: {
+                translatable: {
+                    easingX: {
+                        duration: 300,
+                        type: 'ease-out'
+                    }
+                }
+            }
+        },
+        /**
+         * @cfg {Number} increment The increment by which to snap each thumb when its value changes. Any thumb movement
+         * will be snapped to the nearest value that is a multiple of the increment (e.g. if increment is 10 and the user
+         * tries to move the thumb to 67, it will be snapped to 70 instead)
+         * @accessor
+         */
+        increment: 1,
+        /**
+         * @cfg {Number/Number[]} value The value(s) of this slider's thumbs. If you pass
+         * a number, it will assume you have just 1 thumb.
+         * @accessor
+         */
+        value: 0,
+        /**
+         * @cfg {Number} minValue The lowest value any thumb on this slider can be set to.
+         * @accessor
+         */
+        minValue: 0,
+        /**
+         * @cfg {Number} maxValue The highest value any thumb on this slider can be set to.
+         * @accessor
+         */
+        maxValue: 100,
+        /**
+         * @cfg {Boolean} allowThumbsOverlapping Whether or not to allow multiple thumbs to overlap each other.
+         * Setting this to true guarantees the ability to select every possible value in between {@link #minValue}
+         * and {@link #maxValue} that satisfies {@link #increment}
+         * @accessor
+         */
+        allowThumbsOverlapping: false,
+        /**
+         * @cfg {Boolean/Object} animation
+         * The animation to use when moving the slider. Possible properties are:
+         *
+         * - duration
+         * - easingX
+         * - easingY
+         *
+         * @accessor
+         */
+        animation: true,
+        /**
+         * Will make this field read only, meaning it cannot be changed with used interaction.
+         * @cfg {Boolean} readOnly
+         * @accessor
+         */
+        readOnly: false
+    },
+    /**
+     * @cfg {Number/Number[]} values Alias to {@link #value}
+     */
+    elementWidth: 0,
+    offsetValueRatio: 0,
+    activeThumb: null,
+    constructor: function(config) {
+        config = config || {};
+        if (config.hasOwnProperty('values')) {
+            config.value = config.values;
+        }
+        this.callParent([
+            config
+        ]);
+    },
+    // @private
+    initialize: function() {
+        var element = this.element;
+        this.callParent();
+        element.on({
+            scope: this,
+            tap: 'onTap',
+            resize: 'onResize'
+        });
+        this.on({
+            scope: this,
+            delegate: '> thumb',
+            tap: 'onTap',
+            dragstart: 'onThumbDragStart',
+            drag: 'onThumbDrag',
+            dragend: 'onThumbDragEnd'
+        });
+        var thumb = this.getThumb(0);
+        if (thumb) {
+            thumb.on('resize', 'onThumbResize', this);
+        }
+    },
+    /**
+     * @private
+     */
+    factoryThumb: function() {
+        return Ext.factory(this.getThumbConfig(), Ext.slider.Thumb);
+    },
+    /**
+     * Returns the Thumb instances bound to this Slider
+     * @return {Ext.slider.Thumb[]} The thumb instances
+     */
+    getThumbs: function() {
+        return this.innerItems;
+    },
+    /**
+     * Returns the Thumb instance bound to this Slider
+     * @param {Number} [index=0] The index of Thumb to return.
+     * @return {Ext.slider.Thumb} The thumb instance
+     */
+    getThumb: function(index) {
+        if (typeof index != 'number') {
+            index = 0;
+        }
+        return this.innerItems[index];
+    },
+    refreshOffsetValueRatio: function() {
+        var valueRange = this.getMaxValue() - this.getMinValue(),
+            trackWidth = this.elementWidth - this.thumbWidth;
+        this.offsetValueRatio = trackWidth / valueRange;
+    },
+    onThumbResize: function() {
+        var thumb = this.getThumb(0);
+        if (thumb) {
+            this.thumbWidth = thumb.getElementWidth();
+        }
+        this.refresh();
+    },
+    onResize: function(element, info) {
+        this.elementWidth = info.width;
+        this.refresh();
+    },
+    refresh: function() {
+        this.refreshValue();
+    },
+    setActiveThumb: function(thumb) {
+        var oldActiveThumb = this.activeThumb;
+        if (oldActiveThumb && oldActiveThumb !== thumb) {
+            oldActiveThumb.setZIndex(null);
+        }
+        this.activeThumb = thumb;
+        thumb.setZIndex(2);
+        return this;
+    },
+    onThumbDragStart: function(thumb, e) {
+        if (e.absDeltaX <= e.absDeltaY || this.getReadOnly()) {
+            return false;
+        } else {
+            e.stopPropagation();
+        }
+        if (this.getAllowThumbsOverlapping()) {
+            this.setActiveThumb(thumb);
+        }
+        this.dragStartValue = this.getValue()[this.getThumbIndex(thumb)];
+        this.fireEvent('dragstart', this, thumb, this.dragStartValue, e);
+    },
+    onThumbDrag: function(thumb, e, offsetX) {
+        var index = this.getThumbIndex(thumb),
+            offsetValueRatio = this.offsetValueRatio,
+            constrainedValue = this.constrainValue(this.getMinValue() + offsetX / offsetValueRatio);
+        e.stopPropagation();
+        this.setIndexValue(index, constrainedValue);
+        this.fireEvent('drag', this, thumb, this.getValue(), e);
+        return false;
+    },
+    setIndexValue: function(index, value, animation) {
+        var thumb = this.getThumb(index),
+            values = this.getValue(),
+            minValue = this.getMinValue(),
+            offsetValueRatio = this.offsetValueRatio,
+            increment = this.getIncrement(),
+            draggable = thumb.getDraggable();
+        draggable.setOffset((value - minValue) * offsetValueRatio, null, animation);
+        values[index] = minValue + Math.round((draggable.offset.x / offsetValueRatio) / increment) * increment;
+    },
+    onThumbDragEnd: function(thumb, e) {
+        this.refreshThumbConstraints(thumb);
+        var index = this.getThumbIndex(thumb),
+            newValue = this.getValue()[index],
+            oldValue = this.dragStartValue;
+        this.fireEvent('dragend', this, thumb, this.getValue(), e);
+        if (oldValue !== newValue) {
+            this.fireEvent('change', this, thumb, newValue, oldValue);
+        }
+    },
+    getThumbIndex: function(thumb) {
+        return this.getThumbs().indexOf(thumb);
+    },
+    refreshThumbConstraints: function(thumb) {
+        var allowThumbsOverlapping = this.getAllowThumbsOverlapping(),
+            offsetX = thumb.getDraggable().getOffset().x,
+            thumbs = this.getThumbs(),
+            index = this.getThumbIndex(thumb),
+            previousThumb = thumbs[index - 1],
+            nextThumb = thumbs[index + 1],
+            thumbWidth = this.thumbWidth;
+        if (previousThumb) {
+            previousThumb.getDraggable().addExtraConstraint({
+                max: {
+                    x: offsetX - ((allowThumbsOverlapping) ? 0 : thumbWidth)
+                }
+            });
+        }
+        if (nextThumb) {
+            nextThumb.getDraggable().addExtraConstraint({
+                min: {
+                    x: offsetX + ((allowThumbsOverlapping) ? 0 : thumbWidth)
+                }
+            });
+        }
+    },
+    // @private
+    onTap: function(e) {
+        if (this.isDisabled() || this.getReadOnly()) {
+            return;
+        }
+        var targetElement = Ext.get(e.target);
+        if (!targetElement || (Ext.browser.engineName == 'WebKit' && targetElement.hasCls('x-thumb'))) {
+            return;
+        }
+        var touchPointX = e.touch.point.x,
+            element = this.element,
+            elementX = element.getX(),
+            offset = touchPointX - elementX - (this.thumbWidth / 2),
+            value = this.constrainValue(this.getMinValue() + offset / this.offsetValueRatio),
+            values = this.getValue(),
+            minDistance = Infinity,
+            ln = values.length,
+            i, absDistance, testValue, closestIndex, oldValue, thumb;
+        if (ln === 1) {
+            closestIndex = 0;
+        } else {
+            for (i = 0; i < ln; i++) {
+                testValue = values[i];
+                absDistance = Math.abs(testValue - value);
+                if (absDistance < minDistance) {
+                    minDistance = absDistance;
+                    closestIndex = i;
+                }
+            }
+        }
+        oldValue = values[closestIndex];
+        thumb = this.getThumb(closestIndex);
+        this.setIndexValue(closestIndex, value, this.getAnimation());
+        this.refreshThumbConstraints(thumb);
+        if (oldValue !== value) {
+            this.fireEvent('change', this, thumb, value, oldValue);
+        }
+    },
+    // @private
+    updateThumbs: function(newThumbs) {
+        this.add(newThumbs);
+    },
+    applyValue: function(value) {
+        var values = Ext.Array.from(value || 0),
+            filteredValues = [],
+            previousFilteredValue = this.getMinValue(),
+            filteredValue, i, ln;
+        for (i = 0 , ln = values.length; i < ln; i++) {
+            filteredValue = this.constrainValue(values[i]);
+            if (filteredValue < previousFilteredValue) {
+                Ext.Logger.warn("Invalid values of '" + Ext.encode(values) + "', values at smaller indexes must " + "be smaller than or equal to values at greater indexes");
+                filteredValue = previousFilteredValue;
+            }
+            filteredValues.push(filteredValue);
+            previousFilteredValue = filteredValue;
+        }
+        return filteredValues;
+    },
+    /**
+     * Updates the sliders thumbs with their new value(s)
+     */
+    updateValue: function(newValue, oldValue) {
+        var thumbs = this.getThumbs(),
+            ln = newValue.length,
+            minValue = this.getMinValue(),
+            offset = this.offsetValueRatio,
+            i;
+        this.setThumbsCount(ln);
+        for (i = 0; i < ln; i++) {
+            thumbs[i].getDraggable().setExtraConstraint(null).setOffset((newValue[i] - minValue) * offset);
+        }
+        for (i = 0; i < ln; i++) {
+            this.refreshThumbConstraints(thumbs[i]);
+        }
+    },
+    /**
+     * @private
+     */
+    refreshValue: function() {
+        this.refreshOffsetValueRatio();
+        this.setValue(this.getValue());
+    },
+    /**
+     * @private
+     * Takes a desired value of a thumb and returns the nearest snap value. e.g if minValue = 0, maxValue = 100, increment = 10 and we
+     * pass a value of 67 here, the returned value will be 70. The returned number is constrained within {@link #minValue} and {@link #maxValue},
+     * so in the above example 68 would be returned if {@link #maxValue} was set to 68.
+     * @param {Number} value The value to snap
+     * @return {Number} The snapped value
+     */
+    constrainValue: function(value) {
+        var me = this,
+            minValue = me.getMinValue(),
+            maxValue = me.getMaxValue(),
+            increment = me.getIncrement(),
+            remainder;
+        value = parseFloat(value);
+        if (isNaN(value)) {
+            value = minValue;
+        }
+        remainder = (value - minValue) % increment;
+        value -= remainder;
+        if (Math.abs(remainder) >= (increment / 2)) {
+            value += (remainder > 0) ? increment : -increment;
+        }
+        value = Math.max(minValue, value);
+        value = Math.min(maxValue, value);
+        return value;
+    },
+    setThumbsCount: function(count) {
+        var thumbs = this.getThumbs(),
+            thumbsCount = thumbs.length,
+            i, ln, thumb;
+        if (thumbsCount > count) {
+            for (i = 0 , ln = thumbsCount - count; i < ln; i++) {
+                thumb = thumbs[thumbs.length - 1];
+                thumb.destroy();
+            }
+        } else if (thumbsCount < count) {
+            for (i = 0 , ln = count - thumbsCount; i < ln; i++) {
+                this.add(this.factoryThumb());
+            }
+        }
+        return this;
+    },
+    /**
+     * Convenience method. Calls {@link #setValue}.
+     */
+    setValues: function(value) {
+        this.setValue(value);
+    },
+    /**
+     * Convenience method. Calls {@link #getValue}.
+     * @return {Object}
+     */
+    getValues: function() {
+        return this.getValue();
+    },
+    /**
+     * Sets the {@link #increment} configuration.
+     * @param {Number} increment
+     * @return {Number}
+     */
+    applyIncrement: function(increment) {
+        if (increment === 0) {
+            increment = 1;
+        }
+        return Math.abs(increment);
+    },
+    // @private
+    updateAllowThumbsOverlapping: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+    // @private
+    updateMinValue: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+    // @private
+    updateMaxValue: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+    // @private
+    updateIncrement: function(newValue, oldValue) {
+        if (typeof oldValue != 'undefined') {
+            this.refreshValue();
+        }
+    },
+    doSetDisabled: function(disabled) {
+        this.callParent(arguments);
+        var items = this.getItems().items,
+            ln = items.length,
+            i;
+        for (i = 0; i < ln; i++) {
+            items[i].setDisabled(disabled);
+        }
+    }
+}, function() {});
+
+/**
+ * The slider is a way to allow the user to select a value from a given numerical range. You might use it for choosing
+ * a percentage, combine two of them to get min and max values, or use three of them to specify the hex values for a
+ * color. Each slider contains a single 'thumb' that can be dragged along the slider's length to change the value.
+ * Sliders are equally useful inside {@link Ext.form.Panel forms} and standalone. Here's how to quickly create a
+ * slider in form, in this case enabling a user to choose a percentage:
+ *
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         fullscreen: true,
+ *         items: [
+ *             {
+ *                 xtype: 'sliderfield',
+ *                 label: 'Percentage',
+ *                 value: 50,
+ *                 minValue: 0,
+ *                 maxValue: 100
+ *             }
+ *         ]
+ *     });
+ *
+ * In this case we set a starting value of 50%, and defined the min and max values to be 0 and 100 respectively, giving
+ * us a percentage slider. Because this is such a common use case, the defaults for {@link #minValue} and
+ * {@link #maxValue} are already set to 0 and 100 so in the example above they could be removed.
+ *
+ * It's often useful to render sliders outside the context of a form panel too. In this example we create a slider that
+ * allows a user to choose the waist measurement of a pair of jeans. Let's say the online store we're making this for
+ * sells jeans with waist sizes from 24 inches to 60 inches in 2 inch increments - here's how we might achieve that:
+ *
+ *     @example
+ *     Ext.create('Ext.form.Panel', {
+ *         fullscreen: true,
+ *         items: [
+ *             {
+ *                 xtype: 'sliderfield',
+ *                 label: 'Waist Measurement',
+ *                 minValue: 24,
+ *                 maxValue: 60,
+ *                 increment: 2,
+ *                 value: 32
+ *             }
+ *         ]
+ *     });
+ *
+ * Now that we've got our slider, we can ask it what value it currently has and listen to events that it fires. For
+ * example, if we wanted our app to show different images for different sizes, we can listen to the {@link #change}
+ * event to be informed whenever the slider is moved:
+ *
+ *     slider.on('change', function(field, newValue) {
+ *         if (newValue[0] > 40) {
+ *             imgComponent.setSrc('large.png');
+ *         } else {
+ *             imgComponent.setSrc('small.png');
+ *         }
+ *     }, this);
+ *
+ * Here we listened to the {@link #change} event on the slider and updated the background image of an
+ * {@link Ext.Img image component} based on what size the user selected. Of course, you can use any logic inside your
+ * event listener.
+ *
+ * For more information regarding forms and fields, please review [Using Forms in Sencha Touch Guide](../../../components/forms.html)
+ */
+Ext.define('Ext.field.Slider', {
+    extend: Ext.field.Field,
+    xtype: 'sliderfield',
+    alternateClassName: 'Ext.form.Slider',
+    /**
+     * @event change
+     * Fires when an option selection has changed.
+     * @param {Ext.field.Slider} me
+     * @param {Ext.slider.Slider} sl Slider Component.
+     * @param {Ext.slider.Thumb} thumb
+     * @param {Number} newValue The new value of this thumb.
+     * @param {Number} oldValue The old value of this thumb.
+     */
+    /**
+    * @event dragstart
+    * Fires when the slider thumb starts a drag operation.
+    * @param {Ext.field.Slider} this
+    * @param {Ext.slider.Slider} sl Slider Component.
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged.
+    * @param {Array} value The start value.
+    * @param {Ext.EventObject} e
+    */
+    /**
+    * @event drag
+    * Fires when the slider thumb starts a drag operation.
+    * @param {Ext.field.Slider} this
+    * @param {Ext.slider.Slider} sl Slider Component.
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged.
+    * @param {Ext.EventObject} e
+    */
+    /**
+    * @event dragend
+    * Fires when the slider thumb ends a drag operation.
+    * @param {Ext.field.Slider} this
+    * @param {Ext.slider.Slider} sl Slider Component.
+    * @param {Ext.slider.Thumb} thumb The thumb being dragged.
+    * @param {Array} value The end value.
+    * @param {Ext.EventObject} e
+    */
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        cls: Ext.baseCSSPrefix + 'slider-field',
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        tabIndex: -1,
+        /**
+         * Will make this field read only, meaning it cannot be changed with used interaction.
+         * @cfg {Boolean} readOnly
+         * @accessor
+         */
+        readOnly: false
+    },
+    proxyConfig: {
+        /**
+         * @inheritdoc Ext.slider.Slider#increment
+         * @cfg {Number} increment
+         * @accessor
+         */
+        increment: 1,
+        /**
+         * @inheritdoc Ext.slider.Slider#value
+         * @cfg {Number/Number[]} value
+         * @accessor
+         */
+        value: 0,
+        /**
+         * @inheritdoc Ext.slider.Slider#minValue
+         * @cfg {Number} minValue
+         * @accessor
+         */
+        minValue: 0,
+        /**
+         * @inheritdoc Ext.slider.Slider#maxValue
+         * @cfg {Number} maxValue
+         * @accessor
+         */
+        maxValue: 100
+    },
+    /**
+     * @inheritdoc Ext.slider.Slider#values
+     * @cfg {Number/Number[]} values
+     */
+    constructor: function(config) {
+        config = config || {};
+        if (config.hasOwnProperty('values')) {
+            config.value = config.values;
+        }
+        this.callParent([
+            config
+        ]);
+        this.updateMultipleState();
+    },
+    // @private
+    initialize: function() {
+        this.callParent();
+        this.getComponent().on({
+            scope: this,
+            change: 'onSliderChange',
+            dragstart: 'onSliderDragStart',
+            drag: 'onSliderDrag',
+            dragend: 'onSliderDragEnd'
+        });
+    },
+    // @private
+    applyComponent: function(config) {
+        return Ext.factory(config, Ext.slider.Slider);
+    },
+    // @private
+    updateComponent: function(component) {
+        this.callSuper(arguments);
+        component.setMinValue(this.getMinValue());
+        component.setMaxValue(this.getMaxValue());
+    },
+    onSliderChange: function() {
+        this.fireEvent.apply(this, [].concat('change', this, Array.prototype.slice.call(arguments)));
+    },
+    onSliderDragStart: function() {
+        this.fireEvent.apply(this, [].concat('dragstart', this, Array.prototype.slice.call(arguments)));
+    },
+    onSliderDrag: function() {
+        this.fireEvent.apply(this, [].concat('drag', this, Array.prototype.slice.call(arguments)));
+    },
+    onSliderDragEnd: function() {
+        this.fireEvent.apply(this, [].concat('dragend', this, Array.prototype.slice.call(arguments)));
+    },
+    /**
+     * Convenience method. Calls {@link #setValue}.
+     * @param {Object} value
+     */
+    setValues: function(value) {
+        this.setValue(value);
+        this.updateMultipleState();
+    },
+    /**
+     * Convenience method. Calls {@link #getValue}
+     * @return {Object}
+     */
+    getValues: function() {
+        return this.getValue();
+    },
+    reset: function() {
+        var config = this.config,
+            initialValue = (this.config.hasOwnProperty('values')) ? config.values : config.value;
+        this.setValue(initialValue);
+    },
+    doSetDisabled: function(disabled) {
+        this.callParent(arguments);
+        this.getComponent().setDisabled(disabled);
+    },
+    updateReadOnly: function(newValue) {
+        this.getComponent().setReadOnly(newValue);
+    },
+    isDirty: function() {
+        if (this.getDisabled()) {
+            return false;
+        }
+        return this.getValue() !== this.originalValue;
+    },
+    updateMultipleState: function() {
+        var value = this.getValue();
+        if (value && value.length > 1) {
+            this.addCls(Ext.baseCSSPrefix + 'slider-multiple');
+        }
+    }
+});
+
+/**
+ * @private
+ */
+Ext.define('Ext.slider.Toggle', {
+    extend: Ext.slider.Slider,
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        baseCls: 'x-toggle',
+        /**
+         * @cfg {String} minValueCls CSS class added to the field when toggled to its minValue
+         * @accessor
+         */
+        minValueCls: 'x-toggle-off',
+        /**
+         * @cfg {String} maxValueCls CSS class added to the field when toggled to its maxValue
+         * @accessor
+         */
+        maxValueCls: 'x-toggle-on'
+    },
+    initialize: function() {
+        this.callParent();
+        this.on({
+            change: 'onChange'
+        });
+    },
+    applyMinValue: function() {
+        return 0;
+    },
+    applyMaxValue: function() {
+        return 1;
+    },
+    applyIncrement: function() {
+        return 1;
+    },
+    updateMinValueCls: function(newCls, oldCls) {
+        var element = this.element;
+        if (oldCls && element.hasCls(oldCls)) {
+            element.replaceCls(oldCls, newCls);
+        }
+    },
+    updateMaxValueCls: function(newCls, oldCls) {
+        var element = this.element;
+        if (oldCls && element.hasCls(oldCls)) {
+            element.replaceCls(oldCls, newCls);
+        }
+    },
+    setValue: function(newValue, oldValue) {
+        this.callParent(arguments);
+        this.onChange(this, this.getThumbs()[0], newValue, oldValue);
+    },
+    setIndexValue: function(index, value, animation) {
+        var oldValue = this.getValue()[index];
+        this.callParent(arguments);
+        var thumb = this.getThumb(index),
+            newValue = this.getValue()[index];
+        if (oldValue !== newValue) {
+            this.fireEvent('change', this, thumb, newValue, oldValue);
+        }
+    },
+    onChange: function(me, thumb, newValue, oldValue) {
+        var isOn = newValue > 0,
+            onCls = me.getMaxValueCls(),
+            offCls = me.getMinValueCls(),
+            element = this.element;
+        element.addCls(isOn ? onCls : offCls);
+        element.removeCls(isOn ? offCls : onCls);
+    },
+    toggle: function() {
+        var value = this.getValue();
+        this.setValue((value == 1) ? 0 : 1);
+        return this;
+    },
+    onTap: function() {
+        if (this.isDisabled() || this.getReadOnly()) {
+            return;
+        }
+        var oldValue = this.getValue(),
+            newValue = (oldValue == 1) ? 0 : 1,
+            thumb = this.getThumb(0);
+        this.setIndexValue(0, newValue, this.getAnimation());
+        this.refreshThumbConstraints(thumb);
+    }
+});
+
+/**
+ * Specialized {@link Ext.field.Slider} with a single thumb which only supports two {@link #value values}.
+ *
+ * ## Examples
+ *
+ *     @example miniphone preview
+ *     Ext.Viewport.add({
+ *         xtype: 'togglefield',
+ *         name: 'awesome',
+ *         label: 'Are you awesome?',
+ *         labelWidth: '40%'
+ *     });
+ *
+ * Having a default value of 'toggled':
+ *
+ *     @example miniphone preview
+ *     Ext.Viewport.add({
+ *         xtype: 'togglefield',
+ *         name: 'awesome',
+ *         value: 1,
+ *         label: 'Are you awesome?',
+ *         labelWidth: '40%'
+ *     });
+ *
+ * And using the {@link #value} {@link #toggle} method:
+ *
+ *     @example miniphone preview
+ *     Ext.Viewport.add([
+ *         {
+ *             xtype: 'togglefield',
+ *             name: 'awesome',
+ *             value: 1,
+ *             label: 'Are you awesome?',
+ *             labelWidth: '40%'
+ *         },
+ *         {
+ *             xtype: 'toolbar',
+ *             docked: 'top',
+ *             items: [
+ *                 {
+ *                     xtype: 'button',
+ *                     text: 'Toggle',
+ *                     flex: 1,
+ *                     handler: function() {
+ *                         Ext.ComponentQuery.query('togglefield')[0].toggle();
+ *                     }
+ *                 }
+ *             ]
+ *         }
+ *     ]);
+ *
+ * For more information regarding forms and fields, please review [Using Forms in Sencha Touch Guide](../../../components/forms.html)
+ */
+Ext.define('Ext.field.Toggle', {
+    extend: Ext.field.Slider,
+    xtype: 'togglefield',
+    alternateClassName: 'Ext.form.Toggle',
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        cls: 'x-toggle-field',
+        /* @cfg {String} labelAlign The position to render the label relative to the field input.
+         * Available options are: 'top', 'left', 'bottom' and 'right'
+         * @accessor
+         */
+        labelAlign: 'left',
+        /**
+         * @cfg {String} activeLabel The label to add to the toggle field when it is toggled on.
+         * Only available in the Blackberry theme.
+         * @accessor
+         */
+        activeLabel: null,
+        /**
+         * @cfg {String} inactiveLabel The label to add to the toggle field when it is toggled off.
+         * Only available in the Blackberry theme.
+         * @accessor
+         */
+        inactiveLabel: null
+    },
+    platformConfig: [
+        {
+            theme: [
+                'Windows'
+            ],
+            labelAlign: 'left'
+        },
+        {
+            theme: [
+                'Blackberry',
+                'Blackberry103',
+                'MountainView'
+            ],
+            activeLabel: 'On',
+            inactiveLabel: 'Off'
+        }
+    ],
+    /**
+     * @event change
+     * Fires when an option selection has changed.
+     *
+     *     Ext.Viewport.add({
+     *         xtype: 'togglefield',
+     *         label: 'Event Example',
+     *         listeners: {
+     *             change: function(field, newValue, oldValue) {
+     *                 console.log('Value of this toggle has changed:', (newValue) ? 'ON' : 'OFF');
+     *             }
+     *         }
+     *     });
+     *
+     * @param {Ext.field.Toggle} this
+     * @param {Number} newValue the new value of this thumb
+     * @param {Number} oldValue the old value of this thumb
+     */
+    /**
+    * @event dragstart
+    * @hide
+    */
+    /**
+    * @event drag
+    * @hide
+    */
+    /**
+    * @event dragend
+    * @hide
+    */
+    proxyConfig: {
+        /**
+         * @cfg {String} minValueCls See {@link Ext.slider.Toggle#minValueCls}
+         * @accessor
+         */
+        minValueCls: 'x-toggle-off',
+        /**
+         * @cfg {String} maxValueCls  See {@link Ext.slider.Toggle#maxValueCls}
+         * @accessor
+         */
+        maxValueCls: 'x-toggle-on'
+    },
+    // @private
+    applyComponent: function(config) {
+        return Ext.factory(config, Ext.slider.Toggle);
+    },
+    // @private
+    updateActiveLabel: function(newActiveLabel, oldActiveLabel) {
+        if (newActiveLabel != oldActiveLabel) {
+            this.getComponent().element.dom.setAttribute('data-activelabel', newActiveLabel);
+        }
+    },
+    // @private
+    updateInactiveLabel: function(newInactiveLabel, oldInactiveLabel) {
+        if (newInactiveLabel != oldInactiveLabel) {
+            this.getComponent().element.dom.setAttribute('data-inactivelabel', newInactiveLabel);
+        }
+    },
+    /**
+     * Sets the value of the toggle.
+     * @param {Number} newValue **1** for toggled, **0** for untoggled.
+     * @return {Object} this
+     */
+    setValue: function(newValue) {
+        if (newValue === true) {
+            newValue = 1;
+        }
+        var oldValue = this.getValue();
+        if (oldValue != newValue) {
+            this.getComponent().setValue(newValue);
+            this.fireEvent('change', this, newValue, oldValue);
+        }
+        return this;
+    },
+    getValue: function() {
+        return (this.getComponent().getValue() == 1) ? 1 : 0;
+    },
+    onSliderChange: function(component, thumb, newValue, oldValue) {
+        this.fireEvent.call(this, 'change', this, newValue, oldValue);
+    },
+    /**
+     * Toggles the value of this toggle field.
+     * @return {Object} this
+     */
+    toggle: function() {
+        // We call setValue directly so the change event can be fired
+        var value = this.getValue();
+        this.setValue((value == 1) ? 0 : 1);
+        return this;
+    },
+    onChange: function() {
+        this.setLabel((this.getValue() == 1) ? this.toggleOnLabel : this.toggleOffLabel);
+    }
 });
 
 /**
@@ -62869,52 +65828,6 @@ Ext.define('Ext.viewport.Viewport', {
  * you should **not** use {@link Ext#onReady}.
  */
 
-/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false*/
-Ext.define('Fpos.view.Main', {
-    extend: Ext.navigation.View,
-    xtype: 'main',
-    id: 'mainView',
-    requires: [],
-    config: {
-        navigationBar: {
-            items: [
-                {
-                    xtype: 'button',
-                    id: 'loginButton',
-                    text: 'Anmelden',
-                    align: 'left',
-                    action: 'switchUser',
-                    hidden: true
-                },
-                {
-                    xtype: 'button',
-                    iconCls: 'list',
-                    id: 'mainMenuButton',
-                    ui: 'plain',
-                    align: 'right',
-                    hidden: true
-                },
-                {
-                    xtype: 'button',
-                    id: 'deleteRecordButton',
-                    iconCls: 'trash',
-                    align: 'right',
-                    action: 'deleteRecord',
-                    hidden: true
-                },
-                {
-                    xtype: 'button',
-                    id: 'saveRecordButton',
-                    text: 'Speichern',
-                    align: 'right',
-                    action: 'saveRecord',
-                    hidden: true
-                }
-            ]
-        }
-    }
-});
-
 /**
  * @class Ext.ux.Promise
  * @author Vincenzo Ferrari <wilk3ert@gmail.com>
@@ -63268,249 +66181,6 @@ Ext.define('Ext.ux.Deferred', {
     }
 });
 
-/*global Ext:false, futil:false, DBUtil:false*/
-/**
- * Workarounds 
- */
-// Fix Freeze after double OK Button Click (https://www.sencha.com/forum/showthread.php?284450)
-Ext.override(Ext.MessageBox, {
-    hide: function() {
-        if (this.activeAnimation && this.activeAnimation._onEnd) {
-            this.activeAnimation._onEnd();
-        }
-        return this.callParent(arguments);
-    }
-});
-/**
- * View manager
- */
-Ext.define('Ext.form.ViewManager', {
-    alternateClassName: 'ViewManager',
-    singleton: true,
-    config: {},
-    constructor: function(config) {
-        this.initConfig(config);
-    },
-    updateButtonState: function(view, items) {
-        var saveable = false;
-        var deleteable = false;
-        if (view.saveable || view.config.saveable) {
-            saveable = true;
-            if (view.deleteable || view.config.deleteable) {
-                var record = view.getRecord();
-                if (record && !record.phantom) {
-                    deleteable = true;
-                }
-            }
-        }
-        if (items.saveButton) {
-            if (saveable) {
-                items.saveButton.show();
-            } else {
-                items.saveButton.hide();
-            }
-        }
-        if (items.deleteButton) {
-            if (deleteable) {
-                items.deleteButton.show();
-            } else {
-                items.deleteButton.hide();
-            }
-        }
-        var menu = view.menu || view.config.menu;
-        var menuSide = items.menuSide || 'left';
-        if (menu) {
-            Ext.Viewport.setMenu(menu, {
-                side: menuSide,
-                reveal: true
-            });
-            if (items.menuButton) {
-                items.menuButton.show();
-            }
-        } else if (items.menuButton) {
-            items.menuButton.hide();
-            Ext.Viewport.removeMenu(menuSide);
-        }
-    },
-    /**
-     * start loading
-     */
-    startLoading: function(msg) {
-        Ext.Viewport.setMasked({
-            xtype: 'loadmask',
-            message: msg
-        });
-    },
-    /**
-     * stop loading
-     */
-    stopLoading: function() {
-        Ext.Viewport.setMasked(false);
-    },
-    /**
-     * @return true if valid
-     */
-    validateView: function(view) {
-        var isValid = true;
-        var fields = view.query("field");
-        for (var i = 0; i < fields.length; i++) {
-            var fieldValid = true;
-            var field = fields[i];
-            var value = field.getValue();
-            // trim value
-            if (value && typeof value == "string") {
-                value = field.getValue().trim();
-            }
-            // check required
-            var empty = (value === null || value === "");
-            if (field.getRequired() && empty) {
-                fields[i].addCls('invalidField');
-                fieldValid = false;
-            } else {
-                // check number field
-                if (field.config.xtype == "numberfield") {
-                    var intValue = 0;
-                    // check minimum
-                    if (field.config.maxValue) {
-                        intValue = parseInt(value, 10);
-                        if (intValue > field.config.maxValue) {
-                            fields[i].addCls('invalidField');
-                            fieldValid = false;
-                        }
-                    }
-                    // check maximum
-                    if (field.config.minValue) {
-                        intValue = parseInt(value, 10);
-                        if (intValue < field.config.minValue) {
-                            fields[i].addCls('invalidField');
-                            fieldValid = false;
-                        }
-                    }
-                }
-                // check pattern
-                if (!empty && field.config.pattern) {
-                    var pattern = new RegExp(field.config.pattern);
-                    if (!pattern.test(value)) {
-                        fields[i].addCls('invalidField');
-                        fieldValid = false;
-                    }
-                }
-            }
-            if (fieldValid) {
-                fields[i].removeCls('invalidField');
-            } else {
-                isValid = false;
-                fields[i].addCls('invalidField');
-            }
-        }
-        return isValid;
-    },
-    /**
-     * save record
-     */
-    saveRecord: function(mainView) {
-        var self = this;
-        self.startLoading("Daten validieren...");
-        var deferred = Ext.create('Ext.ux.Deferred');
-        var promise = deferred.promise();
-        //invoke asynchronly
-        setTimeout(function() {
-            var view = mainView.getActiveItem();
-            var valid = self.validateView(view);
-            if (valid) {
-                self.startLoading("Änderungen werden gespeichert...");
-                // record var
-                var record = null;
-                // get handlers
-                var saveHandler = view.saveHandler || view.config.saveHandler;
-                var savedHandler = view.savedHandler || view.config.savedHandler;
-                // the reload handler
-                var reloadHandler = function(err) {
-                        if (err) {
-                            deferred.reject(err);
-                        } else {
-                            //check selection pattern
-                            var prevView = mainView.getPreviousItem();
-                            var popCount = 1;
-                            if (prevView && record) {
-                                // check field select record function
-                                var fieldSelectRecord = prevView.fieldSelectRecord || prevView.config.fieldSelectRecord;
-                                if (fieldSelectRecord) {
-                                    fieldSelectRecord(record);
-                                    popCount++;
-                                }
-                            }
-                            // remove view(s)
-                            mainView.pop(popCount);
-                            // call after save handler
-                            if (savedHandler) {
-                                var promiseSaveHandler = savedHandler();
-                                if (promiseSaveHandler) {
-                                    promiseSaveHandler.then(function() {
-                                        deferred.resolve();
-                                    })['catch'](function(err) {
-                                        deferred.reject(err);
-                                    });
-                                } else {
-                                    deferred.resolve();
-                                }
-                            } else {
-                                // resolve
-                                deferred.resolve();
-                            }
-                        }
-                    };
-                if (saveHandler) {
-                    var res = saveHandler(view);
-                    if (res) {
-                        res.then(function() {
-                            reloadHandler();
-                        })['catch'](reloadHandler);
-                    } else {
-                        reloadHandler();
-                    }
-                } else {
-                    // otherwise try to store record
-                    record = view.getRecord();
-                    if (record !== null) {
-                        var values = view.getValues();
-                        record.set(values);
-                        record.save({
-                            callback: function() {
-                                reloadHandler();
-                            }
-                        });
-                    } else {
-                        reloadHandler();
-                    }
-                }
-            } else {
-                deferred.reject("invalidField");
-            }
-        }, 0);
-        // return promise
-        return deferred.promise().then(function(result) {
-            self.stopLoading();
-        })['catch'](function(err) {
-            self.stopLoading();
-        });
-    },
-    handleError: function(err, alternativeError, forward) {
-        if (!err.name || !err.message) {
-            if (err.data && err.data.name && err.data.message) {
-                err = err.data;
-            } else {
-                err = alternativeError;
-            }
-        }
-        Ext.Msg.alert(err.name, err.message);
-        if (forward)  {
-            throw err;
-        }
-        
-    }
-});
-
 /*global Ext:false,PouchDB:false*,openerplib:false,futil:false,URI:false*/
 Ext.define('Ext.proxy.PouchDBUtil', {
     alternateClassName: 'DBUtil',
@@ -63548,55 +66218,134 @@ Ext.define('Ext.proxy.PouchDBUtil', {
         var name = 'index';
         var keys = [];
         var keyValues = [];
-        var tupl, op, value, field;
-        var foundKey;
-        for (var i = 0; i < domain.length; i++) {
+        var tupl, op, value, field, i;
+        var onlyKeys = true;
+        // check if only keys     
+        for (i = 0; i < domain.length && onlyKeys; i++) {
             tupl = domain[i];
-            foundKey = false;
             if (tupl.constructor === Array && tupl.length == 3) {
                 field = tupl[0];
                 op = tupl[1];
                 value = tupl[2];
-                name = name + "_" + field;
                 if (op === '=') {
+                    name = name + "_" + field;
+                    // field or expression
+                    if (!field.startsWith("(")) {
+                        // it's an field
+                        field = "doc." + field;
+                    }
                     keys.push(field);
                     keyValues.push(value || null);
-                    foundKey = true;
+                } else {
+                    onlyKeys = false;
                 }
             }
-            if (!foundKey) {
+        }
+        // if only keys
+        // create index
+        if (onlyKeys) {
+            if (keys.length === 1) {
+                return {
+                    name: name,
+                    key: keyValues[0] || null,
+                    index: {
+                        map: "function(doc) { \n" + "  var val = " + keys[0] + "; \n" + "  if (val)  { \n" + "    emit(val); \n" + "  } else { \n" + "    emit(null); " + "  }" + "}"
+                    }
+                };
+            } else if (keys.length > 0) {
+                var fct = "function(doc) { \n" + "  var key = []; \n" + "  var val;\n";
+                for (var keyI = 0; keyI < keys.length; keyI++) {
+                    fct += "  val = " + keys[keyI] + "; \n" + "  if (val) { \n" + "    key.push(val); \n" + "  } else { \n" + "    key.push(null); \n" + "  } \n" + "  \n";
+                }
+                fct += "  emit(key);\n";
+                fct += "}\n";
+                return {
+                    name: name,
+                    key: keyValues,
+                    index: {
+                        map: fct
+                    }
+                };
+            }
+        }
+        /*
+      else {
+          // TODO TEST !!!
+          
+          // build search
+          var search = [];
+          var paramIndex = 0;
+          
+          // link
+          var link;
+          var linkStack = [];
+          var stmtCount = 0;
+          
+          // check if only keys     
+          for (i=0; i<domain.length;i++) {
+              tupl = domain[i];
+              
+              if ( tupl.constructor === Array && tupl.length == 3) {
+                  // get link
+                  if ( linkStack.length > 0 ) {
+                      link = linkStack.pop();
+                  } else {
+                      link = "&&";
+                  }
+              
+                  // get values
+                  field = tupl[0];
+                  op = tupl[1];
+                  value = tupl[2];   
                 
-                continue;
-            }
+                  // start new statement
+                  if ( search.length > 0 ) {
+                      search.push(link);
+                  } 
+                  search.push("(");
+                  stmtCount++;
+                  
+                  // evalute operator
+                  if ( op === '=') {     
+                      search.push("doc." + field + " === " + JSON.stringify(value));
+                      //keys.push(value[field]);
+                  } else if (op === 'ilike' ) {
+                      search.push("doc." + field + ".lower().indexOf(" + JSON.stringify(value.lower()) +") >= 0");
+                      //keys.push(value[field]);
+                  } else {
+                      // operator not found
+                      search.push("1==1");
+                  }
+              } else if ( tupl == '|' )  {
+                  linkStack.push('||');
+              } else if ( tupl == '&') {
+                  linkStack.push('&&');
+              }
+          }
+          
+          if ( stmtCount > 0 ) {
+              for ( i=0; i<stmtCount; i++ ) {
+                    search.push(")");
+              }
+              
+              var condition = search.join(" "); 
+              var fun = new Function('doc',
+                     "if " + condition + " {\n" +
+                     "  emit(doc._id)\n" +
+                     "}\n"
+                    );
+                     
+              return {
+                  name: 'search',
+                  fun: fun                 
+              };
         }
-        if (keys.length === 1) {
-            return {
-                name: name,
-                key: keyValues[0] || null,
-                index: {
-                    map: "function(doc) { \n" + "  if (doc." + keys[0] + ")  { \n" + "    emit(doc." + keys[0] + "); \n" + "  } else { \n" + "    emit(null); " + "  }" + "}"
-                }
-            };
-        } else if (keys.length > 0) {
-            var fct = "function(doc) { \n" + "  var key = [];\n";
-            for (var keyI = 0; keyI < keys.length; keyI++) {
-                fct += "  if (doc." + keys[keyI] + ")  { \n" + "    key.push(doc." + keys[keyI] + "); \n" + "  } else { \n" + "    key.push(null); \n" + "  } \n" + "  \n";
-            }
-            fct += "  emit(key);\n";
-            fct += "}\n";
-            return {
-                name: name,
-                key: keyValues,
-                index: {
-                    map: fct
-                }
-            };
-        }
+      }*/
         return null;
     },
     search: function(db, domain, params, callback) {
         var self = this;
-        var view = self.buildView(domain);
+        var view = params.view || self.buildView(domain);
         var deferred = null;
         if (!callback) {
             deferred = Ext.create('Ext.ux.Deferred');
@@ -63611,35 +66360,44 @@ Ext.define('Ext.proxy.PouchDBUtil', {
             };
         }
         if (view !== null) {
-            params.key = view.key;
-            db.query(view.name, params, function(err, res) {
-                if (!err) {
-                    // no error result was successfull
-                    if (callback) {
-                        callback(err, res);
-                    }
-                } else {
-                    //create view doc
-                    var doc = {
-                            _id: "_design/" + view.name,
-                            views: {}
-                        };
-                    doc.views[view.name] = view.index;
-                    //put doc
-                    db.put(doc, function(err, res) {
-                        if (err) {
-                            // error on create index
-                            if (callback) {
-                                callback(err, null);
-                            }
-                        } else {
-                            // query again
-                            db.query(view.name, params, callback);
+            if (view.name == 'search') {
+                // default query
+                db.query(view.fun, params, callback);
+            } else {
+                // index based query
+                // copy params
+                params = JSON.parse(JSON.stringify(params));
+                params.key = view.key;
+                db.query(view.name, params, function(err, res) {
+                    if (!err) {
+                        // no error result was successfull
+                        if (callback) {
+                            callback(err, res);
                         }
-                    });
-                }
-            });
+                    } else {
+                        //create view doc
+                        var doc = {
+                                _id: "_design/" + view.name,
+                                views: {}
+                            };
+                        doc.views[view.name] = view.index;
+                        //put doc
+                        db.put(doc, function(err, res) {
+                            if (err) {
+                                // error on create index
+                                if (callback) {
+                                    callback(err, null);
+                                }
+                            } else {
+                                // query again
+                                db.query(view.name, params, callback);
+                            }
+                        });
+                    }
+                });
+            }
         } else {
+            // query all
             db.allDocs(params, callback);
         }
         if (deferred)  {
@@ -63831,21 +66589,1103 @@ Ext.define('Ext.proxy.PouchDBUtil', {
             // get couchdb link
             var password = client.getClient()._password;
             var target_url = URI(couchdb_config.url).username(couchdb_config.user).password(password).toString() + couchdb_config.db;
-            // sync
-            db.sync(target_url).then(function(sync_res) {
-                // invoke after sync
-                client.invoke("jdoc.jdoc", "jdoc_couchdb_after", [
-                    sync_config
-                ]).then(function(couchdb_config) {
-                    deferred.resolve(sync_res);
-                })['catch'](function(err) {
-                    deferred.reject(err);
-                });
-            })['catch'](function(err) {
+            // sync with couchdb
+            db.sync(target_url)['catch'](function(err) {
                 deferred.reject(err);
+            }).then(function(sync_res) {
+                // invoke database sync
+                client.invoke("jdoc.jdoc", "jdoc_couchdb_sync", [
+                    sync_config
+                ])['catch'](function(err) {
+                    deferred.reject(err);
+                }).then(function(couchdb_config) {
+                    // sync again with couchdb                            
+                    db.sync(target_url)['catch'](function(err) {
+                        deferred.reject(err);
+                    }).then(function(sync_res) {
+                        // finish database sync
+                        client.invoke("jdoc.jdoc", "jdoc_couchdb_after", [
+                            sync_config
+                        ])['catch'](function(err) {
+                            deferred.reject(err);
+                        }).then(function(couchdb_config) {
+                            deferred.resolve(sync_res);
+                        });
+                    });
+                });
             });
         });
         return deferred.promise();
+    }
+});
+
+/*global Ext:false,PouchDB:false,DBUtil:false*/
+Ext.define('Ext.data.reader.PouchDB', {
+    extend: Ext.data.reader.Reader,
+    alternateClassName: 'Ext.data.PouchDBReader',
+    alias: 'reader.pouchdb'
+});
+/*
+    read: function(response) {
+        var res = this.callParent(arguments);
+        return res;
+    }*/
+/*
+Ext.define('Ext.data.identifier.LocalUuid', {
+    extend: 'Ext.data.identifier.Uuid',
+    alias: 'identifier.localuuid',
+    
+    generate: function() {
+        debugger;
+        var self = this;
+        var res = '_local/' + self.callParent(arguments);
+        return res;
+    }
+});*/
+Ext.define('Ext.proxy.PouchDB', {
+    extend: Ext.data.proxy.Proxy,
+    alias: 'proxy.pouchdb',
+    config: {
+        /**
+         * @cfg {Object} reader
+         * @hide
+         */
+        reader: "pouchdb",
+        /**
+         * @cfg {Object} writer
+         * @hide
+         */
+        writer: null,
+        /**
+         * @cfg {String} database
+         * Database name to access tables from
+         */
+        database: null,
+        /**
+         * @cfg {List} domain 
+         * Tuple list of filters
+         */
+        domain: null,
+        /**
+         * @cfg  {List} default Domain
+         * Default Domain is built from resModel + domain, and is used
+         * for new documents and search
+         */
+        defaultDomain: null,
+        /**
+         * @cfg {String} view
+         * View name for synchronisation
+         */
+        view: null,
+        /**
+         * @cfg {String} model name
+         */
+        resModel: null,
+        /**
+         * @cfg
+         * Date Format
+         */
+        defaultDateFormat: 'Y-m-d H:i:s'
+    },
+    /**
+     * Creates the proxy, throws an error if local storage is not supported in the current browser.
+     * @param {Object} config (optional) Config object.
+     */
+    constructor: function(config) {
+        var self = this;
+        self.resolveFields = null;
+        self.callParent(arguments);
+    },
+    applyResModel: function(resModel) {
+        var self = this;
+        if (resModel) {
+            var defaultDomain = [
+                    [
+                        "fdoo__ir_model",
+                        "=",
+                        resModel
+                    ]
+                ];
+            // add domain values
+            var domain = self.getDomain();
+            if (domain) {
+                Ext.each(domain, function(val) {
+                    defaultDomain.push(val);
+                });
+            }
+            self.setDefaultDomain(defaultDomain);
+        } else {
+            self.setDefaultDomain(self.getDomain());
+        }
+        return resModel;
+    },
+    /**
+     * @private
+     * Sets Exception to operation
+     */
+    setException: function(operation, err) {
+        if (err) {
+            operation.exception = err;
+            this.fireEvent('exception', this, operation);
+        }
+    },
+    /**
+     * @private
+     */
+    setCompleted: function(operation) {
+        operation.setCompleted();
+        if (!operation.exception) {
+            operation.setSuccessful();
+        }
+    },
+    /**
+     * @private
+     * Build Domain Query
+     */
+    buildDomainQuery: function(domain, values, nobuild, override) {
+        if (!domain) {
+            return null;
+        }
+        var i, value, field, stmt, op;
+        var ifstmt = '';
+        var ifstmt_op = '&&';
+        var defaults = {};
+        for (i = 0; i < domain.length; i++) {
+            var tupl = domain[i];
+            stmt = null;
+            if (tupl.constructor === Array && tupl.length == 3) {
+                field = tupl[0];
+                op = tupl[1];
+                value = tupl[2];
+                if (op === '=') {
+                    if (value === null || typeof value === 'string') {
+                        op = '===';
+                    } else {
+                        op = '==';
+                    }
+                    if (values) {
+                        if (override || !values.hasOwnProperty(field) || values[field] === undefined) {
+                            values[field] = value;
+                        }
+                    }
+                } else if (op === 'like') {
+                    if (value === null) {
+                        op = '===';
+                    } else if (typeof value === 'string') {
+                        var tokens = value.split(/[\s, ]+/);
+                        var filter = [];
+                        for (var tokI = 0; tokI < tokens.length; tokI++) {
+                            filter.push("doc." + field + ".toString().toLowerCase().indexOf('" + tokens[tokI].toLowerCase() + "') > -1");
+                        }
+                        stmt = 'doc.' + field + ' && (' + filter.join(' || ') + ')';
+                    } else {
+                        stmt = '';
+                    }
+                }
+                if (stmt === null) {
+                    if (value === undefined || value === null) {
+                        value = "null";
+                    } else if (typeof value === 'string') {
+                        value = "'" + value + "'";
+                    } else {
+                        value = value.toString();
+                    }
+                    stmt = 'doc.' + field + ' ' + op + ' ' + value;
+                }
+            }
+            if (stmt !== null && stmt.length > 0) {
+                if (ifstmt.length > 0) {
+                    ifstmt += ' ';
+                    ifstmt += ifstmt_op;
+                    ifstmt += ' ';
+                }
+                ifstmt += '(';
+                ifstmt += stmt;
+                ifstmt += ')';
+            }
+        }
+        if (ifstmt.length === 0 || nobuild) {
+            return null;
+        }
+        return Ext.functionFactory('doc', 'if ( ' + ifstmt + ' ) emit(doc);');
+    },
+    /**
+     * @private
+     * add Domain as Default Values 
+     */
+    addDomainAsDefaultValues: function(domain, values) {
+        this.buildDomainQuery(domain, values, true, false);
+    },
+    /**
+     * @public
+     * get defaults
+     */
+    getDefaults: function() {
+        var res = {};
+        this.buildDomainQuery(this.getDomain(), res, true, false);
+        return res;
+    },
+    /**
+     * @private
+     * join domain
+     */
+    joinDomain: function(result, domain) {
+        if (domain) {
+            if (!result) {
+                result = domain;
+            } else {
+                result = result.concat(domain);
+            }
+        }
+        return result;
+    },
+    writeDate: function(field, date) {
+        if (Ext.isEmpty(date)) {
+            return null;
+        }
+        var dateFormat = field.getDateFormat() || this.getDefaultDateFormat();
+        switch (dateFormat) {
+            case 'timestamp':
+                return date.getTime() / 1000;
+            case 'time':
+                return date.getTime();
+            default:
+                return Ext.Date.format(date, dateFormat);
+        }
+    },
+    readDate: function(field, date) {
+        if (Ext.isEmpty(date)) {
+            return null;
+        }
+        var dateFormat = field.getDateFormat() || this.getDefaultDateFormat();
+        switch (dateFormat) {
+            case 'timestamp':
+                return new Date(date * 1000);
+            case 'time':
+                return new Date(date);
+            default:
+                return Ext.isDate(date) ? date : Ext.Date.parse(date, dateFormat);
+        }
+    },
+    /**
+     * @private
+     * @param {Object} data
+     * 
+     * create/update model/record 
+     * @return Record
+     */
+    createRecord: function(doc, record) {
+        var Model = this.getModel();
+        var fields = Model.getFields().items;
+        var length = fields.length;
+        var data = {};
+        var i, field, name, value;
+        if (!doc) {
+            return undefined;
+        }
+        for (i = 0; i < length; i++) {
+            field = fields[i];
+            name = field.getName();
+            value = doc[name];
+            if (typeof field.getDecode() == 'function') {
+                data[name] = field.getDecode()(value);
+            } else {
+                if (field.getType().type == 'date' && Ext.isDate(value)) {
+                    data[name] = this.writeDate(field, value);
+                } else {
+                    data[name] = value;
+                }
+            }
+        }
+        if (!record) {
+            var model = new Model(data, doc._id, doc);
+            return model;
+        } else {
+            record.setData(data);
+            record.raw = doc;
+            return record;
+        }
+    },
+    /**
+     * @return get fields to resolve
+     */
+    getResolveFields: function() {
+        var self = this;
+        if (self.resolveFields === null) {
+            self.resolveFields = [];
+            var fields = this.getModel().getFields().items;
+            Ext.each(fields, function(field) {
+                var resModel = field.resModel || field.config.resModel;
+                var foreignKey = field.foreignKey || field.config.foreignKey;
+                if (resModel) {
+                    self.resolveFields.push({
+                        "resModel": resModel,
+                        "name": field.getName(),
+                        "foreignKey": foreignKey
+                    });
+                }
+            });
+        }
+        return self.resolveFields;
+    },
+    /**
+     * @private 
+     * @param {Object} record
+     * create Document
+     * @return Document
+     */
+    createDocument: function(record, defaults) {
+        var model = this.getModel();
+        var fields = model.getFields().items;
+        var length = fields.length;
+        var data = record.data;
+        var doc = {};
+        // set defaults
+        if (defaults) {
+            for (var key in defaults) {
+                doc[key] = defaults[key];
+            }
+        }
+        // set fields        
+        var i, field, name, value;
+        for (i = 0; i < length; i++) {
+            field = fields[i];
+            name = field.getName();
+            value = data[name];
+            // check for undefined and persist
+            if (value === undefined || field.getPersist() === false) {
+                if (doc[name]) {
+                    delete doc[name];
+                }
+                
+                continue;
+            }
+            if (typeof field.getDecode() == 'function') {
+                doc[name] = field.getEncode()(value, record);
+            } else {
+                if (field.getType().type == 'date' && Ext.isDate(value)) {
+                    doc[name] = this.writeDate(field, value);
+                } else {
+                    doc[name] = value;
+                }
+            }
+        }
+        doc._id = record.getId();
+        return doc;
+    },
+    // callback helper
+    tryCallback: function(result, callback, scope, err) {
+        if (typeof callback == 'function') {
+            if (err) {
+                callback.call(scope || this, result, err);
+            } else {
+                callback.call(scope || this, result);
+            }
+        }
+    },
+    // read document callback
+    readDocument: function(uuid, callback) {
+        var self = this;
+        var db = DBUtil.getDB(self.getDatabase());
+        db.get(uuid).then(function(doc) {
+            var record = self.createRecord(doc);
+            callback(null, record);
+        })['catch'](function(err) {
+            callback(err);
+        });
+    },
+    // read function
+    read: function(operation, callback, scope) {
+        var self = this;
+        var db = DBUtil.getDB(self.getDatabase());
+        var param;
+        var params = {
+                'include_docs': true
+            };
+        var filter_domain = self.getDefaultDomain();
+        // get sorters from store
+        var defaultSorters = null;
+        var defaultFilters = null;
+        if (scope instanceof Ext.data.Store) {
+            defaultSorters = scope.getSorters();
+            defaultFilters = scope.getFilters();
+        }
+        // set sorters
+        var sorters = operation.getSorters() || defaultSorters;
+        var filters = operation.getFilters() || defaultFilters;
+        // resolve fields
+        var resolveFields = self.getResolveFields();
+        // PREPARE PARAMS                    
+        var operation_params = operation.getParams();
+        if (operation_params) {
+            for (param in operation_params) {
+                if (operation_params.hasOwnProperty(param)) {
+                    if (param === 'domain') {
+                        filter_domain = self.joinDomain(filter_domain, operation_params.domain);
+                    } else {
+                        params[param] = operation_params[param];
+                    }
+                }
+            }
+        }
+        // START OPERATION
+        operation.setStarted();
+        // RESULT
+        var resultCallback = function(err, response) {
+                var records = [];
+                var rows = [];
+                var queryCount = 1;
+                // COMPLETE FUNCTION
+                var complete = function() {
+                        if (--queryCount === 0) {
+                            // create records
+                            Ext.each(rows, function(row) {
+                                records.push(self.createRecord(row.doc));
+                            });
+                            // handle filter and sorters
+                            if (records.length > 0) {
+                                var hasFilters = filters && filters.length;
+                                var hasSorters = sorters && sorters.length;
+                                if (hasFilters || hasSorters) {
+                                    var filtered = Ext.create('Ext.util.Collection', function(record) {
+                                            return record.getId();
+                                        });
+                                    // add filters
+                                    if (hasFilters) {
+                                        filtered.setFilterRoot('data');
+                                        filtered.addFilters(filters);
+                                    }
+                                    // add sorters
+                                    if (hasSorters) {
+                                        filtered.setSortRoot('data');
+                                        filtered.addSorters(sorters);
+                                    }
+                                    //filter and sort
+                                    filtered.addAll(records);
+                                    records = filtered.items.slice();
+                                }
+                            }
+                            // set completed and records
+                            self.setCompleted(operation);
+                            operation.setRecords(records);
+                            //CALLBACK
+                            self.tryCallback(operation, callback, scope, err);
+                        }
+                    };
+                if (err) {
+                    self.setException(operation, err);
+                } else {
+                    // GET ROWS
+                    rows = response.rows;
+                    // RESOLVE FIELDS
+                    if (resolveFields.length > 0) {
+                        Ext.each(rows, function(row) {
+                            Ext.each(resolveFields, function(resolve) {
+                                var foreign_uuid = row.doc[resolve.foreignKey];
+                                if (foreign_uuid) {
+                                    //NEW QUERY                                
+                                    queryCount++;
+                                    db.get(foreign_uuid, function(err, doc) {
+                                        if (err === null) {
+                                            row.doc[resolve.name] = doc;
+                                        }
+                                        //COMPLETE                                 
+                                        complete();
+                                    });
+                                }
+                            });
+                        });
+                    }
+                }
+                // COMPLETE            
+                complete();
+            };
+        // QUERY
+        DBUtil.search(db, filter_domain, params, resultCallback);
+    },
+    // update function
+    update: function(operation, callback, scope) {
+        var self = this;
+        var db = DBUtil.getDB(self.getDatabase());
+        operation.setStarted();
+        var records = operation.getRecords();
+        var operationCount = records.length + 1;
+        var resolveFields = self.getResolveFields();
+        Ext.each(operation.getRecords(), function(record) {
+            //get current values          
+            db.get(record.getId(), function(err, doc) {
+                // get defaults
+                var defaults;
+                var resolvedValues = [];
+                if (!err) {
+                    defaults = doc;
+                } else {
+                    defaults = {};
+                    self.addDomainAsDefaultValues(self.getDefaultDomain(), defaults);
+                }
+                //create next doc
+                var nextDoc = self.createDocument(record, defaults);
+                db.put(nextDoc, function(err, response) {
+                    var finishUpdate = function() {
+                            // set error or null
+                            self.setException(operation, err);
+                            if (!err) {
+                                // update current record
+                                nextDoc._rev = response.rev;
+                                self.createRecord(nextDoc, record);
+                                // fire listener for resolved values
+                                Ext.each(resolvedValues, function(field) {
+                                    record.set(field, record.get(field));
+                                });
+                                record.commit();
+                            }
+                            //check if finished
+                            if (--operationCount <= 0) {
+                                self.setCompleted(operation);
+                                self.tryCallback(operation, callback, scope);
+                            }
+                        };
+                    // check for associations update
+                    if (!err && resolveFields.length > 0) {
+                        var assocQueryCount = 1;
+                        Ext.each(resolveFields, function(resolve) {
+                            // foreign uuid
+                            var foreign_uuid = nextDoc[resolve.foreignKey];
+                            // check current value
+                            var curValue = record.get(resolve.name);
+                            if (foreign_uuid) {
+                                //NEW QUERY     
+                                if ((!curValue || curValue._id != foreign_uuid)) {
+                                    assocQueryCount++;
+                                    db.get(foreign_uuid, function(err, doc) {
+                                        if (err === null) {
+                                            nextDoc[resolve.name] = doc;
+                                            resolvedValues.push(resolve.name);
+                                        }
+                                        if (--assocQueryCount <= 0) {
+                                            finishUpdate();
+                                        }
+                                    });
+                                } else {
+                                    nextDoc[resolve.name] = curValue;
+                                }
+                            } else {
+                                if (curValue)  {
+                                    resolvedValues.push(resolve.name);
+                                }
+                                
+                                nextDoc[resolve.name] = null;
+                            }
+                        });
+                        if (--assocQueryCount <= 0) {
+                            finishUpdate();
+                        }
+                    } else {
+                        finishUpdate();
+                    }
+                });
+            });
+        });
+        if (--operationCount <= 0) {
+            self.setCompleted(operation);
+            self.tryCallback(operation, callback, scope);
+        }
+    },
+    // create function is the same as update
+    create: function(operation, callback, scope) {
+        return this.update(operation, callback, scope);
+    },
+    // destroy
+    destroy: function(operation, callback, scope) {
+        var self = this;
+        var db = DBUtil.getDB(self.getDatabase());
+        operation.setStarted();
+        var records = operation.getRecords();
+        var operationCount = records.length + 1;
+        Ext.each(operation.getRecords(), function(record) {
+            db.remove(record.raw, function(err, response) {
+                self.setException(operation, err);
+                //check if finished
+                if (--operationCount <= 0) {
+                    self.setCompleted(operation);
+                    self.tryCallback(operation, callback, scope);
+                }
+            });
+        });
+        if (--operationCount <= 0) {
+            self.setCompleted(operation);
+            self.tryCallback(operation, callback, scope);
+        }
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.Category', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'name'
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            resModel: 'pos.category'
+        }
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.Product', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'name',
+            'description',
+            'description_sale',
+            'uom_id',
+            'code',
+            'ean13',
+            'image_small',
+            'pos_categ_id',
+            'income_pdt',
+            'expense_pdt',
+            'to_weight',
+            'taxes_id',
+            'price',
+            'brutto_price'
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            resModel: 'product.product'
+        }
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.PosOrder', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'fpos_user_id',
+            'user_id',
+            'partner_id',
+            'date',
+            'seq',
+            'name',
+            'ref',
+            'tax_ids',
+            'payment_ids',
+            'state',
+            'note',
+            'send_invoice',
+            'amount_tax',
+            'amount_total',
+            {
+                name: 'partner',
+                foreignKey: 'partner_id',
+                resModel: 'res.partner',
+                persist: false
+            }
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            resModel: 'fpos.order'
+        }
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.PosLine', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'order_id',
+            'name',
+            'product_id',
+            'uom_id',
+            'tax_ids',
+            'brutto_price',
+            'qty',
+            'subtotal_incl',
+            'discount',
+            'notice',
+            'sequence'
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            resModel: 'fpos.order.line'
+        }
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.AccountTax', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'name',
+            'amount',
+            'type',
+            'price_include',
+            'sequence'
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            resModel: 'account.tax'
+        }
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.ProductUnit', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'name'
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            resModel: 'product.uom'
+        }
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.model.Partner', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'name',
+            'email',
+            'mobile',
+            'phone',
+            'street',
+            'sreet2',
+            'zip',
+            'city',
+            'fax',
+            'customer'
+        ],
+        identifier: 'uuid',
+        proxy: {
+            type: 'pouchdb',
+            database: 'fpos',
+            domain: [
+                [
+                    'customer',
+                    '=',
+                    true
+                ]
+            ],
+            resModel: 'res.partner'
+        },
+        deleteChecks: [
+            {
+                field: 'partner_id',
+                message: 'Ein verwendeter Partner kann nicht gelöscht werden!'
+            }
+        ]
+    }
+});
+
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false*/
+Ext.define('Fpos.view.Main', {
+    extend: Ext.navigation.View,
+    xtype: 'main',
+    id: 'mainView',
+    requires: [],
+    config: {
+        navigationBar: {
+            items: [
+                {
+                    xtype: 'button',
+                    id: 'loginButton',
+                    text: 'Anmelden',
+                    align: 'left',
+                    action: 'switchUser',
+                    hidden: true
+                },
+                {
+                    xtype: 'button',
+                    iconCls: 'list',
+                    id: 'mainMenuButton',
+                    ui: 'plain',
+                    align: 'right',
+                    hidden: true
+                },
+                {
+                    xtype: 'button',
+                    id: 'deleteRecordButton',
+                    iconCls: 'trash',
+                    align: 'right',
+                    action: 'deleteRecord',
+                    hidden: true
+                },
+                {
+                    xtype: 'button',
+                    id: 'saveRecordButton',
+                    text: 'Speichern',
+                    align: 'right',
+                    action: 'saveRecord',
+                    hidden: true
+                }
+            ]
+        }
+    }
+});
+
+/*global Ext:false, futil:false, DBUtil:false*/
+/**
+ * Workarounds 
+ */
+// Fix Freeze after double OK Button Click (https://www.sencha.com/forum/showthread.php?284450)
+Ext.override(Ext.MessageBox, {
+    hide: function() {
+        if (this.activeAnimation && this.activeAnimation._onEnd) {
+            this.activeAnimation._onEnd();
+        }
+        return this.callParent(arguments);
+    }
+});
+/**
+ * View manager
+ */
+Ext.define('Ext.form.ViewManager', {
+    alternateClassName: 'ViewManager',
+    singleton: true,
+    config: {},
+    constructor: function(config) {
+        this.initConfig(config);
+    },
+    updateButtonState: function(view, items) {
+        var saveable = false;
+        var deleteable = false;
+        if (view.saveable || view.config.saveable) {
+            saveable = true;
+            if (view.deleteable || view.config.deleteable) {
+                var record = view.getRecord();
+                if (record && !record.phantom) {
+                    deleteable = true;
+                }
+            }
+        }
+        if (items.saveButton) {
+            if (saveable) {
+                items.saveButton.show();
+            } else {
+                items.saveButton.hide();
+            }
+        }
+        if (items.deleteButton) {
+            if (deleteable) {
+                items.deleteButton.show();
+            } else {
+                items.deleteButton.hide();
+            }
+        }
+        var menu = view.menu || view.config.menu;
+        var menuSide = items.menuSide || 'left';
+        if (menu) {
+            Ext.Viewport.setMenu(menu, {
+                side: menuSide,
+                reveal: true
+            });
+            if (items.menuButton) {
+                items.menuButton.show();
+            }
+        } else if (items.menuButton) {
+            items.menuButton.hide();
+            Ext.Viewport.removeMenu(menuSide);
+        }
+    },
+    /**
+     * start loading
+     */
+    startLoading: function(msg) {
+        Ext.Viewport.setMasked({
+            xtype: 'loadmask',
+            message: msg
+        });
+    },
+    /**
+     * stop loading
+     */
+    stopLoading: function() {
+        Ext.Viewport.setMasked(false);
+    },
+    /**
+     * @return true if valid
+     */
+    validateView: function(view) {
+        var isValid = true;
+        var fields = view.query("field");
+        for (var i = 0; i < fields.length; i++) {
+            var fieldValid = true;
+            var field = fields[i];
+            var value = field.getValue();
+            // trim value
+            if (value && typeof value == "string") {
+                value = field.getValue().trim();
+            }
+            // check required
+            var empty = (value === null || value === "");
+            if (field.getRequired() && empty) {
+                fields[i].addCls('invalidField');
+                fieldValid = false;
+            } else {
+                // check number field
+                if (field.config.xtype == "numberfield") {
+                    var intValue = 0;
+                    // check minimum
+                    if (field.config.maxValue) {
+                        intValue = parseInt(value, 10);
+                        if (intValue > field.config.maxValue) {
+                            fields[i].addCls('invalidField');
+                            fieldValid = false;
+                        }
+                    }
+                    // check maximum
+                    if (field.config.minValue) {
+                        intValue = parseInt(value, 10);
+                        if (intValue < field.config.minValue) {
+                            fields[i].addCls('invalidField');
+                            fieldValid = false;
+                        }
+                    }
+                }
+                // check pattern
+                if (!empty && field.config.pattern) {
+                    var pattern = new RegExp(field.config.pattern);
+                    if (!pattern.test(value)) {
+                        fields[i].addCls('invalidField');
+                        fieldValid = false;
+                    }
+                }
+            }
+            if (fieldValid) {
+                fields[i].removeCls('invalidField');
+            } else {
+                isValid = false;
+                fields[i].addCls('invalidField');
+            }
+        }
+        return isValid;
+    },
+    /**
+     * save record
+     */
+    saveRecord: function(mainView) {
+        var self = this;
+        self.startLoading("Daten validieren...");
+        var deferred = Ext.create('Ext.ux.Deferred');
+        //invoke asynchronly
+        setTimeout(function() {
+            var view = mainView.getActiveItem();
+            var valid = self.validateView(view);
+            if (valid) {
+                self.startLoading("Änderungen werden gespeichert...");
+                // record var
+                var record = null;
+                // get handlers
+                var saveHandler = view.saveHandler || view.config.saveHandler;
+                var savedHandler = view.savedHandler || view.config.savedHandler;
+                // the reload handler
+                var reloadHandler = function(err) {
+                        if (err) {
+                            deferred.reject(err);
+                        } else {
+                            //check selection pattern
+                            var prevView = mainView.getPreviousItem();
+                            var popCount = 1;
+                            if (prevView && record) {
+                                // check field select record function
+                                var fieldSelectRecord = prevView.fieldSelectRecord || prevView.config.fieldSelectRecord;
+                                if (fieldSelectRecord) {
+                                    fieldSelectRecord(record);
+                                    popCount++;
+                                }
+                            }
+                            // remove view(s)
+                            mainView.pop(popCount);
+                            // call after save handler
+                            if (savedHandler) {
+                                var promiseSaveHandler = savedHandler();
+                                if (promiseSaveHandler) {
+                                    promiseSaveHandler.then(function() {
+                                        deferred.resolve();
+                                    })['catch'](function(err) {
+                                        deferred.reject(err);
+                                    });
+                                } else {
+                                    deferred.resolve();
+                                }
+                            } else {
+                                // resolve
+                                deferred.resolve();
+                            }
+                        }
+                    };
+                if (saveHandler) {
+                    var res = saveHandler(view);
+                    if (res) {
+                        res.then(function() {
+                            reloadHandler();
+                        })['catch'](reloadHandler);
+                    } else {
+                        reloadHandler();
+                    }
+                } else {
+                    // otherwise try to store record
+                    record = view.getRecord();
+                    if (record !== null) {
+                        var values = view.getValues();
+                        // convert records to id
+                        record.set(values);
+                        record.save({
+                            callback: function() {
+                                reloadHandler();
+                            }
+                        });
+                    } else {
+                        reloadHandler();
+                    }
+                }
+            } else {
+                deferred.reject();
+            }
+        }, 0);
+        // return promise
+        var promise = deferred.promise();
+        return promise['catch'](function(err) {
+            self.stopLoading();
+        }).then(function(result) {
+            self.stopLoading();
+        });
+    },
+    handleError: function(err, alternativeError, forward) {
+        if (!err.name || !err.message) {
+            if (err.data && err.data.name && err.data.message) {
+                err = err.data;
+            } else {
+                err = alternativeError;
+            }
+        }
+        Ext.Msg.alert(err.name, err.message);
+        if (forward)  {
+            throw err;
+        }
+        
     }
 });
 
@@ -64014,7 +67854,10 @@ Ext.define('Fpos.Config', {
         settings: null,
         user: null,
         profile: null,
+        currency: "€",
         admin: false,
+        decimals: 2,
+        qtyDecimals: 3,
         hwStatus: {
             err: null
         },
@@ -64034,7 +67877,7 @@ Ext.define('Fpos.Config', {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         // check for poshw plugin
-        if (window.PosHw) {
+        if (window.PosHw && !self.getHwStatusId()) {
             window.PosHw.getStatus(function(hwstatus) {
                 // set first status            
                 self.setHwStatus(hwstatus);
@@ -64136,35 +67979,49 @@ Ext.define('Fpos.view.ConfigView', {
                         name: 'host',
                         label: 'Server',
                         placeHolder: 'fpos.oerp.at',
-                        required: true
+                        required: true,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'port',
                         label: 'Port',
                         placeHolder: '443',
-                        required: true
+                        required: true,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'database',
                         label: 'Datenbank',
                         placeHolder: 'odoo_fpos_xxx',
-                        required: true
+                        required: true,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'login',
                         label: 'Benutzer',
                         required: true,
-                        autocomplete: false
+                        autocomplete: false,
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'passwordfield',
                         name: 'password',
                         label: 'Passwort',
                         required: true,
-                        autocomplete: false
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     }
                 ]
             },
@@ -64178,7 +68035,10 @@ Ext.define('Fpos.view.ConfigView', {
                         placeHolder: '0000',
                         label: 'PIN',
                         required: true,
-                        pattern: '[0-9]{4,4}'
+                        pattern: '[0-9]{4,4}',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     }
                 ]
             }
@@ -64776,39 +68636,127 @@ Ext.define('Ext.view.NumberInputView', {
 });
 
 /*global Ext:false*/
+Ext.define("Fpos.view.CategoryItem", {
+    extend: Ext.dataview.component.DataItem,
+    xtype: 'fpos_category_item',
+    config: {
+        items: [
+            {
+                cls: 'ProductCategoryButton',
+                ui: 'posInputButtonBlack',
+                xtype: 'button',
+                action: 'selectCategory',
+                categoryId: null,
+                text: ''
+            }
+        ]
+    },
+    updateRecord: function(record) {
+        var self = this;
+        var button = self.down('button');
+        button.setText(record.get('name'));
+        button.categoryId = record.getId();
+    }
+});
+
+/*global Ext:false*/
+Ext.define("Fpos.view.ProductItem", {
+    extend: Ext.dataview.component.DataItem,
+    xtype: 'fpos_product_item',
+    config: {
+        items: [
+            {
+                cls: 'ProductButton',
+                xtype: 'button',
+                action: 'selectProduct',
+                ui: 'posInputButtonWhite'
+            }
+        ]
+    },
+    updateRecord: function(record) {
+        var self = this;
+        var button = self.down('button');
+        button.setRecord(record);
+    }
+});
+
+/*global Ext:false*/
 Ext.define('Fpos.view.ProductView', {
     extend: Ext.Panel,
     xtype: 'fpos_product',
+    id: 'productView',
     config: {
         layout: 'vbox',
+        cls: 'ProductContainer',
         items: [
             {
                 xtype: 'toolbar',
+                ui: 'categoryToolbar',
                 items: [
                     {
                         xtype: 'button',
-                        iconCls: 'home'
+                        iconCls: 'home',
+                        cls: 'SelectedCategoryButton',
+                        categoryId: null,
+                        action: 'selectCategory'
                     },
                     {
-                        xtype: 'component',
-                        flex: 1
+                        xtype: 'button',
+                        text: 'Sub1',
+                        ui: 'back',
+                        categoryId: null,
+                        hidden: true,
+                        id: 'categoryButton1',
+                        action: 'selectCategory'
                     },
                     {
+                        xtype: 'button',
+                        text: 'Sub2',
+                        ui: 'back',
+                        categoryId: null,
+                        hidden: true,
+                        id: 'categoryButton2',
+                        action: 'selectCategory'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Sub3',
+                        ui: 'back',
+                        categoryId: null,
+                        hidden: true,
+                        id: 'categoryButton3',
+                        action: 'selectCategory'
+                    },
+                    {
+                        flex: 1,
                         xtype: 'searchfield',
                         placeholder: 'Suche',
-                        width: '200px'
+                        id: 'productSearch'
                     }
                 ]
             },
             {
-                xtype: 'toolbar',
-                hidden: 'true',
-                items: []
-            },
-            {
-                cls: 'ProductContainer',
-                xtype: 'panel',
-                flex: 1
+                layout: "hbox",
+                flex: 1,
+                items: [
+                    {
+                        xtype: 'dataview',
+                        useComponents: true,
+                        cls: 'CategoryDataView',
+                        id: 'categoryDataView',
+                        defaultType: 'fpos_category_item',
+                        hidden: true,
+                        store: "CategoryStore"
+                    },
+                    {
+                        cls: 'ProductDataView',
+                        xtype: 'dataview',
+                        useComponents: true,
+                        defaultType: 'fpos_product_item',
+                        flex: 1,
+                        store: "ProductStore"
+                    }
+                ]
             }
         ]
     }
@@ -64833,6 +68781,7 @@ Ext.define('Ext.view.ScrollList', {
 Ext.define('Fpos.view.OrderView', {
     extend: Ext.Panel,
     xtype: 'fpos_order',
+    id: 'orderView',
     config: {
         layout: 'vbox',
         items: [
@@ -64843,7 +68792,12 @@ Ext.define('Fpos.view.OrderView', {
                 items: [
                     {
                         xtype: 'label',
-                        html: '0 €',
+                        id: 'posDisplayState',
+                        cls: 'PosDisplayState'
+                    },
+                    {
+                        xtype: 'label',
+                        id: 'posDisplayLabel',
                         cls: 'PosDisplayLabel',
                         flex: 1
                     }
@@ -64851,8 +68805,11 @@ Ext.define('Fpos.view.OrderView', {
             },
             {
                 xtype: 'scrolllist',
+                id: 'orderItemList',
                 cls: 'Receipt',
-                flex: 1
+                itemCls: 'PosOrderItem',
+                flex: 1,
+                allowDeselect: true
             }
         ]
     }
@@ -64901,7 +68858,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 text: '+/-',
-                                action: 'inputPlusMinus',
+                                action: 'inputNumber',
                                 width: '77px',
                                 height: '77px',
                                 ui: 'posInputButtonBlack',
@@ -64983,7 +68940,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 text: '.',
-                                action: 'addComma',
+                                action: 'inputNumber',
                                 width: '77px',
                                 height: '77px',
                                 ui: 'posInputButtonBlack',
@@ -64997,7 +68954,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 iconCls: 'compose',
-                                action: 'inputMenu',
+                                action: 'editOrder',
                                 width: '77px',
                                 height: '77px',
                                 ui: 'posInputButtonBlack',
@@ -65006,28 +68963,31 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 text: '*',
-                                action: 'inputAmount',
+                                action: 'inputModeSwitch',
                                 width: '77px',
                                 height: '77px',
                                 ui: 'posInputButtonGray',
+                                id: 'inputButtonAmount',
                                 cls: 'PosInputButton'
                             },
                             {
                                 xtype: 'button',
                                 text: '%',
-                                action: 'inputDiscount',
+                                action: 'inputModeSwitch',
                                 width: '77px',
                                 height: '77px',
-                                ui: 'posInputButtonGray',
+                                ui: 'posInputButtonBlack',
+                                id: 'inputButtonDiscount',
                                 cls: 'PosInputButton'
                             },
                             {
                                 xtype: 'button',
                                 text: '€',
-                                action: 'inputPrice',
+                                action: 'inputModeSwitch',
                                 width: '77px',
                                 height: '77px',
-                                ui: 'posInputButtonGray',
+                                ui: 'posInputButtonBlack',
+                                id: 'inputButtonPrice',
                                 cls: 'PosInputButton'
                             }
                         ]
@@ -65149,7 +69109,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 tap: 'showHwTest'
             },
             'button[action=sync]': {
-                tap: 'sync'
+                tap: 'onSyncTap'
             },
             mainView: {
                 initialize: 'mainViewInitialize',
@@ -65166,7 +69126,24 @@ Ext.define('Fpos.controller.MainCtrl', {
             }
         }
     },
-    sync: function() {
+    init: function() {
+        this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
+        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+    },
+    mainViewInitialize: function() {
+        var self = this;
+        // show form event
+        Ext.Viewport.on({
+            scope: self,
+            showForm: self.showForm
+        });
+        // reset config
+        self.resetConfig();
+    },
+    onSyncTap: function() {
+        this.sync();
+    },
+    sync: function(resync) {
         var self = this;
         var db = Config.getDB();
         var client = null;
@@ -65216,17 +69193,36 @@ Ext.define('Fpos.controller.MainCtrl', {
             ViewManager.startLoading("Synchronisiere Daten");
             return DBUtil.syncWithOdoo(db, client, {
                 name: 'fpos',
+                resync: typeof (resync) === "boolean" && resync || false,
                 models: [
                     {
-                        model: 'res.partner.title'
+                        model: 'res.partner.title',
+                        readonly: true
+                    },
+                    {
+                        model: 'account.tax',
+                        fields: [
+                            'name',
+                            'amount',
+                            'type',
+                            'price_include',
+                            'sequence'
+                        ],
+                        readonly: true
+                    },
+                    {
+                        model: 'product.uom',
+                        readonly: true
                     },
                     {
                         model: 'pos.category',
-                        view: '_fpos_category'
+                        view: '_fpos_category',
+                        readonly: true
                     },
                     {
                         model: 'product.product',
                         view: '_fpos_product',
+                        readonly: true,
                         domain: [
                             [
                                 'available_in_pos',
@@ -65237,13 +69233,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                     },
                     {
                         model: 'res.partner',
-                        domain: [
-                            [
-                                'active',
-                                '=',
-                                true
-                            ]
-                        ],
                         fields: [
                             'name',
                             'title',
@@ -65266,17 +69255,25 @@ Ext.define('Fpos.controller.MainCtrl', {
                             'mobile',
                             'is_company'
                         ]
+                    },
+                    {
+                        model: 'fpos.order'
+                    },
+                    {
+                        model: 'fpos.order.line'
                     }
                 ]
             });
         }).then(function() {
             ViewManager.stopLoading();
+            self.resetConfig();
         })['catch'](function(err) {
             ViewManager.stopLoading();
             ViewManager.handleError(err, {
                 name: "Unerwarteter Fehler",
                 message: "Synchronisation konnte nicht durchgeführt werden"
             }, true);
+            self.resetConfig();
         });
     },
     loadConfig: function() {
@@ -65289,24 +69286,45 @@ Ext.define('Fpos.controller.MainCtrl', {
             return db.get('_local/profile');
         }).then(function(profile) {
             Config.setProfile(profile);
-            self.showLogin();
+            // reload
+            // load tax
+            self.taxStore.load({
+                callback: function() {
+                    // load product units
+                    self.unitStore.load({
+                        callback: function() {
+                            // fire reload
+                            Ext.Viewport.fireEvent("reloadData");
+                            // ... and show login
+                            self.showLogin();
+                        }
+                    });
+                }
+            });
         })['catch'](function(error) {
-            self.editConfig();
+            if (error.name === 'not_found') {
+                self.editConfig();
+            } else {
+                ViewManager.handleError(error, {
+                    name: "Fehler beim Laden",
+                    message: "Konfiguration konnte nicht geladen werden"
+                }, true);
+            }
         });
     },
-    mainViewInitialize: function() {
+    resetConfig: function() {
         var self = this;
-        // info template       
-        var infoTmpl = null;
-        if (futil.hasSmallRes()) {
-            infoTmpl = Ext.create('Ext.XTemplate', '<div style="width:120px;height:120px;margin:auto;">', '<img src="resources/icons/AppInfo_120x120.png">', '</div>', '<p align="center">', 'Version {version}', '</p>');
-        } else {
-            infoTmpl = Ext.create('Ext.XTemplate', '<div style="width:512px;height:512px;margin:auto;">', '<img src="resources/icons/AppInfo_512x512.png">', '</div>', '<p align="center">', 'Version {version}', '</p>');
-        }
-        // get main 
         var mainView = self.getMainView();
         // create base panel
         if (!self.basePanel) {
+            // info template       
+            var infoTmpl = null;
+            if (futil.hasSmallRes()) {
+                infoTmpl = Ext.create('Ext.XTemplate', '<div style="width:120px;height:120px;margin:auto;">', '<img src="resources/icons/AppInfo_120x120.png">', '</div>', '<p align="center">', 'Version {version}', '</p>');
+            } else {
+                infoTmpl = Ext.create('Ext.XTemplate', '<div style="width:512px;height:512px;margin:auto;">', '<img src="resources/icons/AppInfo_512x512.png">', '</div>', '<p align="center">', 'Version {version}', '</p>');
+            }
+            // base panel    
             self.basePanel = Ext.create("Ext.Panel", {
                 menu: self.getBaseMenu(),
                 title: '',
@@ -65331,7 +69349,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             self.basePanel.config.menu = menu;
             self.basePanel.menu = menu;
             // notify change        
-            self.mainActiveItemChange(self.getMainPanel(), self.basePanel);
+            self.mainActiveItemChange(mainView, self.basePanel);
         }
         // load hardware
         Config.setupHardware().then(function() {
@@ -65425,7 +69443,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                             flex: 1
                         },
                         {
-                            xtype: 'panel',
                             layout: 'vbox',
                             items: [
                                 {
@@ -65495,6 +69512,12 @@ Ext.define('Fpos.controller.MainCtrl', {
         });
     },
     /**
+     * show form
+     */
+    showForm: function(view) {
+        this.getMainView().push(view);
+    },
+    /**
      * edit configuration
      */
     editConfig: function() {
@@ -65509,7 +69532,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                             return db.put(newValues);
                         },
                         savedHandler: function() {
-                            return self.sync().then(function(err) {
+                            return self.sync(true).then(function(err) {
                                 self.loadConfig();
                             })['catch'](function(err) {
                                 self.editConfig();
@@ -65661,6 +69684,1168 @@ Ext.define('Fpos.controller.TestCtrl', {
     }
 });
 
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
+Ext.define('Fpos.controller.ProductViewCtrl', {
+    extend: Ext.app.Controller,
+    config: {
+        refs: {
+            categoryButton1: '#categoryButton1',
+            categoryButton2: '#categoryButton2',
+            categoryButton3: '#categoryButton3',
+            productSearch: '#productSearch',
+            categoryDataView: '#categoryDataView',
+            productView: '#productView'
+        },
+        control: {
+            'button[action=selectCategory]': {
+                tap: 'tapSelectCategory'
+            },
+            'button[action=selectProduct]': {
+                tap: 'tapSelectProduct',
+                initialize: 'productButtonInitialize'
+            },
+            productSearch: {
+                keyup: 'searchItemKeyUp',
+                clearicontap: 'searchItemClearIconTap'
+            },
+            productView: {
+                initialize: 'productViewInitialize'
+            }
+        }
+    },
+    init: function() {
+        this.productStore = Ext.StoreMgr.lookup("ProductStore");
+        this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
+        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+    },
+    productViewInitialize: function() {
+        var self = this;
+        self.loadCategory(null);
+        //search task
+        self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
+            self.loadProducts(self.categoryId, self.searchValue);
+        });
+        // global event after sync
+        Ext.Viewport.on({
+            scope: self,
+            reloadData: function() {
+                self.loadCategory(null);
+            }
+        });
+    },
+    tapSelectCategory: function(button) {
+        var self = this;
+        self.loadCategory(button.categoryId || null);
+    },
+    /**
+     * set product item template
+     */
+    productButtonInitialize: function(button) {
+        var self = this;
+        if (!self.productButtonTmpl) {
+            self.productButtonTmpl = Ext.create('Ext.XTemplate', '<tpl if="image_small">', '<div class="ProductImage">', '<img src="data:image/jpeg;base64,{image_small}"/>', '</div>', '<div class="ProductText">', '{name}', '</div>', '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>', '<tpl elseif="name.length &lt;= 7">', '<div class="ProductTextOnlyBig">', '{name}', '</div>', '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>', '<tpl else>', '<div class="ProductTextOnly">', '{name}', '</div>', '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>', '</tpl>', {
+                getUnit: function(uom_id) {
+                    var uom = self.unitStore.getById(uom_id);
+                    return uom && uom.get('name') || '';
+                }
+            });
+        }
+        button.setTpl(self.productButtonTmpl);
+    },
+    /**
+     * select product
+     */
+    tapSelectProduct: function(button) {
+        var product = button.getRecord();
+        if (product) {
+            // send productInput EVENT
+            Ext.Viewport.fireEvent("productInput", product);
+        }
+    },
+    /**
+     * search
+     */
+    searchItemKeyUp: function(field, key, opts) {
+        this.searchValue = field.getValue();
+        this.searchTask.delay(Config.getSearchDelay());
+    },
+    /**
+     * clear search
+     */
+    searchItemClearIconTap: function() {
+        this.loadProducts(this.categoryId);
+    },
+    /**
+     * load product
+     */
+    loadProducts: function(categoryId, search) {
+        var self = this;
+        self.categoryId = categoryId;
+        // options
+        var options = {};
+        // category        
+        if (self.categoryId) {
+            options.params = {
+                domain: [
+                    [
+                        'pos_categ_id',
+                        '=',
+                        categoryId
+                    ]
+                ]
+            };
+        }
+        // search text or not
+        if (!search) {
+            self.searchValue = null;
+            self.searchTask.cancel();
+            self.getProductSearch().reset();
+        } else {
+            options.filters = [
+                {
+                    property: 'name',
+                    value: search,
+                    anyMatch: true
+                }
+            ];
+        }
+        // load
+        self.productStore.load(options);
+    },
+    /**
+     * load category
+     */
+    loadCategory: function(categoryId) {
+        var self = this;
+        var db = Config.getDB();
+        var store = self.categoryStore;
+        // filter
+        var options = {
+                params: {
+                    domain: [
+                        [
+                            'parent_id',
+                            '=',
+                            categoryId
+                        ]
+                    ]
+                },
+                callback: function() {
+                    DBUtil.findParents(db, categoryId, function(err, parents) {
+                        // vars
+                        var buttons = [
+                                self.getCategoryButton1(),
+                                self.getCategoryButton2(),
+                                self.getCategoryButton3()
+                            ];
+                        var i;
+                        //show buttons     
+                        parents = !err && parents && parents.reverse() || [];
+                        for (i = 0; i < buttons.length; i++) {
+                            if (i < parents.length) {
+                                buttons[i].categoryId = parents[i]._id;
+                                buttons[i].setHidden(false);
+                                buttons[i].setText(parents[i].name);
+                            } else {
+                                buttons[i].setHidden(true);
+                            }
+                        }
+                        // enable/disable category view
+                        self.getCategoryDataView().setHidden(store.getCount() === 0);
+                        // load products
+                        self.loadProducts(categoryId);
+                    });
+                }
+            };
+        // load
+        store.load(options);
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.view.OrderLineFormView', {
+    extend: Ext.form.FormPanel,
+    xtype: 'fpos_line_form',
+    config: {
+        scrollable: true,
+        saveable: true,
+        items: [
+            {
+                xtype: 'fieldset',
+                title: 'Position',
+                items: [
+                    {
+                        xtype: 'textfield',
+                        name: 'name',
+                        label: 'Name',
+                        required: true
+                    },
+                    {
+                        xtype: 'textareafield',
+                        name: 'notice',
+                        label: 'Notiz'
+                    }
+                ]
+            }
+        ]
+    }
+});
+
+/*global Ext:false, futil:false */
+Ext.define('Ext.field.ListSelect', {
+    extend: Ext.field.Select,
+    xtype: 'listselect',
+    config: {
+        /**
+         * @cfg {Object} Navigation View
+         */
+        navigationView: null,
+        /**
+         * @cfg {String} current Search
+         */
+        searchValue: null,
+        /**
+         * @cfg {String} value field
+         */
+        valueField: "id",
+        /**
+         * @cfg {String} title
+         */
+        title: "Auswahl",
+        /**
+         * handler if creation of new 
+         * records are allowed
+         */
+        pickerToolbarItems: null,
+        /**
+         * search delay
+         */
+        searchDelay: 500,
+        /**
+         * limit
+         */
+        limit: 100
+    },
+    showPicker: function() {
+        // prevent double tap
+        if (futil.isDoubleTap())  {
+            return;
+        }
+        
+        var self = this;
+        var navigationView = self.findNavigationView();
+        var store = self.getStore();
+        if (navigationView !== null && store !== null) {
+            var toolbarItems = [
+                    {
+                        xtype: 'searchfield',
+                        placeholder: 'Suche',
+                        flex: 1,
+                        listeners: {
+                            keyup: function(field, key, opts) {
+                                self.searchDelayed(field.getValue());
+                            },
+                            clearicontap: function() {
+                                self.searchDelayed(null);
+                            }
+                        }
+                    },
+                    {
+                        xtype: 'button',
+                        iconCls: 'delete',
+                        align: 'right',
+                        listeners: {
+                            tap: function(button, e, opts) {
+                                if (!futil.isDoubleTap()) {
+                                    self.setValue(null);
+                                    navigationView.pop();
+                                }
+                            }
+                        }
+                    }
+                ];
+            // add additional items
+            var additionalToolbarItems = self.getPickerToolbarItems();
+            if (additionalToolbarItems) {
+                toolbarItems = toolbarItems.concat(additionalToolbarItems);
+            }
+            navigationView.push({
+                title: self.getTitle(),
+                newRecord: null,
+                xtype: 'container',
+                listeners: {
+                    scope: self,
+                    show: self.firstSearch
+                },
+                items: [
+                    {
+                        docked: 'top',
+                        xtype: 'toolbar',
+                        items: toolbarItems
+                    },
+                    {
+                        xtype: 'list',
+                        height: '100%',
+                        flex: 1,
+                        store: store,
+                        itemTpl: '{' + self.getDisplayField() + '}',
+                        listeners: {
+                            select: self.onListSelect,
+                            itemtap: self.onListTap,
+                            scope: self
+                        }
+                    }
+                ],
+                fieldSelectRecord: function(record) {
+                    self.setValue(record);
+                }
+            });
+        } else {
+            return self.callParent(arguments);
+        }
+    },
+    initialize: function() {
+        var self = this;
+        self.callParent(arguments);
+        self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
+            self.search();
+        });
+    },
+    searchDelayed: function(searchValue) {
+        this.setSearchValue(searchValue);
+        this.searchTask.delay(this.getSearchDelay());
+    },
+    search: function() {
+        var self = this;
+        var storeInst = self.getStore();
+        var searchValue = self.getSearchValue();
+        var searchField = self.getDisplayField();
+        // search params
+        var params = {
+                limit: self.getLimit()
+            };
+        // options
+        var options = {
+                params: params
+            };
+        // build search domain
+        if (!Ext.isEmpty(searchValue) && searchValue.length >= 3) {
+            var expr = "(doc." + searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0, 3)) + ") >= 0)";
+            params.domain = [
+                [
+                    expr,
+                    '=',
+                    true
+                ]
+            ];
+        }
+        // search text or not
+        if (!Ext.isEmpty(searchValue)) {
+            options.filters = [
+                {
+                    property: searchField,
+                    value: searchValue,
+                    anyMatch: true
+                }
+            ];
+        }
+        // load
+        storeInst.load(options);
+    },
+    firstSearch: function() {
+        this.search();
+    },
+    findNavigationView: function() {
+        var navigationView = this.getNavigationView();
+        if (!navigationView) {
+            navigationView = this.up('navigationview');
+        }
+        return navigationView;
+    },
+    onListTap: function() {
+        // prevent double tap
+        if (futil.isDoubleTap())  {
+            return;
+        }
+        
+        var self = this;
+        var navigationView = self.findNavigationView();
+        if (navigationView !== null) {
+            navigationView.pop();
+        } else {
+            self.callParent(arguments);
+        }
+    },
+    getValue: function() {
+        var res = this.callParent(arguments);
+        return res;
+    },
+    applyValue: function(value) {
+        var record = value,
+            index, store;
+        var self = this;
+        //we call this so that the options configruation gets intiailized, so that a store exists, and we can
+        //find the correct value
+        this.getOptions();
+        store = this.getStore();
+        if ((value !== undefined && value !== null && !value.isModel) && store) {
+            if (typeof value === 'object') {
+                value = value[this.getValueField()];
+            }
+            index = store.find(this.getValueField(), value, null, null, null, true);
+            if (index == -1) {
+                var model = store.getModel();
+                var proxy = model.getProxy();
+                if (proxy) {
+                    proxy.readDocument(value, function(err, record) {
+                        if (!err) {
+                            self.setValue(record);
+                        }
+                    });
+                }
+            }
+            record = store.getAt(index);
+        }
+        return record;
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.view.PartnerListSelect', {
+    extend: Ext.field.ListSelect,
+    xtype: 'fpos_partner_select',
+    requires: [],
+    config: {
+        store: 'PartnerStore',
+        displayField: 'name',
+        title: 'Kunde',
+        pickerToolbarItems: [
+            {
+                xtype: 'button',
+                iconCls: 'add',
+                align: 'right',
+                action: 'newPartner'
+            }
+        ]
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.view.OrderFormView', {
+    extend: Ext.form.FormPanel,
+    xtype: 'fpos_order_form',
+    config: {
+        scrollable: true,
+        saveable: true,
+        items: [
+            {
+                xtype: 'fieldset',
+                title: 'Belegdaten',
+                items: [
+                    {
+                        xtype: 'textfield',
+                        name: 'ref',
+                        label: 'Beleg/Referenz'
+                    },
+                    {
+                        xtype: 'fpos_partner_select',
+                        name: 'partner_id',
+                        label: 'Kunde'
+                    },
+                    {
+                        xtype: 'togglefield',
+                        name: 'send_invoice',
+                        label: 'Rechnung senden'
+                    },
+                    {
+                        xtype: 'textareafield',
+                        name: 'note',
+                        label: 'Notiz'
+                    }
+                ]
+            }
+        ]
+    }
+});
+
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
+Ext.define('Fpos.controller.OrderViewCtrl', {
+    extend: Ext.app.Controller,
+    config: {
+        refs: {
+            orderView: '#orderView',
+            posDisplay: '#posDisplayLabel',
+            orderItemList: '#orderItemList',
+            stateDisplay: '#posDisplayState',
+            inputButtonAmount: '#inputButtonAmount',
+            inputButtonDiscount: '#inputButtonDiscount',
+            inputButtonPrice: '#inputButtonPrice'
+        },
+        control: {
+            orderView: {
+                initialize: 'orderViewInitialize'
+            },
+            posDisplay: {
+                initialize: 'posDisplayInitialize'
+            },
+            stateDisplay: {
+                initialize: 'stateDisplayInitialize'
+            },
+            orderItemList: {
+                initialize: 'orderItemListInitialize',
+                selectionchange: 'onItemSelectionChange'
+            },
+            'button[action=inputCancel]': {
+                tap: 'onInputCancelTap'
+            },
+            'button[action=inputModeSwitch]': {
+                tap: 'onInputModeSwitch'
+            },
+            'button[action=inputNumber]': {
+                tap: 'onInputNumber'
+            },
+            'button[action=editOrder]': {
+                tap: 'onEditOrder'
+            }
+        }
+    },
+    init: function() {
+        this.order = null;
+        this.mode = '*';
+        this.resetInputText();
+        this.lineStore = Ext.StoreMgr.lookup("PosLineStore");
+        this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
+        this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
+        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+    },
+    posDisplayInitialize: function(display) {
+        display.setTpl(Ext.create('Ext.XTemplate', '{[futil.formatFloat(values.amount_total,Config.getDecimals())]}'));
+    },
+    stateDisplayInitialize: function(display) {
+        display.setTpl(Ext.create('Ext.XTemplate', '<div class="PosOrderState">', '<div class="PosOrderCurrency">', '{[Config.getCurrency()]}', '</div>', '<div class="PosOrderInfo">', '<div class="PosOrderInfo2">', '{name} <tpl if="ref"> / {ref}</tpl>', '</div>', '<div class="PosOrderInfo1">', '<tpl if="partner">', '{partner.name}', '</tpl>', '</div>', '</div>', '</div>'));
+    },
+    orderItemListInitialize: function(orderItemList) {
+        var self = this;
+        orderItemList.setItemTpl(Ext.create('Ext.XTemplate', '<div class="PosOrderLineDescription">', '<div class="PosOrderLineName">', '{name}', '</div>', '<div class="PosOrderLineAmount">', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}', ' ', '{[this.getUnit(values.uom_id)]}', ' * ', '{[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}', ' ', '<tpl if="discount &gt; 0.0">', '<span class="PosOrderLineDiscount">', '- {[futil.formatFloat(values.discount,Config.getDecimals())]} %', '</span>', '</tpl>', '</div>', '</div>', '<div class="PosOrderLinePrice">', '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}', '</div>', {
+            getUnit: function(uom_id) {
+                var uom = self.unitStore.getById(uom_id);
+                return uom && uom.get('name') || '';
+            }
+        }));
+        orderItemList.setStore(this.lineStore);
+    },
+    orderViewInitialize: function() {
+        var self = this;
+        // reload event
+        Ext.Viewport.on({
+            scope: self,
+            reloadData: self.reloadData
+        });
+        // product input event         
+        Ext.Viewport.on({
+            scope: self,
+            productInput: self.productInput
+        });
+        // reload data
+        self.reloadData();
+    },
+    productInput: function(product) {
+        var self = this;
+        if (self.isEditable()) {
+            var changedLine = null;
+            var toWeight = product.get('to_weight');
+            if (!toWeight) {
+                self.lineStore.each(function(line) {
+                    if (line.get('product_id') === product.getId()) {
+                        line.set('qty', (line.get('qty') || 0) + 1);
+                        changedLine = line;
+                        return false;
+                    }
+                });
+            }
+            //stop iteration
+            if (!changedLine) {
+                var db = Config.getDB();
+                changedLine = self.lineStore.add({
+                    'order_id': self.order.getId(),
+                    'name': product.get('name'),
+                    'product_id': product.getId(),
+                    'uom_id': product.get('uom_id'),
+                    'tax_ids': product.get('taxes_id'),
+                    'brutto_price': product.get('brutto_price'),
+                    'qty': 1,
+                    'subtotal_incl': 0,
+                    'discount': 0,
+                    'sequence': self.lineStore.getCount()
+                });
+            }
+            // validate lines
+            self.validateLines().then(function() {
+                self.getOrderItemList().select(changedLine);
+                self.setMode('*');
+            });
+        }
+    },
+    // compute line values
+    validateLine: function(line, taxes, taxlist) {
+        var self = this;
+        var price = line.get('brutto_price') || 0;
+        var discount = line.get('discount') || 0;
+        discount = 1 - (discount / 100);
+        var qty = line.get('qty') || 0;
+        var total = qty * price * discount;
+        var tax_ids = line.get('tax_ids');
+        if (!taxes)  {
+            taxes = {};
+        }
+        
+        var tax_percent = 0;
+        var tax_fixed = 0;
+        var total_tax = 0;
+        Ext.each(tax_ids, function(tax_id) {
+            var tax = taxes[tax_id];
+            if (!tax) {
+                var taxDef = self.taxStore.getById(tax_id);
+                if (taxDef) {
+                    var taxsum = {
+                            fdoo__ir_model: 'fpos.order.tax',
+                            tax_id: tax_id,
+                            name: taxDef.get('name'),
+                            amount_tax: 0
+                        };
+                    if (taxlist)  {
+                        taxlist.push(taxsum);
+                    }
+                    
+                    tax = {
+                        type: taxDef.get('type'),
+                        amount: taxDef.get('amount'),
+                        sum: taxsum
+                    };
+                    taxes[tax_id] = tax;
+                }
+            }
+            if (tax) {
+                if (tax.type === 'percent') {
+                    tax_percent += tax.amount;
+                } else if (tax.type === 'fixed') {
+                    tax_fixed += (tax.amount * qty);
+                }
+            }
+        });
+        // subtotal without tax
+        var total_netto = (total - tax_fixed) / (1 + tax_percent);
+        // sum tax
+        Ext.each(tax_ids, function(tax_id) {
+            var tax = taxes[tax_id];
+            var amount_tax = 0;
+            if (tax.type === 'percent') {
+                amount_tax = (total_netto * (1 + tax.amount)) - total_netto;
+            } else if (tax.type === 'fixed') {
+                amount_tax = (tax.amount * qty);
+            }
+            tax.sum.amount_tax += amount_tax;
+            total_tax += amount_tax;
+        });
+        // set subtotal if dirty
+        if (line.get('subtotal_incl') != total) {
+            line.set('subtotal_incl', total);
+        }
+        // return subtotal brutto and amount tax
+        return {
+            subtotal_incl: total,
+            amount_tax: total_tax
+        };
+    },
+    // validate lines of current order
+    validateLines: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        // primary check
+        if (self.order && self.order.get('state') === 'draft') {
+            var tax_group = {};
+            var tax_ids = [];
+            // compute lines
+            var amount_total = 0;
+            var amount_tax = 0;
+            self.lineStore.each(function(line) {
+                var total_line = self.validateLine(line, tax_group, tax_ids);
+                amount_total += total_line.subtotal_incl;
+                amount_tax += total_line.amount_tax;
+            });
+            // set values
+            self.order.set('tax_ids', tax_ids);
+            self.order.set('amount_tax', amount_tax);
+            self.order.set('amount_total', amount_total);
+            // sync
+            self.lineStore.sync({
+                callback: function() {
+                    if (self.order.dirty) {
+                        self.order.save({
+                            callback: function() {
+                                deferred.resolve();
+                            }
+                        });
+                    } else {
+                        deferred.resolve();
+                    }
+                }
+            });
+        } else {
+            setTimeout(function() {
+                deferred.resolve();
+            }, 0);
+        }
+        return deferred.promise();
+    },
+    // set current order
+    setOrder: function(order) {
+        var self = this;
+        self.order = order;
+        self.getPosDisplay().setRecord(order);
+        self.getStateDisplay().setRecord(order);
+        if (order) {
+            var options = {
+                    params: {
+                        domain: [
+                            [
+                                'order_id',
+                                '=',
+                                order.getId()
+                            ]
+                        ]
+                    },
+                    callback: function() {
+                        self.validateLines();
+                    }
+                };
+            self.lineStore.load(options);
+        } else {
+            self.lineStore.load(function(store) {});
+        }
+    },
+    //load nothing                 
+    // create new order
+    nextOrder: function() {
+        var self = this;
+        var db = Config.getDB();
+        var user_id = Config.getUser()._id;
+        var fpos_user_id = Config.getProfile().user_id;
+        if (user_id && fpos_user_id) {
+            var date = futil.datetimeToStr(new Date());
+            db.post({
+                'fdoo__ir_model': 'fpos.order',
+                'fpos_user_id': fpos_user_id,
+                'user_id': user_id,
+                'state': 'draft',
+                'date': date,
+                'tax_ids': [],
+                'amount_tax': 0,
+                'amount_total': 0
+            }).then(function(res) {
+                self.reloadData();
+            });
+        }
+    },
+    setMode: function(mode) {
+        var self = this;
+        self.mode = mode;
+        this.resetInputText();
+        Ext.each([
+            self.getInputButtonAmount(),
+            self.getInputButtonDiscount(),
+            self.getInputButtonPrice()
+        ], function(button) {
+            if (button) {
+                if (button.getText() == self.mode) {
+                    button.setUi('posInputButtonGray');
+                } else {
+                    button.setUi('posInputButtonBlack');
+                }
+            }
+        });
+    },
+    resetInputText: function() {
+        this.inputSign = 1;
+        this.inputText = '';
+    },
+    reloadData: function() {
+        var self = this;
+        var db = Config.getDB();
+        var user = Config.getUser();
+        self.setMode('*');
+        if (user) {
+            var options = {
+                    params: {
+                        domain: [
+                            [
+                                'user_id',
+                                '=',
+                                user._id
+                            ],
+                            [
+                                'state',
+                                '=',
+                                'draft'
+                            ]
+                        ]
+                    },
+                    callback: function() {
+                        if (self.orderStore.getCount() === 0) {
+                            // create new order
+                            self.nextOrder();
+                        } else {
+                            // set current order
+                            self.setOrder(self.orderStore.last());
+                        }
+                    }
+                };
+            self.orderStore.load(options);
+        } else {
+            // load nothing
+            self.orderStore.load(function(store) {
+                self.setOrder(null);
+            });
+        }
+    },
+    isEditable: function() {
+        return this.order && this.order.get('state') == 'draft';
+    },
+    // validates and stop loading
+    finalValidate: function() {
+        this.validateLines()['catch'](function(err) {
+            ViewManager.stopLoading();
+            throw err;
+        }).then(function() {
+            ViewManager.stopLoading();
+        });
+    },
+    onInputCancelTap: function() {
+        var self = this;
+        this.resetInputText();
+        if (self.isEditable()) {
+            ViewManager.startLoading("Zurücksetzen");
+            var records = self.getOrderItemList().getSelection();
+            if (records.length > 0) {
+                var record = records[0];
+                // reset price price
+                if (this.mode == "€") {
+                    var db = Config.getDB();
+                    var product_id = record.get('product_id');
+                    if (product_id) {
+                        db.get(product_id).then(function(doc) {
+                            record.set('brutto_price', doc.brutto_price);
+                            self.finalValidate();
+                        })['catch'](function(err) {
+                            ViewManager.stopLoading();
+                            throw err;
+                        });
+                    } else {
+                        record.set('brutto_price', 0);
+                        self.finalValidate();
+                    }
+                } else {
+                    // reset quantity
+                    if (this.mode == "*") {
+                        if (record.get('qty') === 0) {
+                            self.lineStore.remove(record);
+                        } else {
+                            record.set('qty', 0);
+                        }
+                    }
+                    // reset discount
+                    else if (this.mode == "%") {
+                        record.set('discount', 0);
+                    }
+                    self.finalValidate();
+                }
+            } else {
+                ViewManager.stopLoading();
+            }
+        }
+    },
+    getInputTextFromLine: function(line) {
+        if (this.mode == "%") {
+            return futil.formatFloat(line.get('discount'), Config.getDecimals());
+        } else if (this.mode == "€") {
+            return futil.formatFloat(line.get('brutto_price'), Config.getDecimals());
+        } else {
+            return futil.formatFloat(line.get('qty'), Config.getQtyDecimals());
+        }
+    },
+    inputAction: function(action) {
+        if (this.isEditable()) {
+            var lines = this.getOrderItemList().getSelection();
+            if (lines.length > 0) {
+                var line = lines[0];
+                var valid = true;
+                // switch sign
+                if (action == "+/-") {
+                    if (this.mode == "*" || this.mode == "€") {
+                        // special case, only switch sign
+                        if (this.inputText.length === 0) {
+                            if (this.mode == "*") {
+                                line.set('qty', line.get('qty') * -1);
+                            } else {
+                                line.set('brutto_price', line.get('brutto_price') * -1);
+                            }
+                            this.validateLines();
+                            valid = false;
+                        } else {
+                            this.inputSign *= -1;
+                        }
+                    } else {
+                        valid = false;
+                    }
+                }
+                // add comma
+                else if (action == ".") {
+                    if (this.inputText.indexOf(".") < 0) {
+                        this.inputText += ".";
+                    } else {
+                        valid = false;
+                    }
+                } else // default number handling
+                {
+                    var commaPos = this.inputText.indexOf(".");
+                    if (commaPos >= 0) {
+                        var decimals = this.inputText.length - commaPos;
+                        if (this.mode == '*') {
+                            // only add if less than max qty decimals
+                            if (decimals > Config.getQtyDecimals()) {
+                                valid = false;
+                            }
+                        }
+                        // only add if less than max decimals
+                        else if (decimals > Config.getDecimals()) {
+                            valid = false;
+                        }
+                    }
+                    //add if valid
+                    if (valid)  {
+                        this.inputText += action;
+                    }
+                    
+                }
+                // update if valid
+                if (valid) {
+                    // update
+                    var value = parseFloat(this.inputText);
+                    if (this.mode == "€") {
+                        line.set('brutto_price', value * this.inputSign);
+                    } else if (this.mode == "%") {
+                        line.set('discount', value);
+                    } else {
+                        line.set('qty', value * this.inputSign);
+                    }
+                    this.validateLines();
+                }
+            }
+        }
+    },
+    onInputModeSwitch: function(button) {
+        this.setMode(button.getText());
+    },
+    onInputNumber: function(button) {
+        this.inputAction(button.getText());
+    },
+    onItemSelectionChange: function() {
+        this.setMode('*');
+    },
+    onEditOrder: function() {
+        var self = this;
+        if (self.order && !futil.isDoubleTap()) {
+            var lines = self.getOrderItemList().getSelection();
+            var form;
+            if (lines.length > 0) {
+                form = Ext.create("Fpos.view.OrderLineFormView", {
+                    'title': 'Position'
+                });
+                form.setRecord(lines[0]);
+            } else {
+                form = Ext.create("Fpos.view.OrderFormView", {
+                    'title': 'Verkauf'
+                });
+                form.setRecord(this.order);
+            }
+            if (form) {
+                if (self.order.get('state') != 'draft')  {
+                    form.setDisabled(true);
+                }
+                
+                Ext.Viewport.fireEvent("showForm", form);
+            }
+        }
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.view.PartnerView', {
+    extend: Ext.form.FormPanel,
+    xtype: 'fpos_partner_form',
+    config: {
+        scrollable: true,
+        saveable: true,
+        items: [
+            {
+                xtype: 'fieldset',
+                title: 'Kontakt',
+                items: [
+                    {
+                        xtype: 'textfield',
+                        name: 'name',
+                        label: 'Name',
+                        required: true
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'email',
+                        label: 'E-Mail'
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'mobile',
+                        label: 'Mobil'
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'phone',
+                        label: 'Telefon'
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'fax',
+                        label: 'Fax'
+                    }
+                ]
+            },
+            {
+                xtype: 'fieldset',
+                title: 'Adresse',
+                items: [
+                    {
+                        xtype: 'textfield',
+                        name: 'street',
+                        label: 'Straße'
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'street2',
+                        label: 'Straße2'
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'zip',
+                        label: 'PLZ'
+                    },
+                    {
+                        xtype: 'textfield',
+                        name: 'city',
+                        label: 'Ort'
+                    }
+                ]
+            }
+        ]
+    }
+});
+
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
+Ext.define('Fpos.controller.PartnerCtrl', {
+    extend: Ext.app.Controller,
+    config: {
+        refs: {
+            mainView: '#mainView'
+        },
+        control: {
+            'button[action=newPartner]': {
+                tap: 'onNewPartner'
+            }
+        }
+    },
+    onNewPartner: function() {
+        var newPartner = Ext.create('Fpos.model.Partner', {});
+        this.editPartner(newPartner);
+    },
+    editPartner: function(record) {
+        var self = this;
+        if (futil.isDoubleTap())  {
+            return;
+        }
+        
+        self.getMainView().push({
+            title: 'Partner',
+            xtype: 'fpos_partner_form',
+            record: record,
+            deleteable: true
+        });
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.CategoryStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.Category',
+        sorters: 'name'
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.ProductStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.Product',
+        sorters: 'name'
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.PosOrderStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.PosOrder',
+        sorters: 'date'
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.PosLineStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.PosLine',
+        sorters: 'sequence'
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.AccountTaxStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.AccountTax',
+        sorters: 'name'
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.ProductUnitStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.ProductUnit'
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.PartnerStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.Partner',
+        sorters: 'name',
+        grouper: function(record) {
+            return record.get('name')[0];
+        }
+    }
+});
+
 /*global Ext:false*/
 /**
  * funkring util lib
@@ -65669,12 +70854,32 @@ var futil = {
         comma: ",",
         activetap: false
     };
+futil.keys = function(obj) {
+    if (typeof obj != "object" && typeof obj != "function" || obj === null) {
+        throw TypeError("Object.keys called on non-object");
+    }
+    var keys = [];
+    for (var p in obj) if (obj.hasOwnProperty(p))  {
+        keys.push(p);
+    }
+    
+    return keys;
+};
+futil.dateToStr = function(date) {
+    //2016-02-03T22:46:46.011Z
+    return date.toISOString().substring(0, 10);
+};
+futil.datetimeToStr = function(date) {
+    //2016-02-03T22:46:46.011Z
+    var isoStr = date.toISOString();
+    return isoStr.substring(0, 10) + " " + isoStr.substring(11, 19);
+};
 futil.isDoubleTap = function() {
-    if (!futil.activetab) {
-        futil.activetab = true;
+    if (!futil.activetap) {
+        futil.activetap = true;
         setTimeout(function() {
-            futil.activetab = false;
-        }, 1000);
+            futil.activetap = false;
+        }, 500);
         return false;
     }
     return true;
@@ -75606,9 +80811,30 @@ Ext.application({
     views: [
         'Main'
     ],
+    models: [
+        'Category',
+        'Product',
+        'PosOrder',
+        'PosLine',
+        'AccountTax',
+        'ProductUnit',
+        'Partner'
+    ],
+    stores: [
+        'CategoryStore',
+        'ProductStore',
+        'PosOrderStore',
+        'PosLineStore',
+        'AccountTaxStore',
+        'ProductUnitStore',
+        'PartnerStore'
+    ],
     controllers: [
         'MainCtrl',
-        'TestCtrl'
+        'TestCtrl',
+        'ProductViewCtrl',
+        'OrderViewCtrl',
+        'PartnerCtrl'
     ],
     icon: {
         '57': 'resources/icons/Icon.png',
