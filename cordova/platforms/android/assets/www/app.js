@@ -66201,9 +66201,8 @@ Ext.define('Ext.proxy.PouchDBUtil', {
             db = new PouchDB(dbName, {size: 50,
                                       adapter: 'websql' });
             */
-            db = new PouchDB(dbName, {
-                adapter: 'websql'
-            });
+            //db = new PouchDB(dbName, { adapter: 'websql' });
+            db = new PouchDB(dbName);
             self.databases[dbName] = db;
         }
         return db;
@@ -67861,7 +67860,9 @@ Ext.define('Fpos.Config', {
         hwStatus: {
             err: null
         },
-        hwStatusId: null
+        hwStatusId: null,
+        cashJournal: null,
+        journalById: {}
     },
     constructor: function(config) {
         this.initConfig(config);
@@ -67906,10 +67907,22 @@ Ext.define('Fpos.Config', {
         }
         return deferred.promise();
     },
-    printHtml: function(html) {
+    hasPrinter: function() {
         var hwstatus = this.getHwStatus();
-        if (hwstatus.printer.installed) {
+        return hwstatus.printer && hwstatus.printer.installed;
+    },
+    printHtml: function(html) {
+        if (this.hasPrinter()) {
             window.PosHw.printHtml(html);
+        }
+    },
+    hasDisplay: function() {
+        var hwstatus = this.getHwStatus();
+        return hwstatus.display && hwstatus.display.installed;
+    },
+    display: function(lines) {
+        if (this.hasDisplay()) {
+            window.PosHw.display(lines);
         }
     },
     applyLog: function(store) {
@@ -67919,6 +67932,34 @@ Ext.define('Fpos.Config', {
             }
         }
         return store;
+    },
+    formatSeq: function(seq) {
+        var profile = this.getProfile();
+        var seqStr = Ext.util.Format.leftPad(seq.toString(), profile.sequence_id.padding, '0');
+        if (profile.fpos_prefix) {
+            seqStr = profile.fpos_prefix + seqStr;
+        }
+        return seqStr;
+    },
+    updateProfile: function(profile) {
+        var self = this;
+        if (profile) {
+            var journalById = self.getJournalById();
+            // set cash journal
+            Ext.each(profile.journal_ids, function(journal) {
+                journalById[journal._id] = journal;
+                if (journal.type == 'cash') {
+                    self.setCashJournal(journal);
+                }
+            });
+        }
+    },
+    getJournal: function(journal_id) {
+        var journalById = this.getJournalById();
+        if (journalById) {
+            return journalById[journal_id];
+        }
+        return null;
     },
     getDB: function() {
         var db = DBUtil.getDB(this.getDatabaseName());
@@ -69016,7 +69057,7 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 iconCls: 'action',
-                                action: 'inputBar',
+                                action: 'inputCash',
                                 width: '77px',
                                 height: '156px',
                                 ui: 'posInputButtonGreen',
@@ -69073,6 +69114,15 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Test Cashdrawer',
                         action: 'testCashdrawer',
+                        width: '250px',
+                        height: '77px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Test Database',
+                        action: 'testDB',
                         width: '250px',
                         height: '77px',
                         ui: 'posInputButtonBlack',
@@ -69638,6 +69688,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testCashdrawer]': {
                 tap: 'testCashdrawer'
+            },
+            'button[action=testDB]': {
+                tap: 'testDB'
             }
         }
     },
@@ -69681,6 +69734,14 @@ Ext.define('Fpos.controller.TestCtrl', {
             }, function(err) {
                 self.getTestLabel().setHtml(err);
             });
+    },
+    testDB: function() {
+        var self = this;
+        self.beforeTest();
+        var db = Config.getDB();
+        db.info().then(function(info) {
+            self.getTestLabel().setHtml("<pre>" + JSON.stringify(info, null, 2) + "</pre>");
+        });
     }
 });
 
@@ -70206,17 +70267,25 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=editOrder]': {
                 tap: 'onEditOrder'
+            },
+            'button[action=inputCash]': {
+                tap: 'onCash'
             }
         }
     },
     init: function() {
+        var self = this;
         this.order = null;
+        this.printTemplate = null;
         this.mode = '*';
         this.resetInputText();
         this.lineStore = Ext.StoreMgr.lookup("PosLineStore");
         this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
+            self.display();
+        });
     },
     posDisplayInitialize: function(display) {
         display.setTpl(Ext.create('Ext.XTemplate', '{[futil.formatFloat(values.amount_total,Config.getDecimals())]}'));
@@ -70377,20 +70446,27 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.order.set('tax_ids', tax_ids);
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
+            self.displayTask.delay(800);
             // sync
-            self.lineStore.sync({
-                callback: function() {
-                    if (self.order.dirty) {
-                        self.order.save({
-                            callback: function() {
-                                deferred.resolve();
-                            }
-                        });
-                    } else {
-                        deferred.resolve();
+            var syncRes = self.lineStore.sync({
+                    callback: function() {
+                        if (self.order.dirty) {
+                            self.order.save({
+                                callback: function() {
+                                    deferred.resolve();
+                                }
+                            });
+                        } else {
+                            deferred.resolve();
+                        }
                     }
-                }
-            });
+                });
+            // if no sync was done resolve, deferred
+            if ((syncRes.added.length + syncRes.updated.length + syncRes.removed.length) === 0) {
+                setTimeout(function() {
+                    deferred.resolve();
+                }, 0);
+            }
         } else {
             setTimeout(function() {
                 deferred.resolve();
@@ -70473,6 +70549,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         var db = Config.getDB();
         var user = Config.getUser();
+        self.printTemplate = null;
         self.setMode('*');
         if (user) {
             var options = {
@@ -70676,6 +70753,157 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 Ext.Viewport.fireEvent("showForm", form);
             }
         }
+    },
+    postOrder: function() {
+        var self = this;
+        if (!self.order) {
+            throw {
+                name: "Buchungsfehler",
+                message: "Kein Verkauf ausgewählt"
+            };
+        }
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var db = Config.getDB();
+        var profile = Config.getProfile();
+        var orderSeq = 0;
+        var hasSeq = false;
+        var seqId = '_local/orderseq';
+        self.validateLines()['catch'](function(err) {
+            deferred.reject(err);
+        }).then(function() {
+            return db.get(seqId).then(function(doc) {
+                hasSeq = true;
+                if (doc.order_id == self.order.getId()) {
+                    orderSeq = doc.seq;
+                } else {
+                    doc.seq = orderSeq = doc.seq + 1;
+                    doc.order_id = self.order.getId();
+                    return db.put(doc);
+                }
+            })['catch'](function(err) {
+                if (hasSeq) {
+                    // something goes wrong
+                    // show error and cancel 
+                    deferred.reject({
+                        name: "Buchungsfehler",
+                        message: "Sequenz konnte nicht akualisiert werden"
+                    });
+                } else {
+                    //create first sequence
+                    orderSeq = profile.last_seq + 1;
+                    return db.post({
+                        _id: seqId,
+                        seq: orderSeq,
+                        order_id: self.order.getId()
+                    });
+                }
+            }).then(function() {
+                var payment_ids = self.order.get('payment_ids');
+                // add cash payment if no payment                
+                if (!payment_ids || payment_ids.length === 0) {
+                    var amount_total = self.order.get('amount_total');
+                    self.order.set('payment_ids', [
+                        {
+                            journal_id: Config.getCashJournal()._id,
+                            amount: amount_total,
+                            payment: amount_total
+                        }
+                    ]);
+                }
+                var date = futil.datetimeToStr(new Date());
+                self.order.set('date', date);
+                self.order.set('seq', orderSeq);
+                self.order.set('name', Config.formatSeq(orderSeq));
+                self.order.set('state', 'paid');
+                self.order.save({
+                    callback: function() {
+                        deferred.resolve();
+                    }
+                });
+            });
+        });
+        return deferred.promise();
+    },
+    onCash: function() {
+        var self = this;
+        if (self.isEditable()) {
+            //self.printOrder();
+            // add payment
+            // and print
+            self.postOrder()['catch'](function(err) {
+                ViewManager.handleError(err, {
+                    name: "Buchungsfehler",
+                    message: "Verkauf konnte nicht gebucht werden"
+                }, true);
+            }).then(function() {
+                self.printOrder();
+                self.reloadData();
+            });
+        } else {
+            // if not editable
+            // reload data
+            self.reloadData();
+        }
+    },
+    printOrder: function() {
+        var self = this;
+        if (!self.printTemplate) {
+            var profile = Config.getProfile();
+            self.printTemplate = Ext.create('Ext.XTemplate', profile.receipt_header || '', '<table width="100%">', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td width="{attribWidth}">Beleg:</td>', '<td>{o.name}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Datum:</td>', '<td>{date:date("d.m.Y H:i:s")}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Kasse:</td>', '<td>{[Config.getProfile().name]}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Bediener:</td>', '<td>{[Config.getUser().name]}</td>', '</tr>', '<tpl if="o.ref">', '<tr>', '<td width="{attribWidth}">Referenz:</td>', '<td>{o.ref}</td>', '</tr>', '</tpl>', '</table>', '<tpl if="o.partner">', '<table width="100%">', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>K U N D E</td>', '</tr>', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>', '{o.partner.name}', '<tpl if="o.partner.street"><br/>{o.partner.street}</tpl>', '<tpl if="o.partner.street2"><br/>{o.partner.street2}</tpl>', '<tpl if="o.partner.zip && o.partner.city"><br/>{o.partner.zip} {o.partner.city}</tpl>', '</td>', '</tr>', '</table>', '</tpl>', '<br/>', '<table width="100%">', '<tr>', '<td>Bezeichnung</td>', '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="lines">', '<tr>', '<td>{name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>', '</tr>', '<tr>', '<td colspan="2">', '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}', '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>', '</td>', '</tr>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td align="right"><b>S U M M E</b></td>', '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>', '</tr>', '<tpl for="o.payment_ids">', '<tr>', '<td align="right">{[this.getJournal(values.journal_id)]}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="o.tax_ids">', '<tr>', '<td align="right">inkl. {name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '</table>', profile.receipt_footer || '', {
+                getUnit: function(uom_id) {
+                    var uom = self.unitStore.getById(uom_id);
+                    return uom ? uom.get('name') : '';
+                },
+                getJournal: function(journal_id) {
+                    var journal = Config.getJournal(journal_id);
+                    return journal ? journal.name : '';
+                }
+            });
+        }
+        // build data
+        var data = {
+                o: this.order.getData(),
+                lines: [],
+                priceColWidth: "32%",
+                attribWidth: "34%",
+                date: futil.strToDate(this.order.get('date'))
+            };
+        self.lineStore.each(function(line) {
+            data.lines.push(line.getData());
+        });
+        // render it
+        var html = self.printTemplate.apply(data);
+        // print/show it
+        if (!Config.hasPrinter()) {
+            html = '<div class="PrintReport">' + html + '</div>';
+            if (!self.reportPanel) {
+                self.reportPanel = Ext.create('Ext.Panel', {
+                    hideOnMaskTap: true,
+                    modal: true,
+                    centered: true,
+                    scrollable: true,
+                    cls: 'PrintReport',
+                    height: '400px',
+                    width: '300px',
+                    layout: 'vbox',
+                    html: html
+                });
+                Ext.Viewport.add(self.reportPanel);
+            } else {
+                self.reportPanel.setHtml(html);
+                self.reportPanel.show();
+            }
+        } else {
+            Config.printHtml(html);
+        }
+    },
+    display: function() {
+        var amount_total = this.order ? this.order.get('amount_total') : null;
+        if (amount_total) {
+            Config.display(amount_total.toString());
+        } else {
+            Config.display("0");
+        }
     }
 });
 
@@ -70812,8 +71040,7 @@ Ext.define('Fpos.store.PosOrderStore', {
 Ext.define('Fpos.store.PosLineStore', {
     extend: Ext.data.Store,
     config: {
-        model: 'Fpos.model.PosLine',
-        sorters: 'sequence'
+        model: 'Fpos.model.PosLine'
     }
 });
 
@@ -70874,6 +71101,21 @@ futil.datetimeToStr = function(date) {
     var isoStr = date.toISOString();
     return isoStr.substring(0, 10) + " " + isoStr.substring(11, 19);
 };
+futil.strToDate = function(str) {
+    if (str.length == 19)  {
+        str = str.substring(0, 10) + "T" + str.substring(11, 19) + "Z";
+    }
+    
+    var date = new Date(str);
+    return date;
+};
+futil.strToIsoDate = function(str) {
+    var date = futil.strToDate(str);
+    return date.toISOString();
+};
+futil.strToLocalDateTime = function(str) {
+    var date = futil.strToDate(str);
+};
 futil.isDoubleTap = function() {
     if (!futil.activetap) {
         futil.activetap = true;
@@ -70911,22 +71153,6 @@ futil.parseFloat = function(num) {
         return 0;
     }
     return parseFloat(num.replace(futil.comma, "."));
-};
-futil.Barrier = function(callback, args) {
-    this.callback = callback;
-    this.ref = 1;
-    this.add = function(count) {
-        if (count) {
-            this.ref += count;
-        } else {
-            this.ref++;
-        }
-    };
-    this.test = function() {
-        if (--this.ref === 0) {
-            this.callback(args);
-        }
-    };
 };
 
 /**

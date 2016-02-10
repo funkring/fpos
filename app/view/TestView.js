@@ -50,6 +50,15 @@ Ext.define('Fpos.view.TestView', {
                         height: '77px',  
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
+                     },
+                     {
+                        xtype: 'button',
+                        text: 'Test Database',    
+                        action: 'testDB',
+                        width: '250px',
+                        height: '77px',  
+                        ui: 'posInputButtonBlack',
+                        cls : 'TestButton'
                      }
                 ]                 
             },            

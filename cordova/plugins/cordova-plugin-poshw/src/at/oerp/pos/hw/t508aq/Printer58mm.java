@@ -15,6 +15,7 @@ import at.oerp.pos.PosHwPrinter;
 import at.oerp.util.HtmlLinePrinter;
 import at.oerp.util.IObjectResolver;
 import at.oerp.util.LinePrintDriver;
+import at.oerp.util.StringUtil;
 
 public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDriver  {
 
@@ -49,7 +50,8 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	private SerialPortAdapter displayPort;
 	
 	private OutputStream output;
-	private Charset unicode;
+	//private Charset unicode;
+	private Charset ascii;
 	private T508AQService service;
 	
 	
@@ -60,7 +62,8 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	 */
 	public Printer58mm(T508AQService inService) throws SecurityException, IOException {
 		service = inService;
-		unicode = Charset.forName("unicode");
+		//unicode = Charset.forName("unicode");
+		ascii = Charset.forName("ascii");
 		dev =  new File("/dev/ttyS3");
 		displayPort = new SerialPortAdapter(dev, 0);
 	}
@@ -154,8 +157,14 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	public void printHtml(String inHtml, IObjectResolver inResolver) throws IOException {
 		synchronized ( service ) {
 			if ( switchToPrinter() ) {
+				inHtml = StringUtil.toAscii(inHtml);
 				HtmlLinePrinter printer = new HtmlLinePrinter(this, inResolver);
 				printer.print(inHtml);
+				print(LF);
+				print(LF);
+				print(LF);
+				print(LF);
+				print(LF);
 			}
 		}
 	}
@@ -168,19 +177,22 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 				print(ESC_ENTER);
 				print(ESC_ENTER);
 				print(ESC_FONT_SMALL);
-				printUnicode("Fetter Text!");
-				printUnicode(" Und jetzt wieder normal");
+				write("Fetter Text!");
+				write(" Und jetzt wieder normal");
 				print(ESC_ENTER);
 				print(ESC_ENTER);
 			}
 		}
 	}
 	
-	protected void printUnicode(String data) throws IOException {
+	/**
+	 * TODO The unicode printing not WORK!!!
+	 * @param data
+	 * @throws IOException
+	 
+	protected void writeUnicode(String data) throws IOException {
 		if ( data == null )
 			data = "";
-		
-		//print(SET_LEFT);
 		
 		byte[] bData = data.getBytes(unicode);
 		byte[] buf = new byte[2];
@@ -192,7 +204,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 		}
 		
 		output.flush();		
-	}
+	}*/
 		
 	protected void print(byte[] inData) throws IOException {
 		if ( inData != null ) {
@@ -268,10 +280,16 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	@Override
 	public void setStyle(int inStyle) throws IOException {
 	}
+	
+	public void write(String inText) throws IOException {
+		output.write(inText.getBytes(ascii));
+		output.flush();
+	}
 
 	@Override
-	public void writeln(String inText) throws IOException {			
-		printUnicode(inText);
+	public void writeln(String inText) throws IOException {		
+		write(inText);
+		//writeUnicode(inText);
 		print(LF);
 	}
 	

@@ -146,7 +146,18 @@ public class HtmlLinePrinter  {
 				// split text
 				TextElement tElement = (TextElement) child;
 				while ( tElement.text.length() > tElement.chars ) {
-					tElement = tElement.split(tElement.chars-1);
+					int searchCount = (tElement.chars/3*2);
+					int splitIndex = tElement.chars-1;
+					if ( searchCount > 0) {
+						for ( int i=tElement.text.length()-1; i>searchCount;i--) {
+							if ( tElement.text.charAt(i) == ' ' && i < tElement.chars ) {
+								splitIndex = i+1;
+								break;
+							}
+						}							
+					}
+					// split at position
+					tElement = tElement.split(splitIndex);
 					it.add(new LineBreakElement());
 					it.add(tElement);					
 				}
@@ -210,12 +221,18 @@ public class HtmlLinePrinter  {
 			}
 		}
 		
+		public String toString(String inValue) {
+			if ( inValue != null ) 
+				return inValue.replace('\u00a0', ' ');
+			return inValue;
+		}
+		
 		public String toString() {
 			StringBuilder b = new StringBuilder();
 			for ( int i=0; i<lines.size(); i++) {
 				if (i>0) 
 					b.append("\n");
-				b.append(lines.get(i).toString());
+				b.append(toString(lines.get(i).toString()));
 			}
 			return b.toString();
 		}
@@ -223,7 +240,7 @@ public class HtmlLinePrinter  {
 		
 		public void print() throws IOException {
 			for ( int i=0; i<lines.size(); i++) {
-				driver.writeln(lines.get(i).toString());
+				driver.writeln(toString(lines.get(i).toString()));
 			}
 		}
 	}
@@ -331,7 +348,7 @@ public class HtmlLinePrinter  {
 		public void characters(char[] ch, int start, int length) throws SAXException {
 			int whitespaceCount = 0;
 			for (int i=start; i<length; i++) {
-				char c = ch[i];
+				char c = ch[i];			
 				if ( Character.isWhitespace(c) ) {
 					if ( whitespaceCount == 0 ) {
 						textBuilder.append(' ');

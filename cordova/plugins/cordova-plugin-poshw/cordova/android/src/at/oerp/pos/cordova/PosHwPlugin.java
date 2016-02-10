@@ -71,6 +71,7 @@ public class PosHwPlugin extends CordovaPlugin {
 								displayStatus.put("installed", true);
 								displayStatus.put("lines", display.getLines());
 								displayStatus.put("chars", display.getCharsPerLine());
+								status.put("display", displayStatus);
 							}
 							callbackContext.success(status);
 							return true;

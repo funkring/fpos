@@ -53,6 +53,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     init: function() {
+        var self = this;
+        
         this.order = null;
         this.printTemplate = null;
         
@@ -63,6 +65,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        
+        this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
+            self.display();
+        });
     },    
     
     posDisplayInitialize: function(display) {
@@ -290,7 +296,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.order.set('tax_ids', tax_ids);
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
-            
+            self.displayTask.delay(800);
             // sync
             var syncRes = self.lineStore.sync({
                 callback: function() {
@@ -709,11 +715,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( !self.printTemplate ) {
             var profile = Config.getProfile();
             self.printTemplate = Ext.create('Ext.XTemplate',
-                '<br/>',
-                '<br/>',
-                '<br/>',
                 profile.receipt_header || '',
                 '<table width="100%">',
+                    '<tr>',
+                        '<td colspan="2"><hr/></td>',
+                    '</tr>',
                     '<tr>',
                         '<td width="{attribWidth}">Beleg:</td>',
                         '<td>{o.name}</td>',
@@ -737,16 +743,28 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '</tr>',
                     '</tpl>',
                 '</table>',
-                '<br/>',
-                '<tpl if="o.partner">',               
-                '<p>Kunde</p>',
-                '<p><hr/></p>',
-                '<p>{o.partner.name}</p>',
-                '<tpl if="o.partner.street"><p>{o.partner.street}</p></tpl>',
-                '<tpl if="o.partner.street2"><p>{o.partner.street2}</p></tpl>',
-                '<tpl if="o.partner.zip && o.partner.city"><p>{o.partner.zip} {o.partner.city}</p></tpl>',
-                '<br/>',
+                '<tpl if="o.partner">',
+                '<table width="100%">',
+                    '<tr>',
+                        '<td><hr/></td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td>K U N D E</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td><hr/></td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td>',
+                            '{o.partner.name}',
+                            '<tpl if="o.partner.street"><br/>{o.partner.street}</tpl>',
+                            '<tpl if="o.partner.street2"><br/>{o.partner.street2}</tpl>',
+                            '<tpl if="o.partner.zip && o.partner.city"><br/>{o.partner.zip} {o.partner.city}</tpl>',
+                        '</td>',
+                    '</tr>',
+                '</table>',
                 '</tpl>',
+                '<br/>',
                 '<table width="100%">',
                 '<tr>',
                     '<td>Bezeichnung</td>',
@@ -758,7 +776,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '<tpl for="lines">',
                 '<tr>',
                     '<td>{name}</td>',
-                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
                 '</tr>',
                 '<tr>',
                     '<td colspan="2">',
@@ -772,12 +790,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '</tr>',
                 '<tr>',
                     '<td align="right"><b>S U M M E</b></td>',
-                    '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]} {[Config.getCurrency()]}</b></td>',        
+                    '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
                 '</tr>',
                 '<tpl for="o.payment_ids">',
                 '<tr>',
                     '<td align="right">{[this.getJournal(values.journal_id)]}</td>',
-                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]} {[Config.getCurrency()]}</td>',        
+                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',        
                 '</tr>',
                 '</tpl>',
                 '<tr>',                
@@ -786,23 +804,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '<tpl for="o.tax_ids">',
                 '<tr>',
                     '<td align="right">inkl. {name}</td>',
-                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',        
+                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]}</td>',        
                 '</tr>',
 				'</tpl>',
                 '</table>',
                 profile.receipt_footer || '',
-                '<br/>',
-                '<br/>',
-                '<br/>',
-                '<cut/>',
                 {
                     getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
-                        return uom && uom.get('name') || '';
+                        return uom ? uom.get('name') : '';
                     },
                     getJournal: function(journal_id) {
                         var journal = Config.getJournal(journal_id);
-                        return journal && journal.name || '';
+                        return journal ? journal.name : '';
                     }
                 }                
             );
@@ -812,8 +826,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var data = {
             o: this.order.getData(),
             lines: [],
-            priceColWidth: "33%",
-            attribWidth: "35%",
+            priceColWidth: "32%",
+            attribWidth: "34%",
             date: futil.strToDate(this.order.get('date'))
         };
         
@@ -845,6 +859,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }
         } else {
             Config.printHtml(html);
+        }
+    },
+    
+    display: function() {
+        var amount_total = this.order ? this.order.get('amount_total') : null;
+        if ( amount_total ) {
+            Config.display(amount_total.toString());
+        } else {
+            Config.display("0");
         }
     }
     

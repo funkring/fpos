@@ -21,6 +21,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testCashdrawer]' : {
                 tap: 'testCashdrawer'  
+            },
+            'button[action=testDB]' : {
+                tap: 'testDB'
             }
         }
     },
@@ -76,6 +79,19 @@ Ext.define('Fpos.controller.TestCtrl', {
         function(err) {
             self.getTestLabel().setHtml(err);
         });  
+    },
+    
+    testDB : function() {
+        var self = this;
+        self.beforeTest();
+        var db = Config.getDB();
+        db.info().then(function(info) {
+           self.getTestLabel().setHtml(
+            "<pre>" +
+            JSON.stringify(info, null, 2) +
+            "</pre>"
+            );
+        });
     }
     
 });

@@ -29,7 +29,7 @@ Ext.define('Fpos.Config', {
         hwStatus: { err: null },
         hwStatusId: null,
         cashJournal: null,
-        journalById: {},
+        journalById: {}
     },
     
     constructor: function(config) {
@@ -89,6 +89,17 @@ Ext.define('Fpos.Config', {
         if ( this.hasPrinter() ) {
             window.PosHw.printHtml(html);
         }          
+    },
+    
+    hasDisplay: function() {
+        var hwstatus = this.getHwStatus();
+        return hwstatus.display && hwstatus.display.installed;
+    },
+    
+    display: function(lines) {
+        if ( this.hasDisplay() ) {
+             window.PosHw.display(lines);
+        }
     },
  
     applyLog: function(store) {

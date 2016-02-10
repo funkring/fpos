@@ -1,6 +1,25 @@
 package at.oerp.util;
 
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class StringUtil {
+	
+	private final static Pattern PATTERN_NON_ASCII = Pattern.compile("[^\\p{ASCII}]");
+	private final static HashMap<String, String> NON_ASCII_REPLACEMENT;
+	
+	static {
+		NON_ASCII_REPLACEMENT = new HashMap<String, String>();
+		NON_ASCII_REPLACEMENT.put("ö", "oe");
+		NON_ASCII_REPLACEMENT.put("Ö", "Oe");
+		NON_ASCII_REPLACEMENT.put("ä", "ae");
+		NON_ASCII_REPLACEMENT.put("Ä", "Ae");
+		NON_ASCII_REPLACEMENT.put("ü", "ue");
+		NON_ASCII_REPLACEMENT.put("Ü", "Ue");
+		NON_ASCII_REPLACEMENT.put("ß", "ss");
+		NON_ASCII_REPLACEMENT.put("€", "EUR");
+	}
 	
 	/**
 	 * format string right
@@ -62,5 +81,25 @@ public class StringUtil {
 	 */
 	public static float parseDigits(String inDigits, int inLen, int inDecPlaces) {
 		 return Float.parseFloat(inDigits.substring(0, inLen-inDecPlaces) + "." + inDigits.substring(inLen-inDecPlaces, inLen));
+	}
+	
+	/**
+	 * Convert all non ASCII chars to something nice ;-)
+	 * @param inStr
+	 * @return converted string
+	 */
+	public static String toAscii(String inStr) {
+		StringBuffer b = new StringBuffer(inStr.length());
+		Matcher m = PATTERN_NON_ASCII.matcher(inStr);
+		while (m.find()) {
+			String repl = NON_ASCII_REPLACEMENT.get(m.group());
+			if ( repl != null ) {
+				m.appendReplacement(b, repl);
+			} else {
+				m.appendReplacement(b, "?");
+			}
+		}
+		m.appendTail(b);
+		return b.toString();
 	}
 }
