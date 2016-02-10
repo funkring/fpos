@@ -36,19 +36,22 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     },
     
     init: function() {
+        var self = this;
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
+        this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
-    },
-    
-    productViewInitialize: function() {
-        var self = this;
-        self.loadCategory(null);
         
         //search task
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
             self.loadProducts(self.categoryId, self.searchValue);
         });        
+        
+    },
+    
+    productViewInitialize: function() {
+        var self = this;
+        self.loadCategory(null);
         
         // global event after sync
         Ext.Viewport.on({
@@ -168,40 +171,49 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     loadCategory: function(categoryId) {
         var self = this;
         var db = Config.getDB();
-        var store = self.categoryStore;
-        // filter
-        var options = {
-            params : {
-                domain : [['parent_id','=',categoryId]]
-            },
-            callback: function() {
-                 DBUtil.findParents(db, categoryId, function(err, parents) {
-                    // vars
-                    var buttons = [self.getCategoryButton1(), self.getCategoryButton2(), self.getCategoryButton3()];
-                    var i;
-                    //show buttons     
-                    parents = !err && parents && parents.reverse() || [];
-                    for ( i=0; i < buttons.length; i++) {
-                        if ( i < parents.length ) {
-                            buttons[i].categoryId = parents[i]._id;
-                            buttons[i].setHidden(false);                                
-                            buttons[i].setText(parents[i].name);
-                        } else {                            
-                            buttons[i].setHidden(true);
-                        }
-                    }
-                    
-                    // enable/disable category view
-                    self.getCategoryDataView().setHidden(store.getCount() === 0); 
-                    // load products
-                    self.loadProducts(categoryId);                    
-                });
-            
-            }                    
-        };
         
-        // load
-        store.load(options);
+        // get category
+        var category = categoryId ? self.allCategoryStore.getById(categoryId) : null;
+        
+        // get parents
+        var parents = [];
+        var parent = category;
+        while ( parent ) {
+            parents.push(parent);
+            parent = self.allCategoryStore.getById(parent.get('parent_id'));                    
+        }
+        
+        var buttons = [self.getCategoryButton1(), self.getCategoryButton2(), self.getCategoryButton3()];
+        var i;
+        
+        //show/hide buttons     
+        parents = parents.reverse();
+        for ( i=0; i < buttons.length; i++) {
+            if ( i < parents.length ) {
+                buttons[i].categoryId = parents[i].getId();
+                if ( buttons[i].isHidden() ) {
+                    buttons[i].setHidden(false);
+                }                                
+                buttons[i].setText(parents[i].get('name'));
+            } else {     
+                if ( !buttons[i].isHidden() ) {                  
+                    buttons[i].setHidden(true);
+                }
+            }
+        } 
+        
+        // load categories
+        var categories = [];
+        self.allCategoryStore.each(function(category) {
+            if ( category.get('parent_id') == categoryId ) {
+                categories.push(category);
+            } 
+        });
+        
+        self.categoryStore.setData(categories);
+        self.getCategoryDataView().setHidden(categories.length === 0);
+        self.loadProducts(categoryId);     
+        
     }    
     
 });

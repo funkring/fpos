@@ -335,6 +335,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.order = order;    
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
+        self.getOrderItemList().deselectAll(true);
         
         if ( order ) {
             var options = {
@@ -347,9 +348,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             };
             self.lineStore.load(options);             
         } else {
-            self.lineStore.load(function(store) {
-               //load nothing                 
-            });
+            self.lineStore.setData([]);
         }        
     },
     
@@ -428,9 +427,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.orderStore.load(options);
         } else {
             // load nothing
-            self.orderStore.load(function(store) {
-                self.setOrder(null);    
-            });       
+            self.orderStore.setData([]);
+            self.setOrder(null);
         }        
     },
     
@@ -596,8 +594,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( self.order && !futil.isDoubleTap() ) {
             var lines = self.getOrderItemList().getSelection();
             var form;
-            if ( lines.length > 0) {
-                form =  Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
+            if ( lines.length > 0 && lines[0].get('order_id') == self.order.getId() ) {
+                form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
                 form.setRecord(lines[0]);
             } else {
                 form =  Ext.create("Fpos.view.OrderFormView", {'title' : 'Verkauf'});

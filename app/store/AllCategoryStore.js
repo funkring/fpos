@@ -1,6 +1,6 @@
 /*global Ext:false*/
 
-Ext.define('Fpos.store.CategoryStore', {
+Ext.define('Fpos.store.AllCategoryStore', {
     extend: 'Ext.data.Store',      
     config: {
         model: 'Fpos.model.Category'

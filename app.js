@@ -33,6 +33,7 @@ Ext.application({
     ],
         
     stores: [
+        'AllCategoryStore',
         'CategoryStore',
         'ProductStore',        
         'PosOrderStore',

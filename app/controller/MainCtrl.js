@@ -54,6 +54,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     init: function() {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");     
+        this.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
     },
     
     mainViewInitialize: function() {
@@ -211,21 +212,27 @@ Ext.define('Fpos.controller.MainCtrl', {
             
             // reload
             
-            // load tax
-            self.taxStore.load({
+            // load category
+            self.categoryStore.load({
                 callback: function() {
-                
-                    // load product units
-                    self.unitStore.load({
+                    
+                    // load tax
+                    self.taxStore.load({
                         callback: function() {
-                            // fire reload
-                            Ext.Viewport.fireEvent("reloadData");
-                            // ... and show login
-                            self.showLogin();                                    
+                        
+                            // load product units
+                            self.unitStore.load({
+                                callback: function() {
+                                    // fire reload
+                                    Ext.Viewport.fireEvent("reloadData");
+                                    // ... and show login
+                                    self.showLogin();                                    
+                                }
+                            });                                        
                         }
-                    });                                        
+                    });   
                 }
-            });            
+            });         
         })
         ['catch'](function (error) {
             if ( error.name === 'not_found') {
