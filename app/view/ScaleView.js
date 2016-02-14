@@ -3,6 +3,7 @@
 Ext.define('Fpos.view.ScaleView', {
     extend: 'Ext.Panel',    
     xtype: 'fpos_scale',
+    id: 'scaleView',
     requires: [
         'Ext.form.FieldSet', 
         'Ext.Button',
@@ -10,12 +11,13 @@ Ext.define('Fpos.view.ScaleView', {
         'Ext.Label'
     ],
     config: {        
+        record: null,
         layout: 'vbox',     
         items: [
             {
                 cls: 'ScaleLabel',
                 xtype: 'label',
-                height: '100px'                                
+                id: 'scaleLabel'                              
             },
             {
                 cls: 'ScaleInput', 
@@ -24,7 +26,7 @@ Ext.define('Fpos.view.ScaleView', {
                     {
                         xtype: 'button',
                         text: 'Übernehmen',    
-                        action: 'scaleInput',
+                        action: 'stopScale',
                         width: '200px',
                         height: '77px',  
                         ui: 'posInputButtonGreen',
@@ -33,7 +35,7 @@ Ext.define('Fpos.view.ScaleView', {
                     {
                         xtype: 'button',
                         text: 'Tara',    
-                        action: 'scaleSetTara',
+                        action: 'startScale',
                         width: '200px',
                         height: '77px',  
                         ui: 'posInputButtonBlack',
@@ -42,6 +44,15 @@ Ext.define('Fpos.view.ScaleView', {
                 ]
             }                
         ]
-    }
+    },
     
+    updateRecord: function(record) {
+        var label = this.getComponent("scaleLabel");
+        label.setRecord(record);
+        return this.callParent(arguments);
+    },
+    
+    startScale: function() {
+        this.fireEvent("startScale");   
+    }       
 });

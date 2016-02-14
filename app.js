@@ -29,7 +29,8 @@ Ext.application({
         'PosLine',
         'AccountTax',
         'ProductUnit',
-        'Partner'
+        'Partner',
+        'PosPayment'
     ],
         
     stores: [
@@ -48,7 +49,8 @@ Ext.application({
         'TestCtrl',
         'ProductViewCtrl',
         'OrderViewCtrl',
-        'PartnerCtrl'
+        'PartnerCtrl',
+        'ScaleViewCtrl'
     ],
 
     icon: {

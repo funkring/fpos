@@ -101,6 +101,47 @@ Ext.define('Fpos.Config', {
         }
     },
  
+    hasScale: function() {
+        var hwstatus = this.getHwStatus();
+        return this.getSettings().scale && hwstatus.scale && hwstatus.scale.supported;
+    },
+    
+    scaleInit: function(price, tara) {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if ( self.hasScale() ) {
+            window.PosHw.scaleInit(price, tara, function(result) {
+                deferred.resolve(result);
+            }, function(err) {
+                deferred.reject(err);
+            });
+        } else {
+            setTimeout(function() {
+                deferred.reject({ name : "Unsupported",
+                                  message: "Scale not supported!"});
+            }, 0);
+        }
+        return deferred.promise();
+    },
+    
+    scaleRead: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if ( self.hasScale() ) {
+            window.PosHw.scaleRead(function(result) {
+                deferred.resolve(result);
+            }, function(err) {
+                deferred.reject(err);
+            });
+        } else {
+            setTimeout(function() {
+                deferred.reject({ name : "Unsupported",
+                                  message: "Scale not supported!"});
+            }, 0);
+        }
+        return deferred.promise();
+    },
+ 
     applyLog: function(store) {
         if (store) {
             if ( !store ){

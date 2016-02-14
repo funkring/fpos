@@ -146,7 +146,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // product input event         
         Ext.Viewport.on({
             scope: self,
-            productInput: self.productInput
+            productInput: self.productInput            
+        });
+        
+        // validation event         
+        Ext.Viewport.on({
+            scope: self,
+            validateLines: self.validateLines            
         });
         
         // reload data
@@ -178,11 +184,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'uom_id' : product.get('uom_id'),
                     'tax_ids' : product.get('taxes_id'),
                     'brutto_price' : product.get('brutto_price'),
-                    'qty' : 1.0,
+                    'qty' : toWeight ? 0.0 : 1.0,
                     'subtotal_incl' : 0.0,
                     'discount' : 0.0,
                     'sequence' : self.lineStore.getCount()
-                });
+                })[0];
                
             }
             
@@ -193,8 +199,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             });
             
             // show weight dialog
-            var settings = Config.getSettings();
-            if ( changedLine && toWeight && settings.scale) {
+            if ( changedLine && Config.hasScale() ) {
                 if ( !self.scaleInput ) {
                     self.scaleInput = Ext.create('Fpos.view.ScaleView',{      
                         hideOnMaskTap: true,
@@ -205,8 +210,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 } else {
                     self.scaleInput.show();
                 }
+                
+                // start scale
                 self.scaleInput.setRecord(changedLine);
-                self.scaleInput.start();
+                self.scaleInput.startScale();
             }
         }
     },

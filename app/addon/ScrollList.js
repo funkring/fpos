@@ -12,6 +12,6 @@ Ext.define('Ext.view.ScrollList', {
     
     scrollToBottom: function() {
         var scroller = this.getScrollable().getScroller();
-        scroller.scrollToEnd(true);
+        scroller.scrollToEnd(false);
     }
 });

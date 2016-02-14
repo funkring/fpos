@@ -346,5 +346,9 @@ div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription
 
 .ScaleLabel {
     background-color: $fpos-input-dark !important;
-    padding: 10px;    
+    padding: 5px;    
+    font-size: 2em; 
+    font-weight: bold;
+    text-align: center;
+    color: white;
 }
