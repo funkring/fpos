@@ -2,8 +2,8 @@
 Ext.define('Fpos.controller.ScaleViewCtrl', {
     extend: 'Ext.app.Controller',
     requires: [    
-        "Ext.Viewport",
-        ""
+        "Ext.Button",
+        "Ext.Label"
     ],
     config: {
         refs: {
