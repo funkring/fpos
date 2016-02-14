@@ -8,7 +8,8 @@ Ext.define('Fpos.view.ConfigView', {
         'Ext.field.Text',
         'Ext.field.Password',
         'Ext.field.Hidden',
-        'Ext.field.Number'     
+        'Ext.field.Number',
+        'Ext.field.Toggle'  
     ],
     config: {
         scrollable: true,
@@ -90,7 +91,19 @@ Ext.define('Fpos.view.ConfigView', {
                         autoCapitalize: false
                     }                
                 ]
+            },
+            {
+                xtype: 'fieldset',
+                title: 'Konfiguration',
+                items: [
+                    {
+                        xtype: 'togglefield',
+                        name: 'scale',
+                        label: 'Waage'  
+                    }
+                ]
             }
+            
         ]
     }
     

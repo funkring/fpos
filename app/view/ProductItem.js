@@ -15,7 +15,8 @@ Ext.define("Fpos.view.ProductItem", {
     updateRecord: function(record) {        
         var self = this;
         var button = self.down('button');
-        button.setRecord(record);
+        if ( button )
+            button.setRecord(record);
     }
     
 });

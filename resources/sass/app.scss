@@ -163,16 +163,32 @@
 }
 
 .ProductCategoryButton {
-   width: 77px;
-   height: 77px;
+   width: 78px;
+   height: 56px;
    margin: 2px;
    color: #ffffff !important; 
    font-size: 1em;
 }
 
-.CategoryDataView {
-    width: 82px;
-    background-color: #777777 !important;
+.ProductCategoryButtonMedium {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: #ffffff !important; 
+   font-size: 0.85em;
+}
+
+.ProductCategoryButtonSmall {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: #ffffff !important; 
+   font-size: 0.72em;
+}
+
+.CategorySelection {
+    background-color: #525252 !important;
+    width: 86px;
 }
 
 .SelectedCategoryButton {
@@ -186,9 +202,8 @@
 .ProductButton {
     float: left;
     margin: 2px;
-    min-width: 100px;
-    max-width: 120px;
-    height: 110px;
+    width: 100px;
+    height: 100px;
     font-size: 0.7em;
     word-wrap:break-word;
 }

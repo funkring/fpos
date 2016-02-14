@@ -161,7 +161,8 @@ Ext.define('Ext.field.ListSelect', {
        };
        
        // build search domain
-       if ( !Ext.isEmpty(searchValue) && searchValue.length >= 3) {            
+       if ( !Ext.isEmpty(searchValue) && searchValue.length >= 3) {       
+           searchValue = searchValue.toLowerCase();
            var expr = "(doc."+searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0,3)) +") >= 0)";
            params.domain = [[expr,'=',true]];
        }

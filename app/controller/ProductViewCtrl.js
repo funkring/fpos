@@ -41,6 +41,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.cache = {};
         
         //search task
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
@@ -57,6 +58,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
+                this.cache = {};
                 self.loadCategory(null);
             }
         });     
@@ -64,7 +66,20 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     
     tapSelectCategory: function(button) {
         var self = this;
-        self.loadCategory(button.categoryId || null);
+        var categoryId = button.categoryId || null;
+        if ( categoryId === self.categoryId ) {
+            if ( !categoryId ) {
+                self.loadCategory(null);
+            } else {
+                // if category load parent
+                var category = self.allCategoryStore.getById(categoryId);
+                if ( category ) {
+                    self.loadCategory(category.get('parent_id'));
+                }
+            }
+        } else {
+            self.loadCategory(categoryId);
+        }
     },
       
     /**
@@ -129,6 +144,41 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.loadProducts(this.categoryId);
     },
     
+    search: function() {
+       var self = this;
+       var storeInst = self.getStore();
+       var searchValue = self.getSearchValue();
+       var searchField = self.getDisplayField();
+       
+       // search params
+       var params = {
+           limit: self.getLimit()
+       };
+       
+       // options
+       var options = {
+           params : params
+       };
+       
+       // build search domain
+       if ( !Ext.isEmpty(searchValue) && searchValue.length >= 3) {            
+           var expr = "(doc."+searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0,3)) +") >= 0)";
+           params.domain = [[expr,'=',true]];
+       }
+       
+       // search text or not
+       if ( !Ext.isEmpty(searchValue) ) {
+            options.filters = [{
+                property: searchField,
+                value: searchValue,
+                anyMatch: true
+            }];  
+       }
+       
+       // load
+       storeInst.load(options);
+   },
+    
     /**
      * load product
      */
@@ -136,10 +186,16 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         var self = this;
         self.categoryId = categoryId;
 
-        // options
-        var options = {
-        };
-
+       // search params
+       var params = {
+           limit: Config.getSearchLimit()
+       };
+       
+       // options
+       var options = {
+           params : params
+       };
+       
         // category        
         if ( self.categoryId ) {
             options.params = {
@@ -147,20 +203,48 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             };
         } 
 
-                
-        // search text or not
-        if ( !search ) {
+        // build search domain        
+        if ( Ext.isEmpty(self.searchValue) ) {
             self.searchValue = null;
             self.searchTask.cancel();
             self.getProductSearch().reset();
+            
+            // query cache
+            if ( self.categoryId ) {            
+                var cached = self.cache[self.categoryId];
+                if ( cached === undefined ) {
+                    //set cache
+                    cached = [];
+                    self.cache[self.categoryId] = cached;
+                    
+                    // cache
+                    options.callback = function() {
+                        self.productStore.each(function(rec) {
+                            cached.push(rec); 
+                        });
+                    };
+                } else {
+                    // set cached
+                    self.productStore.setData(cached);
+                    return;
+                }
+            }
+            
         } else {
+            // build search token
+            if ( self.searchValue.length >= 3 ) {            
+               var searchStr = JSON.stringify(self.searchValue.substring(0,3).toLowerCase());
+               var expr = "(doc.name && doc.name.toLowerCase().indexOf(" + searchStr +") >= 0)";
+               params.domain = [[expr,'=',true]];           
+            }
+            // add search filter
             options.filters = [{
                 property: 'name',
                 value: search,
                 anyMatch: true
-            }];         
+            }];
         }
-        
+      
         // load
         self.productStore.load(options);               
     },
@@ -174,46 +258,58 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         
         // get category
         var category = categoryId ? self.allCategoryStore.getById(categoryId) : null;
-        
-        // get parents
-        var parents = [];
-        var parent = category;
-        while ( parent ) {
-            parents.push(parent);
-            parent = self.allCategoryStore.getById(parent.get('parent_id'));                    
+        if (category) {
+            category.set('selected',true);
         }
-        
-        var buttons = [self.getCategoryButton1(), self.getCategoryButton2(), self.getCategoryButton3()];
-        var i;
-        
-        //show/hide buttons     
-        parents = parents.reverse();
-        for ( i=0; i < buttons.length; i++) {
-            if ( i < parents.length ) {
-                buttons[i].categoryId = parents[i].getId();
-                if ( buttons[i].isHidden() ) {
-                    buttons[i].setHidden(false);
-                }                                
-                buttons[i].setText(parents[i].get('name'));
-            } else {     
-                if ( !buttons[i].isHidden() ) {                  
-                    buttons[i].setHidden(true);
-                }
-            }
-        } 
         
         // load categories
         var categories = [];
-        self.allCategoryStore.each(function(category) {
-            if ( category.get('parent_id') == categoryId ) {
-                categories.push(category);
+        self.allCategoryStore.each(function(childCategory) {
+            if ( childCategory.get('parent_id') == categoryId ) {
+                childCategory.set('selected',false);
+                childCategory.set('parent',false);
+                categories.push(childCategory);
             } 
         });
+           
+        // get parents
+        var parents = [];
+        var parentId = null;
+        if ( category ) {
+            parentId = category.get('parent_id');
+            var parent = self.allCategoryStore.getById(parentId);
+            while (parent) {
+                parents.push(parent);
+                parent.set('parent',true);
+                parent = self.allCategoryStore.getById(parent.get('parent_id'));
+            }
+        }
         
-        self.categoryStore.setData(categories);
-        self.getCategoryDataView().setHidden(categories.length === 0);
+        // if has sub categories
+        if ( categories.length > 0 ) {
+            if (category) {
+                category.set('parent',true);
+                parents.push(category);
+            }
+            self.categoryStore.setData(parents.concat(categories));            
+        }
+        else if ( category ) {
+            // otherwise reset unselected siblings
+            self.categoryStore.each(function(childCategory) {
+                if ( childCategory.getId() != categoryId ) {
+                    childCategory.set('selected', false);
+                }
+            });
+        }
+        
+        // hide or show categories
+        var hidden = (self.categoryStore.getCount() === 0);
+        if ( hidden != self.getCategoryDataView().getHidden() ) {
+            self.getCategoryDataView().setHidden(hidden);
+        }
+       
+        // load products
         self.loadProducts(categoryId);     
-        
     }    
     
 });

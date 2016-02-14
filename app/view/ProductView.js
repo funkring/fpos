@@ -13,73 +13,46 @@ Ext.define('Fpos.view.ProductView', {
     config: {
         layout: 'vbox',
         cls: 'ProductContainer',
-        items: [
-            {
-                xtype: 'toolbar',
-                ui: 'categoryToolbar',
-                items: [
-                    {
-                        xtype: 'button',
-                        iconCls: 'home',
-                        cls: 'SelectedCategoryButton',
-                        categoryId: null,
-                        action: 'selectCategory'
-                    },
-                    {
-                        xtype: 'button',                        
-                        text: 'Sub1',
-                        ui: 'back',
-                        categoryId: null,
-                        hidden: true,
-                        id: 'categoryButton1',
-                        action: 'selectCategory'
-                    },       
-                    {
-                        xtype: 'button',
-                        text: 'Sub2',
-                        ui: 'back',
-                        categoryId: null,
-                        hidden: true,
-                        id: 'categoryButton2',
-                        action: 'selectCategory'
-                    },
-                    {
-                        xtype: 'button',
-                        text: 'Sub3',
-                        ui: 'back',
-                        categoryId: null,
-                        hidden: true,
-                        id: 'categoryButton3',
-                        action: 'selectCategory'
-                    },
-                    {
-                        flex: 1,
-                        xtype: 'searchfield',
-                        placeholder: 'Suche',
-                        id: 'productSearch'
-                    }
-                ]                 
-            },
+        items: [        
             {
                 layout: "hbox",
                 flex: 1,
                 items: [                   
-                    {            
+                    {        
                         xtype: 'dataview',
+                        cls: 'CategorySelection',
                         useComponents: true,
-                        cls: 'CategoryDataView',  
                         id: 'categoryDataView',                              
                         defaultType: 'fpos_category_item',
                         hidden: true,
-                        store: "CategoryStore"
+                        store: 'CategoryStore'
                     },
                     {
-                        cls: 'ProductDataView',
-                        xtype: 'dataview',
-                        useComponents: true,
-                        defaultType: 'fpos_product_item',
-                        flex: 1,    
-                        store: "ProductStore"            
+                        layout: "vbox",
+                        flex: 1,
+                        items: [
+                            {
+                                xtype: 'toolbar',
+                                ui: 'categoryToolbar',
+                                items: [
+                                    {
+                                        flex: 1,
+                                        xtype: 'searchfield',
+                                        placeholder: 'Suche',
+                                        id: 'productSearch'
+                                    }
+                                ]                 
+                            },
+                            {
+                                cls: 'ProductDataView',
+                                xtype: 'dataview',
+                                useComponents: true,
+                                defaultType: 'fpos_product_item',
+                                flex: 1,    
+                                store: "ProductStore"        
+                            }
+                        ]
+                          
                     }                 
                 ]
             }

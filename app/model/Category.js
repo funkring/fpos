@@ -5,7 +5,12 @@ Ext.define('Fpos.model.Category', {
        'Ext.proxy.PouchDB'
    ],
    config: {
-       fields: ['name', 'parent_id'],
+       fields: ['name',                 
+                'parent_id',
+                'sequence',
+                {name:'selected', persist:false},
+                {name:'parent', persist:false}
+               ],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',
