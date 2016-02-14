@@ -7,7 +7,8 @@ Ext.define('Fpos.controller.TestCtrl', {
     ],
     config: {
         refs: {
-            testLabel: '#testLabel'
+            testLabel: '#testLabel',
+            testView: '#testView'
         },
         control: {     
             'button[action=testInterface]' : {
@@ -24,6 +25,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testDB]' : {
                 tap: 'testDB'
+            },
+            'button[action=delDB]' : { 
+                tap: 'delDB'
             }
         }
     },
@@ -92,6 +96,19 @@ Ext.define('Fpos.controller.TestCtrl', {
             "</pre>"
             );
         });
+    },
+    
+    delDB: function() {
+        var self = this;
+        self.beforeTest();
+        if ( !Config.getUser() ) {          
+            var db = Config.getDB();
+            db.destroy().then(function() {
+                Ext.Viewport.fireEvent("posReset");
+            })['catch'](function(err) {
+                self.getTestLabel().setHtml(err);
+            });
+        }
     }
     
 });

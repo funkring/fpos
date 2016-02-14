@@ -65,6 +65,13 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showForm: self.showForm
         });
+        
+        // pos reset event
+        /*
+        Ext.Viewport.on({
+            scope: self,
+            posReset: self.resetConfig
+        });*/
 
         // reset config
         self.resetConfig();
@@ -249,6 +256,12 @@ Ext.define('Fpos.controller.MainCtrl', {
     resetConfig: function() {
        var self = this;
        var mainView = self.getMainView();
+       
+       // pop all views, untail base panel
+       /*
+       while ( mainView.getActiveItem() && mainView.getActiveItem() != self.basePanel ) {
+            mainView.pop();
+       }*/
        
        // create base panel
        if ( !self.basePanel ) {

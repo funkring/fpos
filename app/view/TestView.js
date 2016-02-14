@@ -3,6 +3,7 @@
 Ext.define('Fpos.view.TestView', {
     extend: 'Ext.Panel',    
     xtype: 'fpos_test',
+    id: 'testView',
     requires: [
       'Ext.Button',
       'Ext.Label'
@@ -55,6 +56,15 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Test Database',    
                         action: 'testDB',
+                        width: '250px',
+                        height: '77px',  
+                        ui: 'posInputButtonBlack',
+                        cls : 'TestButton'
+                     },
+                     {
+                        xtype: 'button',
+                        text: 'Delete Database',    
+                        action: 'delDB',
                         width: '250px',
                         height: '77px',  
                         ui: 'posInputButtonBlack',
