@@ -7,7 +7,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         'Ext.proxy.PouchDBUtil',
         'Fpos.view.OrderView',
         'Fpos.view.OrderLineFormView',
-        'Fpos.view.OrderFormView'
+        'Fpos.view.OrderFormView',
+        'Fpos.view.ScaleView'
     ],
     config: {
         refs: {
@@ -191,6 +192,22 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 self.setMode('*');
             });
             
+            // show weight dialog
+            var settings = Config.getSettings();
+            if ( changedLine && toWeight && settings.scale) {
+                if ( !self.scaleInput ) {
+                    self.scaleInput = Ext.create('Fpos.view.ScaleView',{      
+                        hideOnMaskTap: true,
+                        modal: true,
+                        centered : true                
+                    });
+                    Ext.Viewport.add( self.scaleInput );
+                } else {
+                    self.scaleInput.show();
+                }
+                self.scaleInput.setRecord(changedLine);
+                self.scaleInput.start();
+            }
         }
     },
     

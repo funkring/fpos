@@ -35,8 +35,7 @@ Ext.define('Fpos.Config', {
     constructor: function(config) {
         this.initConfig(config);
     },
-    
-    
+        
     testSetup: function() {
         window.PosHw.test(function(res) {
             //debugger;
@@ -118,7 +117,7 @@ Ext.define('Fpos.Config', {
             seqStr =  profile.fpos_prefix + seqStr; 
         }
         return seqStr;
-     },
+    },
       
     updateProfile: function(profile) {
         var self = this;        
@@ -149,12 +148,12 @@ Ext.define('Fpos.Config', {
     
     newClient: function() {
         var settings = this.getSettings();
-        if (!settings) 
+        if (!settings) {
             throw {
                 name : "No Settings",
                 message: "No settings to create a client"
             };
-            
+        }
             
         var client = Ext.create('Ext.client.OdooClient', {
             "host" : settings.host,
@@ -163,7 +162,6 @@ Ext.define('Fpos.Config', {
             "login" : settings.login,
             "password" : settings.password            
         });
-        
         
         return client;
     }

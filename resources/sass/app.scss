@@ -11,6 +11,13 @@
 
 
 // ******************************************************************
+// CONST
+// ******************************************************************
+
+$fpos-input-dark: #525252;
+$fpos-input-grey: #777777;
+
+// ******************************************************************
 // Invalids
 // ******************************************************************
 
@@ -51,7 +58,7 @@
 // ******************************************************************
 
 @include sencha-button-ui('numInputButtonRed', #e06b5e,'matt');
-@include sencha-button-ui('numInputButtonBlack', #525252,'matt');
+@include sencha-button-ui('numInputButtonBlack', $fpos-input-dark,'matt');
 @include sencha-button-ui('numInputButtonGreen', #3c9d53,'matt');
 
 .NumInputButton {
@@ -61,7 +68,7 @@
 }
 
 .NumInputContainer {
-    background-color: #525252 !important;
+    background-color: $fpos-input-dark !important;
     padding: 8px;
 }
 
@@ -89,8 +96,8 @@
 // ******************************************************************
 
 @include sencha-button-ui('posInputButtonRed', #e06b5e,'matt');
-@include sencha-button-ui('posInputButtonBlack', #525252,'matt');
-@include sencha-button-ui('posInputButtonGray', #777777,'matt');
+@include sencha-button-ui('posInputButtonBlack', $fpos-input-dark,'matt');
+@include sencha-button-ui('posInputButtonGray', $fpos-input-grey,'matt');
 @include sencha-button-ui('posInputButtonGreen', #3c9d53,'matt');
 @include sencha-button-ui('posInputButtonOrange', #ff7f2a,'matt');
 @include sencha-button-ui('posInputButtonWhite', #ffffff,'matt');
@@ -102,15 +109,21 @@
 }
 
 .PosInputContainer {
-    background-color: #525252 !important;
+    background-color: $fpos-input-dark !important;
     padding: 2px;
+}
+
+.PosInputButtonOther {
+    margin: 4px;
+    color: #ffffff !important; 
+    font-size: 1.4em;    
 }
 
 // ******************************************************************
 // PosStatusBar 
 // ******************************************************************
 
-@include sencha-toolbar-ui('posStatusBar', #525252, 'bevel');
+@include sencha-toolbar-ui('posStatusBar', $fpos-input-dark, 'bevel');
 
 .PosDisplayLabel {
     padding: 5px;    
@@ -153,7 +166,7 @@
 // ProductView
 // ******************************************************************
 
-@include sencha-toolbar-ui('categoryToolbar', #777777, 'matt');
+@include sencha-toolbar-ui('categoryToolbar', $fpos-input-grey, 'matt');
 
 .CategoryToolbar {
 }
@@ -187,7 +200,7 @@
 }
 
 .CategorySelection {
-    background-color: #525252 !important;
+    background-color: $fpos-input-dark !important;
     width: 86px;
 }
 
@@ -215,7 +228,7 @@
     vertical-align: top;
     line-height: 13px;
     color: #ffffff !important; 
-    background-color: #777777 !important;
+    background-color: $fpos-input-grey !important;
     padding: 2px 5px;
     border-radius: 2px;
 }
@@ -319,4 +332,19 @@ div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription
 .PrintReport {
     font-family: monospace;
     margin: 5px;
+}
+
+
+// ******************************************************************
+// Scale
+// ******************************************************************
+
+.ScaleInput {
+    background-color: $fpos-input-grey !important;
+    padding: 10px;    
+}
+
+.ScaleLabel {
+    background-color: $fpos-input-dark !important;
+    padding: 10px;    
 }
