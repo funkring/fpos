@@ -63,13 +63,14 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
-				PosHwScale scale = posHw.getScale();
 				try {
-					if ( scale.init(11.99f, 0.0f) ) {
-						if ( scaleTask == null ) {
-							scaleTask = new ScaleTask();
-							scaleTask.execute();
-						}
+					float price = (float) (Math.random()*20.0);
+					if ( scaleTask == null ) {
+						scaleTask = new ScaleTask(price, 0.0f);						
+						scaleTask.execute();
+					} else {
+						scaleTask.price = price;
+						scaleTask.init = true;
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -121,6 +122,17 @@ public class MainActivity extends Activity {
 	
 	private class ScaleTask extends AsyncTask<Void, WeightResult, Void> {
 
+		float price;
+		float tara;
+		boolean init;
+		
+		public ScaleTask(float inPrice, float inTara) {
+			super();
+			price = inPrice;
+			tara = inTara;
+			init = true;
+		}
+		
 		@Override
 		protected void onProgressUpdate(WeightResult... values) {
 			super.onProgressUpdate(values);
@@ -140,11 +152,20 @@ public class MainActivity extends Activity {
 			WeightResult result = new WeightResult();
 			try {				
 				while ( !isCancelled() ) {
-					boolean successful =  posHw.getScale().readResult(result);
-					if ( successful) {
-						publishProgress(result);
-					} 
-					Thread.sleep(200);
+					if ( init ) {
+						if ( posHw.getScale().init(price, tara) ) {
+							init = false;
+						}
+					} else {
+						boolean successful =  posHw.getScale().readResult(result);
+						if ( successful) {
+							if ( result.price != price) {
+								init = true;
+							} 
+							publishProgress(result);
+						}
+						Thread.sleep(40);
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

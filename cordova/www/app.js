@@ -67223,7 +67223,17 @@ Ext.define('Fpos.model.Category', {
     extend: Ext.data.Model,
     config: {
         fields: [
-            'name'
+            'name',
+            'parent_id',
+            'sequence',
+            {
+                name: 'selected',
+                persist: false
+            },
+            {
+                name: 'parent',
+                persist: false
+            }
         ],
         identifier: 'uuid',
         proxy: {
@@ -67394,6 +67404,18 @@ Ext.define('Fpos.model.Partner', {
                 field: 'partner_id',
                 message: 'Ein verwendeter Partner kann nicht gelöscht werden!'
             }
+        ]
+    }
+});
+
+/*global Ext:false, Config:false*/
+Ext.define('Fpos.model.PosPayment', {
+    extend: Ext.data.Model,
+    config: {
+        fields: [
+            'journal_id',
+            'amount',
+            'payment'
         ]
     }
 });
@@ -67925,6 +67947,48 @@ Ext.define('Fpos.Config', {
             window.PosHw.display(lines);
         }
     },
+    hasScale: function() {
+        var hwstatus = this.getHwStatus();
+        return this.getSettings().scale && hwstatus.scale && hwstatus.scale.supported;
+    },
+    scaleInit: function(price, tara) {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if (self.hasScale()) {
+            window.PosHw.scaleInit(price, tara, function(result) {
+                deferred.resolve(result);
+            }, function(err) {
+                deferred.reject(err);
+            });
+        } else {
+            setTimeout(function() {
+                deferred.reject({
+                    name: "Unsupported",
+                    message: "Scale not supported!"
+                });
+            }, 0);
+        }
+        return deferred.promise();
+    },
+    scaleRead: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if (self.hasScale()) {
+            window.PosHw.scaleRead(function(result) {
+                deferred.resolve(result);
+            }, function(err) {
+                deferred.reject(err);
+            });
+        } else {
+            setTimeout(function() {
+                deferred.reject({
+                    name: "Unsupported",
+                    message: "Scale not supported!"
+                });
+            }, 0);
+        }
+        return deferred.promise();
+    },
     applyLog: function(store) {
         if (store) {
             if (!store) {
@@ -67967,13 +68031,12 @@ Ext.define('Fpos.Config', {
     },
     newClient: function() {
         var settings = this.getSettings();
-        if (!settings)  {
+        if (!settings) {
             throw {
                 name: "No Settings",
                 message: "No settings to create a client"
             };
         }
-        
         var client = Ext.create('Ext.client.OdooClient', {
                 "host": settings.host,
                 "port": settings.port,
@@ -68080,6 +68143,17 @@ Ext.define('Fpos.view.ConfigView', {
                         autoComplete: false,
                         autoCorrect: false,
                         autoCapitalize: false
+                    }
+                ]
+            },
+            {
+                xtype: 'fieldset',
+                title: 'Konfiguration',
+                items: [
+                    {
+                        xtype: 'togglefield',
+                        name: 'scale',
+                        label: 'Waage'
                     }
                 ]
             }
@@ -68695,8 +68769,28 @@ Ext.define("Fpos.view.CategoryItem", {
     updateRecord: function(record) {
         var self = this;
         var button = self.down('button');
-        button.setText(record.get('name'));
-        button.categoryId = record.getId();
+        var name = record.get('name') || '';
+        // config text
+        if (name.length >= 7) {
+            button.setCls('ProductCategoryButtonSmall');
+        } else if (name.length > 5) {
+            button.setCls('ProductCategoryButtonMedium');
+        } else {
+            button.setCls('ProductCategoryButton');
+        }
+        // config ui
+        if (record.get('parent')) {
+            button.setUi('posInputButtonOrange');
+            button.categoryId = record.get('parent_id');
+        } else if (record.get('selected')) {
+            button.setUi('posInputButtonGray');
+            button.categoryId = record.getId();
+        } else {
+            button.setUi('posInputButtonBlack');
+            button.categoryId = record.getId();
+        }
+        // text
+        button.setText(name);
     }
 });
 
@@ -68717,7 +68811,10 @@ Ext.define("Fpos.view.ProductItem", {
     updateRecord: function(record) {
         var self = this;
         var button = self.down('button');
-        button.setRecord(record);
+        if (button)  {
+            button.setRecord(record);
+        }
+        
     }
 });
 
@@ -68731,71 +68828,43 @@ Ext.define('Fpos.view.ProductView', {
         cls: 'ProductContainer',
         items: [
             {
-                xtype: 'toolbar',
-                ui: 'categoryToolbar',
-                items: [
-                    {
-                        xtype: 'button',
-                        iconCls: 'home',
-                        cls: 'SelectedCategoryButton',
-                        categoryId: null,
-                        action: 'selectCategory'
-                    },
-                    {
-                        xtype: 'button',
-                        text: 'Sub1',
-                        ui: 'back',
-                        categoryId: null,
-                        hidden: true,
-                        id: 'categoryButton1',
-                        action: 'selectCategory'
-                    },
-                    {
-                        xtype: 'button',
-                        text: 'Sub2',
-                        ui: 'back',
-                        categoryId: null,
-                        hidden: true,
-                        id: 'categoryButton2',
-                        action: 'selectCategory'
-                    },
-                    {
-                        xtype: 'button',
-                        text: 'Sub3',
-                        ui: 'back',
-                        categoryId: null,
-                        hidden: true,
-                        id: 'categoryButton3',
-                        action: 'selectCategory'
-                    },
-                    {
-                        flex: 1,
-                        xtype: 'searchfield',
-                        placeholder: 'Suche',
-                        id: 'productSearch'
-                    }
-                ]
-            },
-            {
                 layout: "hbox",
                 flex: 1,
                 items: [
                     {
                         xtype: 'dataview',
+                        cls: 'CategorySelection',
                         useComponents: true,
-                        cls: 'CategoryDataView',
                         id: 'categoryDataView',
                         defaultType: 'fpos_category_item',
                         hidden: true,
-                        store: "CategoryStore"
+                        store: 'CategoryStore'
                     },
                     {
-                        cls: 'ProductDataView',
-                        xtype: 'dataview',
-                        useComponents: true,
-                        defaultType: 'fpos_product_item',
+                        layout: "vbox",
                         flex: 1,
-                        store: "ProductStore"
+                        items: [
+                            {
+                                xtype: 'toolbar',
+                                ui: 'categoryToolbar',
+                                items: [
+                                    {
+                                        flex: 1,
+                                        xtype: 'searchfield',
+                                        placeholder: 'Suche',
+                                        id: 'productSearch'
+                                    }
+                                ]
+                            },
+                            {
+                                cls: 'ProductDataView',
+                                xtype: 'dataview',
+                                useComponents: true,
+                                defaultType: 'fpos_product_item',
+                                flex: 1,
+                                store: "ProductStore"
+                            }
+                        ]
                     }
                 ]
             }
@@ -68814,7 +68883,7 @@ Ext.define('Ext.view.ScrollList', {
     },
     scrollToBottom: function() {
         var scroller = this.getScrollable().getScroller();
-        scroller.scrollToEnd(true);
+        scroller.scrollToEnd(false);
     }
 });
 
@@ -69075,6 +69144,7 @@ Ext.define('Fpos.view.OrderInputView', {
 Ext.define('Fpos.view.TestView', {
     extend: Ext.Panel,
     xtype: 'fpos_test',
+    id: 'testView',
     config: {
         layout: 'hbox',
         items: [
@@ -69123,6 +69193,15 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Test Database',
                         action: 'testDB',
+                        width: '250px',
+                        height: '77px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Delete Database',
+                        action: 'delDB',
                         width: '250px',
                         height: '77px',
                         ui: 'posInputButtonBlack',
@@ -69179,6 +69258,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     init: function() {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
     },
     mainViewInitialize: function() {
         var self = this;
@@ -69187,6 +69267,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showForm: self.showForm
         });
+        // pos reset event
+        /*
+        Ext.Viewport.on({
+            scope: self,
+            posReset: self.resetConfig
+        });*/
         // reset config
         self.resetConfig();
     },
@@ -69337,16 +69423,21 @@ Ext.define('Fpos.controller.MainCtrl', {
         }).then(function(profile) {
             Config.setProfile(profile);
             // reload
-            // load tax
-            self.taxStore.load({
+            // load category
+            self.categoryStore.load({
                 callback: function() {
-                    // load product units
-                    self.unitStore.load({
+                    // load tax
+                    self.taxStore.load({
                         callback: function() {
-                            // fire reload
-                            Ext.Viewport.fireEvent("reloadData");
-                            // ... and show login
-                            self.showLogin();
+                            // load product units
+                            self.unitStore.load({
+                                callback: function() {
+                                    // fire reload
+                                    Ext.Viewport.fireEvent("reloadData");
+                                    // ... and show login
+                                    self.showLogin();
+                                }
+                            });
                         }
                     });
                 }
@@ -69365,6 +69456,11 @@ Ext.define('Fpos.controller.MainCtrl', {
     resetConfig: function() {
         var self = this;
         var mainView = self.getMainView();
+        // pop all views, untail base panel
+        /*
+       while ( mainView.getActiveItem() && mainView.getActiveItem() != self.basePanel ) {
+            mainView.pop();
+       }*/
         // create base panel
         if (!self.basePanel) {
             // info template       
@@ -69674,7 +69770,8 @@ Ext.define('Fpos.controller.TestCtrl', {
     extend: Ext.app.Controller,
     config: {
         refs: {
-            testLabel: '#testLabel'
+            testLabel: '#testLabel',
+            testView: '#testView'
         },
         control: {
             'button[action=testInterface]': {
@@ -69691,6 +69788,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testDB]': {
                 tap: 'testDB'
+            },
+            'button[action=delDB]': {
+                tap: 'delDB'
             }
         }
     },
@@ -69742,6 +69842,18 @@ Ext.define('Fpos.controller.TestCtrl', {
         db.info().then(function(info) {
             self.getTestLabel().setHtml("<pre>" + JSON.stringify(info, null, 2) + "</pre>");
         });
+    },
+    delDB: function() {
+        var self = this;
+        self.beforeTest();
+        if (!Config.getUser()) {
+            var db = Config.getDB();
+            db.destroy().then(function() {
+                Ext.Viewport.fireEvent("posReset");
+            })['catch'](function(err) {
+                self.getTestLabel().setHtml(err);
+            });
+        }
     }
 });
 
@@ -69775,28 +69887,45 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         }
     },
     init: function() {
+        var self = this;
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
+        this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
-    },
-    productViewInitialize: function() {
-        var self = this;
-        self.loadCategory(null);
+        this.cache = {};
         //search task
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
             self.loadProducts(self.categoryId, self.searchValue);
         });
+    },
+    productViewInitialize: function() {
+        var self = this;
+        self.loadCategory(null);
         // global event after sync
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
+                this.cache = {};
                 self.loadCategory(null);
             }
         });
     },
     tapSelectCategory: function(button) {
         var self = this;
-        self.loadCategory(button.categoryId || null);
+        var categoryId = button.categoryId || null;
+        if (categoryId === self.categoryId) {
+            if (!categoryId) {
+                self.loadCategory(null);
+            } else {
+                // if category load parent
+                var category = self.allCategoryStore.getById(categoryId);
+                if (category) {
+                    self.loadCategory(category.get('parent_id'));
+                }
+            }
+        } else {
+            self.loadCategory(categoryId);
+        }
     },
     /**
      * set product item template
@@ -69836,14 +69965,57 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     searchItemClearIconTap: function() {
         this.loadProducts(this.categoryId);
     },
+    search: function() {
+        var self = this;
+        var storeInst = self.getStore();
+        var searchValue = self.getSearchValue();
+        var searchField = self.getDisplayField();
+        // search params
+        var params = {
+                limit: self.getLimit()
+            };
+        // options
+        var options = {
+                params: params
+            };
+        // build search domain
+        if (!Ext.isEmpty(searchValue) && searchValue.length >= 3) {
+            var expr = "(doc." + searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0, 3)) + ") >= 0)";
+            params.domain = [
+                [
+                    expr,
+                    '=',
+                    true
+                ]
+            ];
+        }
+        // search text or not
+        if (!Ext.isEmpty(searchValue)) {
+            options.filters = [
+                {
+                    property: searchField,
+                    value: searchValue,
+                    anyMatch: true
+                }
+            ];
+        }
+        // load
+        storeInst.load(options);
+    },
     /**
      * load product
      */
     loadProducts: function(categoryId, search) {
         var self = this;
         self.categoryId = categoryId;
+        // search params
+        var params = {
+                limit: Config.getSearchLimit()
+            };
         // options
-        var options = {};
+        var options = {
+                params: params
+            };
         // category        
         if (self.categoryId) {
             options.params = {
@@ -69856,12 +70028,44 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                 ]
             };
         }
-        // search text or not
-        if (!search) {
+        // build search domain        
+        if (Ext.isEmpty(self.searchValue)) {
             self.searchValue = null;
             self.searchTask.cancel();
             self.getProductSearch().reset();
+            // query cache
+            if (self.categoryId) {
+                var cached = self.cache[self.categoryId];
+                if (cached === undefined) {
+                    //set cache
+                    cached = [];
+                    self.cache[self.categoryId] = cached;
+                    // cache
+                    options.callback = function() {
+                        self.productStore.each(function(rec) {
+                            cached.push(rec);
+                        });
+                    };
+                } else {
+                    // set cached
+                    self.productStore.setData(cached);
+                    return;
+                }
+            }
         } else {
+            // build search token
+            if (self.searchValue.length >= 3) {
+                var searchStr = JSON.stringify(self.searchValue.substring(0, 3).toLowerCase());
+                var expr = "(doc.name && doc.name.toLowerCase().indexOf(" + searchStr + ") >= 0)";
+                params.domain = [
+                    [
+                        expr,
+                        '=',
+                        true
+                    ]
+                ];
+            }
+            // add search filter
             options.filters = [
                 {
                     property: 'name',
@@ -69879,47 +70083,54 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     loadCategory: function(categoryId) {
         var self = this;
         var db = Config.getDB();
-        var store = self.categoryStore;
-        // filter
-        var options = {
-                params: {
-                    domain: [
-                        [
-                            'parent_id',
-                            '=',
-                            categoryId
-                        ]
-                    ]
-                },
-                callback: function() {
-                    DBUtil.findParents(db, categoryId, function(err, parents) {
-                        // vars
-                        var buttons = [
-                                self.getCategoryButton1(),
-                                self.getCategoryButton2(),
-                                self.getCategoryButton3()
-                            ];
-                        var i;
-                        //show buttons     
-                        parents = !err && parents && parents.reverse() || [];
-                        for (i = 0; i < buttons.length; i++) {
-                            if (i < parents.length) {
-                                buttons[i].categoryId = parents[i]._id;
-                                buttons[i].setHidden(false);
-                                buttons[i].setText(parents[i].name);
-                            } else {
-                                buttons[i].setHidden(true);
-                            }
-                        }
-                        // enable/disable category view
-                        self.getCategoryDataView().setHidden(store.getCount() === 0);
-                        // load products
-                        self.loadProducts(categoryId);
-                    });
+        // get category
+        var category = categoryId ? self.allCategoryStore.getById(categoryId) : null;
+        if (category) {
+            category.set('selected', true);
+        }
+        // load categories
+        var categories = [];
+        self.allCategoryStore.each(function(childCategory) {
+            if (childCategory.get('parent_id') == categoryId) {
+                childCategory.set('selected', false);
+                childCategory.set('parent', false);
+                categories.push(childCategory);
+            }
+        });
+        // get parents
+        var parents = [];
+        var parentId = null;
+        if (category) {
+            parentId = category.get('parent_id');
+            var parent = self.allCategoryStore.getById(parentId);
+            while (parent) {
+                parents.push(parent);
+                parent.set('parent', true);
+                parent = self.allCategoryStore.getById(parent.get('parent_id'));
+            }
+        }
+        // if has sub categories
+        if (categories.length > 0) {
+            if (category) {
+                category.set('parent', true);
+                parents.push(category);
+            }
+            self.categoryStore.setData(parents.concat(categories));
+        } else if (category) {
+            // otherwise reset unselected siblings
+            self.categoryStore.each(function(childCategory) {
+                if (childCategory.getId() != categoryId) {
+                    childCategory.set('selected', false);
                 }
-            };
-        // load
-        store.load(options);
+            });
+        }
+        // hide or show categories
+        var hidden = (self.categoryStore.getCount() === 0);
+        if (hidden != self.getCategoryDataView().getHidden()) {
+            self.getCategoryDataView().setHidden(hidden);
+        }
+        // load products
+        self.loadProducts(categoryId);
     }
 });
 
@@ -70091,6 +70302,7 @@ Ext.define('Ext.field.ListSelect', {
             };
         // build search domain
         if (!Ext.isEmpty(searchValue) && searchValue.length >= 3) {
+            searchValue = searchValue.toLowerCase();
             var expr = "(doc." + searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0, 3)) + ") >= 0)";
             params.domain = [
                 [
@@ -70229,6 +70441,47 @@ Ext.define('Fpos.view.OrderFormView', {
     }
 });
 
+/*global Ext:false*/
+Ext.define('Fpos.view.ScaleView', {
+    extend: Ext.Panel,
+    xtype: 'fpos_scale',
+    id: 'scaleView',
+    config: {
+        record: null,
+        layout: 'vbox',
+        items: [
+            {
+                cls: 'ScaleLabel',
+                xtype: 'label',
+                id: 'scaleLabel'
+            },
+            {
+                cls: 'ScaleInput',
+                layout: 'vbox',
+                items: [
+                    {
+                        xtype: 'button',
+                        text: 'Übernehmen',
+                        action: 'stopScale',
+                        width: '200px',
+                        height: '77px',
+                        ui: 'posInputButtonGreen',
+                        cls: 'PosInputButtonOther'
+                    }
+                ]
+            }
+        ]
+    },
+    updateRecord: function(record) {
+        var label = this.getComponent("scaleLabel");
+        label.setRecord(record);
+        return this.callParent(arguments);
+    },
+    startScale: function() {
+        this.fireEvent("startScale");
+    }
+});
+
 /*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
 Ext.define('Fpos.controller.OrderViewCtrl', {
     extend: Ext.app.Controller,
@@ -70315,6 +70568,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             scope: self,
             productInput: self.productInput
         });
+        // validation event         
+        Ext.Viewport.on({
+            scope: self,
+            validateLines: self.validateLines
+        });
         // reload data
         self.reloadData();
     },
@@ -70342,17 +70600,33 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'uom_id': product.get('uom_id'),
                     'tax_ids': product.get('taxes_id'),
                     'brutto_price': product.get('brutto_price'),
-                    'qty': 1,
+                    'qty': toWeight ? 0 : 1,
                     'subtotal_incl': 0,
                     'discount': 0,
                     'sequence': self.lineStore.getCount()
-                });
+                })[0];
             }
             // validate lines
             self.validateLines().then(function() {
                 self.getOrderItemList().select(changedLine);
                 self.setMode('*');
             });
+            // show weight dialog
+            if (toWeight && changedLine && Config.hasScale()) {
+                if (!self.scaleInput) {
+                    self.scaleInput = Ext.create('Fpos.view.ScaleView', {
+                        hideOnMaskTap: true,
+                        modal: true,
+                        centered: true
+                    });
+                    Ext.Viewport.add(self.scaleInput);
+                } else {
+                    self.scaleInput.show();
+                }
+                // start scale
+                self.scaleInput.setRecord(changedLine);
+                self.scaleInput.startScale();
+            }
         }
     },
     // compute line values
@@ -70480,6 +70754,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.order = order;
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
+        self.getOrderItemList().deselectAll(true);
         if (order) {
             var options = {
                     params: {
@@ -70497,10 +70772,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 };
             self.lineStore.load(options);
         } else {
-            self.lineStore.load(function(store) {});
+            self.lineStore.setData([]);
         }
     },
-    //load nothing                 
     // create new order
     nextOrder: function() {
         var self = this;
@@ -70580,9 +70854,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.orderStore.load(options);
         } else {
             // load nothing
-            self.orderStore.load(function(store) {
-                self.setOrder(null);
-            });
+            self.orderStore.setData([]);
+            self.setOrder(null);
         }
     },
     isEditable: function() {
@@ -70734,7 +71007,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if (self.order && !futil.isDoubleTap()) {
             var lines = self.getOrderItemList().getSelection();
             var form;
-            if (lines.length > 0) {
+            if (lines.length > 0 && lines[0].get('order_id') == self.order.getId()) {
                 form = Ext.create("Fpos.view.OrderLineFormView", {
                     'title': 'Position'
                 });
@@ -71009,12 +71282,130 @@ Ext.define('Fpos.controller.PartnerCtrl', {
     }
 });
 
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
+Ext.define('Fpos.controller.ScaleViewCtrl', {
+    extend: Ext.app.Controller,
+    config: {
+        refs: {
+            scaleView: '#scaleView',
+            scaleLabel: '#scaleLabel'
+        },
+        control: {
+            'button[action=stopScale]': {
+                tap: 'onStopScale'
+            },
+            scaleView: {
+                startScale: 'startScale',
+                hide: 'onHide'
+            },
+            scaleLabel: {
+                initialize: 'scaleLabelInitialize'
+            }
+        }
+    },
+    init: function() {
+        this.reinit = false;
+        this.price = 0;
+        this.tara = 0;
+        this.timeout = 500;
+        this.state = 0;
+    },
+    scaleLabelInitialize: function() {
+        var label = this.getScaleLabel();
+        label.setTpl(Ext.create('Ext.XTemplate', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}'));
+    },
+    onStopScale: function() {
+        this.stopScale();
+    },
+    onHide: function() {
+        this.state = 0;
+        this.getScaleView().setRecord(null);
+        Ext.Viewport.fireEvent("validateLines");
+    },
+    stopScale: function() {
+        var self = this;
+        self.getScaleView().hide();
+    },
+    updateState: function() {
+        var self = this;
+        var record = self.getScaleView().getRecord();
+        if (record) {
+            if (self.state === 1) {
+                Config.scaleInit(self.price, self.tara)['catch'](function() {
+                    // CONTINUE UPDATE
+                    setTimeout(function() {
+                        self.updateState();
+                    }, self.timeout);
+                }).then(function() {
+                    // set state to weighing
+                    self.state = 2;
+                    // CONTINUE UPDATE                 
+                    setTimeout(function() {
+                        self.updateState();
+                    }, self.timeout);
+                });
+            } else if (self.state === 2) {
+                // weighing
+                Config.scaleRead()['catch'](function(err) {
+                    // CONTINUE UPDATE
+                    setTimeout(function() {
+                        self.updateState();
+                    }, self.timeout);
+                }).then(function(result) {
+                    // check price
+                    if (result.price.toFixed(2) != self.price.toFixed(2)) {
+                        // on wrong price init again
+                        // REINIT
+                        self.state = 1;
+                    } else {
+                        // SET VALUES
+                        record.set('qty', result.weight);
+                        record.set('subtotal_incl', result.total);
+                    }
+                    // CONTINUE UPDATE
+                    setTimeout(function() {
+                        self.updateState();
+                    }, self.timeout);
+                });
+            }
+        }
+    },
+    startScale: function() {
+        var self = this;
+        var record = this.getScaleView().getRecord();
+        if (record) {
+            // set price data
+            self.price = record.get('brutto_price');
+            self.tara = 0;
+            // create interval if it no exist
+            if (self.state === 0) {
+                setTimeout(function() {
+                    self.updateState();
+                }, self.timeout);
+            }
+            // reset state to init
+            self.state = 1;
+        } else {
+            self.price = 0;
+            self.tara = 0;
+        }
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.store.AllCategoryStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.Category',
+        sorters: 'sequence'
+    }
+});
+
 /*global Ext:false*/
 Ext.define('Fpos.store.CategoryStore', {
     extend: Ext.data.Store,
     config: {
-        model: 'Fpos.model.Category',
-        sorters: 'name'
+        model: 'Fpos.model.Category'
     }
 });
 
@@ -81044,9 +81435,11 @@ Ext.application({
         'PosLine',
         'AccountTax',
         'ProductUnit',
-        'Partner'
+        'Partner',
+        'PosPayment'
     ],
     stores: [
+        'AllCategoryStore',
         'CategoryStore',
         'ProductStore',
         'PosOrderStore',
@@ -81060,7 +81453,8 @@ Ext.application({
         'TestCtrl',
         'ProductViewCtrl',
         'OrderViewCtrl',
-        'PartnerCtrl'
+        'PartnerCtrl',
+        'ScaleViewCtrl'
     ],
     icon: {
         '57': 'resources/icons/Icon.png',

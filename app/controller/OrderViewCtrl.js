@@ -199,7 +199,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             });
             
             // show weight dialog
-            if ( changedLine && Config.hasScale() ) {
+            if ( toWeight && changedLine && Config.hasScale() ) {
                 if ( !self.scaleInput ) {
                     self.scaleInput = Ext.create('Fpos.view.ScaleView',{      
                         hideOnMaskTap: true,

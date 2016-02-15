@@ -50,7 +50,7 @@ public class StringUtil {
 	public static String formatLeft(String inValue, int inLen, char inChar) {
 		StringBuilder b = new StringBuilder(inValue);
 		if( b.length() > inLen ) {
-			b.delete(b.length()-inLen+1, b.length());
+			b.delete(inLen, b.length());
 		}  		
 		while ( b.length() < inLen ) {
 			b.append(inChar);

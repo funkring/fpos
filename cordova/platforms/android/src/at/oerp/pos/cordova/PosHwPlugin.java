@@ -99,7 +99,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							if ( service.getScale().init(price, tara) ) {
 								callbackContext.success();
 							} else {
-								callbackContext.error("Init Failed");
+								callbackContext.error("init failed");
 							}
 							return true;
 						}
@@ -116,7 +116,7 @@ public class PosHwPlugin extends CordovaPlugin {
 								res.put("total", result.total);
 								callbackContext.success(res);
 							} else {
-								callbackContext.error("Weighing failed!");
+								callbackContext.error("no data");
 							}
 							return true;
 						}

@@ -2613,6 +2613,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.PartnerCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
+  "Fpos.controller.ScaleViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
@@ -2623,6 +2624,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
   "Fpos.store.AccountTaxStore": [],
+  "Fpos.store.AllCategoryStore": [],
   "Fpos.store.CategoryStore": [],
   "Fpos.store.PartnerStore": [],
   "Fpos.store.PosLineStore": [],
@@ -2640,6 +2642,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.PartnerView": [],
   "Fpos.view.ProductItem": [],
   "Fpos.view.ProductView": [],
+  "Fpos.view.ScaleView": [],
   "Fpos.view.TestView": []
 });
 
@@ -3625,6 +3628,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.PartnerCtrl": [],
   "Fpos.controller.ProductViewCtrl": [],
+  "Fpos.controller.ScaleViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
@@ -3635,6 +3639,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
   "Fpos.store.AccountTaxStore": [],
+  "Fpos.store.AllCategoryStore": [],
   "Fpos.store.CategoryStore": [],
   "Fpos.store.PartnerStore": [],
   "Fpos.store.PosLineStore": [],
@@ -3673,6 +3678,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.ProductView": [
     "widget.fpos_product"
+  ],
+  "Fpos.view.ScaleView": [
+    "widget.fpos_scale"
   ],
   "Fpos.view.TestView": [
     "widget.fpos_test"
