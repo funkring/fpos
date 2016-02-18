@@ -55,5 +55,14 @@
         },
         "is_top_level": true,
         "variables": {}
+    },
+    "com.borismus.webintent": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/Initsogar/cordova-webintent.git",
+            "subdir": "."
+        },
+        "is_top_level": true,
+        "variables": {}
     }
 }

@@ -1,4 +1,4 @@
-/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper */
+/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper:false, cordova:false */
 
 Ext.define('Fpos.Config', {
     singleton : true,
@@ -12,7 +12,7 @@ Ext.define('Fpos.Config', {
         'Ext.form.ViewManager'
     ],
     config : {       
-        version : '1.2.1',
+        version : '1.2.2',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -211,7 +211,7 @@ Ext.define('Fpos.Config', {
     },
     
     updateApp: function() {
-        if ( !window.device || window.device.platform !== 'Android')
+        if ( !cordova || cordova.platformId !== 'android')
             return false;
             
         var self = this;
@@ -227,27 +227,35 @@ Ext.define('Fpos.Config', {
                exclusive: false
            }, function(fileEntry) {
                
-               var localPath = fileEntry.fullPath;
+               var localPath = fileEntry.toURL();
                var fileTransfer = new FileTransfer();
+               
+               ViewManager.startLoading("Download...");
                
                fileTransfer.download(apkUrl, localPath, function(entry) {
                        window.plugins.webintent.startActivity({ 
                            action: window.plugins.webintent.ACTION_VIEW,
-                           url:  'file://' + entry.fullPath,
+                           url:  'file://' + entry.toURL(),
                            type: 'application/vnd.android.package-archive'
                        },
-                       function() {},
+                       function() {
+                           ViewManager.stopLoading();
+                       },
                        function(err) {
+                           ViewManager.stopLoading();
                            ViewManager.handleError(err, defaultError);
                        }
                     );                  
                 }, function(err) {
+                    ViewManager.stopLoading();
                     ViewManager.handleError(err, defaultError);
                 });
            }, function(err) {
+               ViewManager.stopLoading();
                ViewManager.handleError(err, defaultError);
            });
         }, function(err) {
+            ViewManager.stopLoading();
             ViewManager.handleError(err, defaultError);
         });
         
