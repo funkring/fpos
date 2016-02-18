@@ -1,4 +1,4 @@
-/*global Ext:false, futil:false, DBUtil:false*/
+/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper */
 
 Ext.define('Fpos.Config', {
     singleton : true,
@@ -8,7 +8,8 @@ Ext.define('Fpos.Config', {
         'Ext.store.LogStore',
         'Ext.client.OdooClient',
         'Ext.ux.Deferred',
-        'Ext.util.Format'
+        'Ext.util.Format',
+        'Ext.form.ViewManager'
     ],
     config : {       
         version : '1.2.1',
@@ -25,6 +26,8 @@ Ext.define('Fpos.Config', {
         currency: "€",
         admin: false,
         decimals: 2,
+        wallpaperUrl: "http://downloads.oerp.at/oerp_android_wallpaper_",
+        apkUrl: "http://downloads.oerp.at/fpos.apk",
         qtyDecimals: 3,
         hwStatus: { err: null },
         hwStatusId: null,
@@ -205,6 +208,69 @@ Ext.define('Fpos.Config', {
         });
         
         return client;
+    },
+    
+    updateApp: function() {
+        if ( !window.device || window.device.platform !== 'Android')
+            return false;
+            
+        var self = this;
+        var apkUrl = self.getApkUrl();
+        var defaultError =  {
+           name : "Download fehlgeschlagen!",
+           message: "Datei " + apkUrl + " konnte nicht geladen werden"
+        };
+        
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+           fileSystem.root.getFile('download/fpos.apk', {
+               create: true,
+               exclusive: false
+           }, function(fileEntry) {
+               
+               var localPath = fileEntry.fullPath;
+               var fileTransfer = new FileTransfer();
+               
+               fileTransfer.download(apkUrl, localPath, function(entry) {
+                       window.plugins.webintent.startActivity({ 
+                           action: window.plugins.webintent.ACTION_VIEW,
+                           url:  'file://' + entry.fullPath,
+                           type: 'application/vnd.android.package-archive'
+                       },
+                       function() {},
+                       function(err) {
+                           ViewManager.handleError(err, defaultError);
+                       }
+                    );                  
+                }, function(err) {
+                    ViewManager.handleError(err, defaultError);
+                });
+           }, function(err) {
+               ViewManager.handleError(err, defaultError);
+           });
+        }, function(err) {
+            ViewManager.handleError(err, defaultError);
+        });
+        
+        return true;        
+    },
+    
+    provisioning: function() {
+        if ( !wallpaper )
+            return;
+            
+        var self = this;
+        var wallpaperUrl = self.getWallpaperUrl();
+        wallpaperUrl += futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + ".png";
+        
+        wallpaper.setImage(wallpaperUrl, "oerp-wallpaper-android", "FposImages", 
+            function() {},
+            function(err) {
+                ViewManager.handleError(err, {
+                    name: 'Fehler',
+                    message: 'Hintergrund kann nicht gesetzt werden'
+                });
+            });
     }
+    
     
 });

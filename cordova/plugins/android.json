@@ -15,7 +15,17 @@
         },
         "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "ca.purplemad.wallpaper": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-file-transfer": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
-    "dependent_plugins": {}
+    "dependent_plugins": {
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        }
+    }
 }

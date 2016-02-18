@@ -35,6 +35,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=sync]' : {
                 tap: 'onSyncTap'
             },
+            'button[action=updateApp]' : {
+                tap: 'onUpdateApp'
+            },
+            'button[action=provisioning]' : {
+                tap: 'onProvisioning'
+            },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
@@ -78,7 +84,21 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     onSyncTap: function() {
-        this.sync();
+        if ( !futil.isDoubleTap() ) { 
+            this.sync();
+        }
+    },
+    
+    onUpdateApp: function() {
+        if ( !futil.isDoubleTap() ) {
+            Config.updateApp();
+        }
+    },
+    
+    onProvisioning: function() {
+        if ( !futil.isDoubleTap() ) {
+            Config.provisioning();
+        }
     },
     
     sync: function(resync) {               
@@ -337,6 +357,18 @@ Ext.define('Fpos.controller.MainCtrl', {
                         flex: 1,
                         text: 'Einstellungen',
                         action: 'editConfig'             
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Aktualisieren',
+                        action: 'updateApp'  
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Provisioning',
+                        action: 'provisioning'  
                     },
                     {
                         xtype: 'button',
@@ -613,6 +645,5 @@ Ext.define('Fpos.controller.MainCtrl', {
             self.pinInput.show();   
         }
           
-    }
-    
+    }    
 });

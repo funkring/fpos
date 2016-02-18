@@ -4,4 +4,4 @@
  * combination of content from app.json, and all required package's package.json
  * files.  Customizations should be placed in app.json.
  */
-{"id":"b332ca04-39d4-4335-9375-34310c284572","js":[{"remote":true,"path":"cordova.js"},{"bootstrap":true,"isSdk":true,"path":"touch/sencha-touch.js"},{"bootstrap":true,"path":"bootstrap.js"},{"update":"delta","path":"lib/futil.js"},{"update":"delta","path":"lib/openerplib.js"},{"update":"delta","path":"lib/pouchdb-5.2.0.min.js"},{"update":"delta","path":"lib/URI.js"},{"update":"delta","path":"app.js"}],"css":[{"update":"delta","path":"resources/css/app.css"}]}
+{"id":"b332ca04-39d4-4335-9375-34310c284572","js":[{"bootstrap":true,"isSdk":true,"path":"touch/sencha-touch.js"},{"bootstrap":true,"path":"bootstrap.js"},{"update":"delta","path":"lib/futil.js"},{"update":"delta","path":"lib/openerplib.js"},{"update":"delta","path":"lib/pouchdb-5.2.0.min.js"},{"update":"delta","path":"lib/URI.js"},{"update":"delta","path":"app.js"}],"css":[{"update":"delta","path":"resources/css/app.css"}]}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    id="ca.purplemad.wallpaper"
+    version="0.2.0">
+    <name>WallpaperPlugin</name>
+    <description>This plugin allows a user to save an image residing in the application folder or from a remote URL into the internal storage of the device. It also allows to set the image as a wallpaper which includes saving the image into the storage of the device.</description>
+    <license>Apache 2.0</license>
+    <keywords>phonegap,wallpaper,image,set wallpaper,save wallpaper,save image</keywords>
+    <engines>
+        <engine name="cordova" version=">=3.0.0" />
+    </engines>
+    
+    <js-module src="www/wallpaper.js" name="Wallpaper">
+        <clobbers target="window.wallpaper" />
+    </js-module>
+    
+    <!-- android -->
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="Wallpaper">
+                <param name="android-package" value="ca.purplemad.wallpaper.Wallpaper"/>
+            </feature>
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.SET_WALLPAPER"/>
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+        </config-file>
+        <source-file src="src/android/Wallpaper.java" target-dir="src/ca/purplemad/wallpaper" />
+    </platform>
+</plugin>

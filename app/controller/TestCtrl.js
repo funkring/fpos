@@ -101,14 +101,16 @@ Ext.define('Fpos.controller.TestCtrl', {
     delDB: function() {
         var self = this;
         self.beforeTest();
-        if ( !Config.getUser() ) {          
-            var db = Config.getDB();
-            db.destroy().then(function() {
-                Ext.Viewport.fireEvent("posReset");
-            })['catch'](function(err) {
-                self.getTestLabel().setHtml(err);
-            });
-        }
+        Ext.Msg.confirm('Komplett Löschung','Wollen sie wirklich alle Daten löschen?', function(buttonId) {
+            if ( buttonId == 'yes' && !Config.getUser() ) {          
+                var db = Config.getDB();
+                db.destroy().then(function() {
+                    window.location.reload();
+                })['catch'](function(err) {
+                    self.getTestLabel().setHtml(err);
+                });
+            }
+        });
     }
     
 });
