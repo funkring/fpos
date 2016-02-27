@@ -839,6 +839,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.OrderView": [],
   "Fpos.view.PartnerListSelect": [],
   "Fpos.view.PartnerView": [],
+  "Fpos.view.PaymentView": [],
   "Fpos.view.ProductItem": [],
   "Fpos.view.ProductView": [],
   "Fpos.view.ScaleView": [],
@@ -1871,6 +1872,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.PartnerView": [
     "widget.fpos_partner_form"
+  ],
+  "Fpos.view.PaymentView": [
+    "widget.fpos_payment"
   ],
   "Fpos.view.ProductItem": [
     "widget.fpos_product_item"

@@ -2,7 +2,7 @@
 Ext.define('Fpos.model.PosPayment', {
    extend: 'Ext.data.Model',
    config: {
-       fields: ['journal_id',
+       fields: ['journal',
                 'amount',
                 'payment']       
    }

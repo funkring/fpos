@@ -15,10 +15,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             orderView: '#orderView',
             posDisplay: '#posDisplayLabel',
             orderItemList: '#orderItemList',
+            paymentItemList: '#paymentItemList',
+            paymentPanel: '#paymentPanel',
             stateDisplay: '#posDisplayState',
             inputButtonAmount: '#inputButtonAmount',
             inputButtonDiscount: '#inputButtonDiscount',
-            inputButtonPrice: '#inputButtonPrice'
+            inputButtonPrice: '#inputButtonPrice',
+            inputButtonPayment: '#inputButtonPayment',
+            orderInputView: '#orderInputView',
+            paymentSummary: '#paymentSummary'
         },
         control: {     
             orderView: {
@@ -34,6 +39,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 initialize: 'orderItemListInitialize',
                 selectionchange: 'onItemSelectionChange'
             },
+            paymentItemList: {
+                initialize: 'paymentItemListInitialize',
+                selectionchange: 'onItemSelectionChange'   // is the same as in item list, because only mode was reset
+            },
+            orderInputView: {
+                activeitemchange : 'orderInputActiveItemChange' 
+            },
             'button[action=inputCancel]' : {
                 tap: 'onInputCancelTap'
             },
@@ -48,6 +60,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=inputCash]' : {
                 tap: 'onCash'
+            },
+            'button[action=inputPayment]' : {
+                tap: 'onPayment'
             }
             
         }
@@ -58,6 +73,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
         this.order = null;
         this.printTemplate = null;
+        this.paymentEnabled = false;
         
         this.mode = '*';
         this.resetInputText();
@@ -66,6 +82,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.paymentStore = Ext.StoreMgr.lookup("PosPaymentStore");
         
         this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
             self.display();
@@ -129,10 +146,22 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 
             }
-        ));
+        ));        
         orderItemList.setStore(this.lineStore);
     },    
 
+    paymentItemListInitialize: function(paymentItemList) {
+        var self = this;
+        paymentItemList.setItemTpl(Ext.create('Ext.XTemplate',
+                '<div class="PaymentName">',
+                    '{journal.name}',
+                '</div>',
+                '<div class="PaymentValue">',
+                    '{[futil.formatFloat(values.payment)]}',
+                '</div>'
+        ));        
+        paymentItemList.setStore(this.paymentStore);
+    },
      
     orderViewInitialize: function() {
         var self = this;
@@ -419,11 +448,33 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                  });        
     },   
     
+    orderInputActiveItemChange: function(view, newCard) {
+        var self = this;
+        if ( newCard == self.getPaymentPanel()  ) {
+            self.getInputButtonPayment().setUi('posInputButtonGray');
+            self.paymentEnabled = true;
+        } else {
+            self.getInputButtonPayment().setUi('posInputButtonOrange');
+            self.paymentEnabled = false;
+        }
+        self.setMode('*');
+    },
+    
     resetInputText: function() {
         this.inputSign = 1; 
         this.inputText = '';
     },
     
+    resetView: function() {
+        // reset current view 
+        var self = this;      
+        var orderItemList = self.getOrderItemList();
+        var inputView = self.getOrderInputView(); 
+        if ( inputView.getActiveItem() != orderItemList ) {
+            inputView.setActiveItem(orderItemList);
+        }
+    },
+        
     reloadData: function() {
         var self = this;
 
@@ -432,6 +483,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
         self.printTemplate = null;
         self.setMode('*');
+        self.resetView();  
                 
         if ( user ) {
             var options = {
@@ -457,7 +509,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     isEditable: function() {
-        return this.order && this.order.get('state') == 'draft';
+        return this.order && this.order.get('state') == 'draft' && !this.paymentEnabled;
     },
     
     // validates and stop loading
@@ -473,6 +525,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onInputCancelTap: function() {
         var self = this;
         this.resetInputText();
+        
+        // default editing
         if ( self.isEditable() ) {
             
             ViewManager.startLoading("Zurücksetzen");
@@ -516,6 +570,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             } else {
                 ViewManager.stopLoading();
             } 
+        } else if ( this.paymentEnabled ) {
+            // handle payment
+            var payments = this.getPaymentItemList().getSelection();
+            if ( payments.length > 0  ) {            
+               var payment = payments[0];
+               payment.set('payment',0.0);
+               this.validatePayment();
+            }
         }
     },
     
@@ -530,13 +592,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
         
     inputAction: function(action) {
+        var valid = true;   
+        var commaPos, decimals, value;
+        
         if ( this.isEditable() ) {
             
             var lines = this.getOrderItemList().getSelection();
-            if ( lines.length > 0  ) {
-            
+            if ( lines.length > 0  ) {            
                 var line = lines[0];
-                var valid = true;
                 
                 // switch sign
                 if ( action == "+/-" ) {
@@ -565,9 +628,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     }
                 // default number handling
                 } else {
-                    var commaPos = this.inputText.indexOf(".");
+                    commaPos = this.inputText.indexOf(".");
                     if ( commaPos >= 0 ) { 
-                        var decimals = this.inputText.length - commaPos; 
+                        decimals = this.inputText.length - commaPos; 
                         if ( this.mode == '*' ) {
                             // only add if less than max qty decimals
                             if ( decimals > Config.getQtyDecimals()  ) {
@@ -586,7 +649,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // update if valid
                 if ( valid ) {
                     // update
-                    var value = parseFloat(this.inputText);
+                    value = parseFloat(this.inputText);
                     if ( this.mode == "€" ) {
                         line.set('brutto_price', value*this.inputSign);
                     } else if ( this.mode == "%" ) {
@@ -598,6 +661,49 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
             }
             
+        }  else if ( this.paymentEnabled ) {
+            var payments = this.getPaymentItemList().getSelection();
+            if ( payments.length > 0  ) {            
+                var payment = payments[0];
+                
+                // switch sign
+                if ( action == "+/-" ) {
+                    if ( this.inputText.length === 0 ) {
+                        payment.set('payment',payment.get('payment')*-1);
+                        this.validatePayment();
+                        valid = false;
+                    } else {
+                        this.inputSign*=-1;
+                    }
+                // add comma
+                } else if ( action == "." ) {
+                    if ( this.inputText.indexOf(".") < 0 ) {
+                        this.inputText += "."; 
+                    } else {
+                        valid = false;
+                    }
+                // default number handling
+                } else {
+                    commaPos = this.inputText.indexOf(".");
+                    if ( commaPos >= 0 ) { 
+                        decimals = this.inputText.length - commaPos; 
+                        if ( decimals > Config.getDecimals() ) {
+                            valid = false;
+                        }                        
+                    }                    
+                    //add if valid
+                    if ( valid ) 
+                        this.inputText += action;            
+                }
+              
+                // update if valid
+                if ( valid ) {
+                    // update
+                    value = parseFloat(this.inputText);
+                    payment.set('payment', value*this.inputSign);
+                    this.validatePayment();
+                }
+            }
         }
     },
     
@@ -712,7 +818,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     onCash: function() {
         var self = this;
-        if ( self.isEditable() ) {
+        if ( self.isEditable() || (self.paymentEnabled && self.validatePayment()) ) {
             //self.printOrder();
             // add payment
             // and print
@@ -887,11 +993,123 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     display: function() {
         var amount_total = this.order ? this.order.get('amount_total') : null;
         if ( amount_total ) {
-            Config.display(amount_total.toString());
+            Config.display(amount_total.toFixed(2));
         } else {
-            Config.display("0");
+            Config.display("0.00");
         }
-    }
+    },
+    
+    validatePayment: function() {
+        var self = this;
+        if ( !self.summaryTemplate ) {
+            self.summaryTemplate = Ext.create('Ext.XTemplate',
+                '<div class="PaymentItem">',
+                '<div class="PaymentName">',
+                    'Bezahlt',
+                '</div>',
+                '<div class="PaymentValue">',
+                    '{[futil.formatFloat(values.payment)]}',
+                '</div>',
+                '</div>',
+                '<div class="PaymentItem">',
+                '<div class="PaymentName">',
+                    'Restbetrag',
+                '</div>',
+                '<div class="PaymentValue">',
+                    '{[futil.formatFloat(values.rest)]}',
+                '</div>',
+                '</div>',
+                '<div class="PaymentChangeItem">',
+                '<div class="PaymentName">',
+                    'Wechelgeld',
+                '</div>',
+                '<div class="PaymentValue">',
+                    '{[futil.formatFloat(values.change)]}',
+                '</div>',
+                '</div>',
+                '</div>');
+        }
+        
+        var payment_ids = [];
+        
+        // calc
+        var change = 0.0;
+        var total = self.order.get('amount_total');
+        var rest = total;
+        self.paymentStore.each(function(data) {
+            var payment = data.get('payment');
+            var journal = data.get('journal');
+            var curRest = rest;
+            
+            //calc
+            if (  payment >= rest ) {
+                change += (payment-rest);
+                rest = 0;
+            } else {
+                rest -= payment;
+            }
+            
+            // add payment
+            payment_ids.push({
+                journal_id : journal._id,
+                amount : curRest - rest,
+                payment : payment
+            });
+        });
+        
+        // update label
+        var html = self.summaryTemplate.apply({
+            change : change,
+            rest : rest,
+            payment : total - rest            
+        });
+        self.getPaymentSummary().setHtml(html);
+        
+        // set payment
+        self.order.set('payment_ids', payment_ids);
+        // check if it is valid
+        return rest === 0;
+    },
+    
+    onPayment: function() {
+        var self = this;
+        var inputView = self.getOrderInputView();
+        if ( inputView.getActiveItem() != self.getPaymentPanel() ) {
+            
+            // init payment
+            var amount_total = self.order.get('amount_total');
+            var profile = Config.getProfile();
+            
+            // first payment line is cash line
+            var payment = [{
+                journal : Config.getCashJournal(),
+                amount : amount_total,
+                payment : amount_total
+            }];
+            // process other
+            Ext.each(profile.journal_ids, function(journal) {
+                if ( journal.type !== 'cash' ) {
+                    payment.push({
+                       journal : journal,
+                       amount : 0.0,
+                       payment: 0.0
+                    });
+                }
+            });
+            
+            // set initial payment
+            self.paymentStore.setData(payment); 
+            self.validatePayment();
+            self.getPaymentItemList().selectRange(0,0,false);
+            
+            // view payment
+            inputView.setActiveItem(self.getPaymentPanel());
+            
+        } else {
+            inputView.setActiveItem(self.getOrderItemList());
+        }
+    }  
+    
     
 });
     

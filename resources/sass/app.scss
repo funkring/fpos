@@ -245,7 +245,7 @@ $fpos-input-grey: #777777;
 
 .ProductTextOnly {
     text-align: center;
-    font-size: 1.1em;
+    font-size: 1.4em;
 }
 
 .ProductTextOnlyBig {
@@ -350,5 +350,45 @@ div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription
     font-size: 2em; 
     font-weight: bold;
     text-align: center;
+    color: white;    
+}
+
+// ******************************************************************
+// Payment
+// ******************************************************************
+
+.PaymentSummary {
+    background-color: $fpos-input-grey;
     color: white;
+    padding: 5px;
+}
+
+.PaymentListItem {
+    display: table;
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.PaymentItem {
+    display: table;
+    font-size: 1.3em;
+    padding: 4px;
+}
+
+.PaymentName {
+    width: 100%;
+    align: left;
+    display: table-cell;
+}
+
+.PaymentValue {
+    display: table-cell;
+    align: right;
+}
+
+.PaymentChangeItem {
+    display: table;
+    font-size: 1.6em;
+    font-weight: bold;
+    padding: 4px;
 }

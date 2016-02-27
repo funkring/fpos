@@ -41,7 +41,8 @@ Ext.application({
         'PosLineStore',
         'AccountTaxStore',
         'ProductUnitStore',
-        'PartnerStore'
+        'PartnerStore',
+        'PosPaymentStore'
     ],
     
     controllers: [

@@ -71,7 +71,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showForm: self.showForm
         });
-        
+       
         // pos reset event
         /*
         Ext.Viewport.on({

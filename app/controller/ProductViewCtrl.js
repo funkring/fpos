@@ -141,50 +141,16 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      * clear search
      */
     searchItemClearIconTap: function() {
-        this.loadProducts(this.categoryId);
+        this.searchValue = null;
+        this.searchTask.delay(Config.getSearchDelay());  
     },
-    
-    search: function() {
-       var self = this;
-       var storeInst = self.getStore();
-       var searchValue = self.getSearchValue();
-       var searchField = self.getDisplayField();
-       
-       // search params
-       var params = {
-           limit: self.getLimit()
-       };
-       
-       // options
-       var options = {
-           params : params
-       };
-       
-       // build search domain
-       if ( !Ext.isEmpty(searchValue) && searchValue.length >= 3) {            
-           var expr = "(doc."+searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0,3)) +") >= 0)";
-           params.domain = [[expr,'=',true]];
-       }
-       
-       // search text or not
-       if ( !Ext.isEmpty(searchValue) ) {
-            options.filters = [{
-                property: searchField,
-                value: searchValue,
-                anyMatch: true
-            }];  
-       }
-       
-       // load
-       storeInst.load(options);
-   },
-    
+      
     /**
      * load product
      */
-    loadProducts: function(categoryId, search) {
-        var self = this;
-        self.categoryId = categoryId;
+    loadProducts: function(categoryId) {
+       var self = this;
+       self.categoryId = categoryId;
 
        // search params
        var params = {
@@ -205,9 +171,10 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
 
         // build search domain        
         if ( Ext.isEmpty(self.searchValue) ) {
-            self.searchValue = null;
             self.searchTask.cancel();
-            self.getProductSearch().reset();
+            if ( self.getProductSearch().getValue() ) {
+                self.getProductSearch().reset();
+            }
             
             // query cache
             if ( self.categoryId ) {            
@@ -240,7 +207,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             // add search filter
             options.filters = [{
                 property: 'name',
-                value: search,
+                value: self.searchValue,
                 anyMatch: true
             }];
         }

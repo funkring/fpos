@@ -31,12 +31,38 @@ Ext.define('Fpos.view.OrderView', {
                 ]                 
             },            
             {
-                xtype: 'scrolllist',
-                id: 'orderItemList',
-                cls: 'Receipt',
-                itemCls: 'PosOrderItem',
+                id: 'orderInputView',
+                layout: 'card',
+                xtype: 'panel',
                 flex : 1,
-                allowDeselect: true
+                items: [
+                    {
+                        xtype: 'scrolllist',
+                        id: 'orderItemList',
+                        cls: 'Receipt',
+                        itemCls: 'PosOrderItem',
+                        allowDeselect: true
+                    },
+                    {
+                        layout: 'vbox',
+                        xtype: 'panel',
+                        id: 'paymentPanel',
+                        items: [
+                            {
+                                id: 'paymentItemList',
+                                itemCls: 'PaymentListItem',
+                                xtype: 'scrolllist',
+                                flex: 1
+                            }, 
+                            {
+                                id: 'paymentSummary',
+                                cls: 'PaymentSummary',
+                                xtype: 'label'
+                            }
+                        ]
+                    }
+                   
+                ]
             }
         ]
     }    

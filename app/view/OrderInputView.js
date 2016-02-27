@@ -194,9 +194,10 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 iconCls: 'action',
-                                action: 'inputMenu',
+                                action: 'inputPayment',
                                 width: '77px',
                                 height: '77px',  
+                                id: 'inputButtonPayment',
                                 ui: 'posInputButtonOrange',
                                 cls : 'PosInputButton'
                             },
