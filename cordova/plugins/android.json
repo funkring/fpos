@@ -21,6 +21,9 @@
         },
         "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "com.borismus.webintent": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
     "dependent_plugins": {

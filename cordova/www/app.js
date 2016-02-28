@@ -67859,12 +67859,12 @@ Ext.define('Ext.client.OdooClient', {
     }
 });
 
-/*global Ext:false, futil:false, DBUtil:false*/
+/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper:false, cordova:false */
 Ext.define('Fpos.Config', {
     singleton: true,
     alternateClassName: 'Config',
     config: {
-        version: '1.2.1',
+        version: '1.2.2',
         log: 'Ext.store.LogStore',
         databaseName: 'fpos',
         searchDelay: 500,
@@ -67878,6 +67878,8 @@ Ext.define('Fpos.Config', {
         currency: "€",
         admin: false,
         decimals: 2,
+        wallpaperUrl: "http://downloads.oerp.at/oerp_android_wallpaper_",
+        apkUrl: "http://downloads.oerp.at/fpos.apk",
         qtyDecimals: 3,
         hwStatus: {
             err: null
@@ -68045,6 +68047,65 @@ Ext.define('Fpos.Config', {
                 "password": settings.password
             });
         return client;
+    },
+    updateApp: function() {
+        if (!cordova || cordova.platformId !== 'android')  {
+            return false;
+        }
+        
+        var self = this;
+        var apkUrl = self.getApkUrl();
+        var defaultError = {
+                name: "Download fehlgeschlagen!",
+                message: "Datei " + apkUrl + " konnte nicht geladen werden"
+            };
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+            fileSystem.root.getFile('download/fpos.apk', {
+                create: true,
+                exclusive: false
+            }, function(fileEntry) {
+                var localPath = fileEntry.toURL();
+                var fileTransfer = new FileTransfer();
+                ViewManager.startLoading("Download...");
+                fileTransfer.download(apkUrl, localPath, function(entry) {
+                    window.plugins.webintent.startActivity({
+                        action: window.plugins.webintent.ACTION_VIEW,
+                        url: 'file://' + entry.toURL(),
+                        type: 'application/vnd.android.package-archive'
+                    }, function() {
+                        ViewManager.stopLoading();
+                    }, function(err) {
+                        ViewManager.stopLoading();
+                        ViewManager.handleError(err, defaultError);
+                    });
+                }, function(err) {
+                    ViewManager.stopLoading();
+                    ViewManager.handleError(err, defaultError);
+                });
+            }, function(err) {
+                ViewManager.stopLoading();
+                ViewManager.handleError(err, defaultError);
+            });
+        }, function(err) {
+            ViewManager.stopLoading();
+            ViewManager.handleError(err, defaultError);
+        });
+        return true;
+    },
+    provisioning: function() {
+        if (!wallpaper)  {
+            return;
+        }
+        
+        var self = this;
+        var wallpaperUrl = self.getWallpaperUrl();
+        wallpaperUrl += futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + ".png";
+        wallpaper.setImage(wallpaperUrl, "oerp-wallpaper-android", "FposImages", function() {}, function(err) {
+            ViewManager.handleError(err, {
+                name: 'Fehler',
+                message: 'Hintergrund kann nicht gesetzt werden'
+            });
+        });
     }
 });
 
@@ -69240,6 +69301,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=sync]': {
                 tap: 'onSyncTap'
             },
+            'button[action=updateApp]': {
+                tap: 'onUpdateApp'
+            },
+            'button[action=provisioning]': {
+                tap: 'onProvisioning'
+            },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange: 'mainActiveItemChange'
@@ -69277,7 +69344,22 @@ Ext.define('Fpos.controller.MainCtrl', {
         self.resetConfig();
     },
     onSyncTap: function() {
-        this.sync();
+        if (!futil.isDoubleTap()) {
+            this.hideMainMenu();
+            this.sync();
+        }
+    },
+    onUpdateApp: function() {
+        if (!futil.isDoubleTap()) {
+            this.hideMainMenu();
+            Config.updateApp();
+        }
+    },
+    onProvisioning: function() {
+        if (!futil.isDoubleTap()) {
+            this.hideMainMenu();
+            Config.provisioning();
+        }
     },
     sync: function(resync) {
         var self = this;
@@ -69285,8 +69367,6 @@ Ext.define('Fpos.controller.MainCtrl', {
         var client = null;
         var profile_rev = null;
         var sync_err = null;
-        // hide menu of shown
-        self.hideMainMenu();
         // reload config        
         ViewManager.startLoading("Synchronisiere Datenbank");
         return db.get('_local/config').then(function(config) {
@@ -69518,6 +69598,18 @@ Ext.define('Fpos.controller.MainCtrl', {
                         flex: 1,
                         text: 'Einstellungen',
                         action: 'editConfig'
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Aktualisieren',
+                        action: 'updateApp'
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Provisioning',
+                        action: 'provisioning'
                     },
                     {
                         xtype: 'button',
@@ -69846,14 +69938,16 @@ Ext.define('Fpos.controller.TestCtrl', {
     delDB: function() {
         var self = this;
         self.beforeTest();
-        if (!Config.getUser()) {
-            var db = Config.getDB();
-            db.destroy().then(function() {
-                Ext.Viewport.fireEvent("posReset");
-            })['catch'](function(err) {
-                self.getTestLabel().setHtml(err);
-            });
-        }
+        Ext.Msg.confirm('Komplett Löschung', 'Wollen sie wirklich alle Daten löschen?', function(buttonId) {
+            if (buttonId == 'yes' && !Config.getUser()) {
+                var db = Config.getDB();
+                db.destroy().then(function() {
+                    window.location.reload();
+                })['catch'](function(err) {
+                    self.getTestLabel().setHtml(err);
+                });
+            }
+        });
     }
 });
 
@@ -71524,6 +71618,12 @@ futil.screenWidth = function() {
 futil.screenHeight = function() {
     var height = (window.innerHeight > 0) ? window.innerHeight : screen.height;
     return height;
+};
+futil.physicalScreenWidth = function() {
+    return window.screen.width * window.devicePixelRatio;
+};
+futil.physicalScreenHeight = function() {
+    return window.screen.height * window.devicePixelRatio;
 };
 futil.hasSmallRes = function() {
     return Math.max(futil.screenWidth(), futil.screenHeight()) < 1024;

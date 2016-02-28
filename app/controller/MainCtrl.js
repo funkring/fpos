@@ -85,18 +85,21 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     onSyncTap: function() {
         if ( !futil.isDoubleTap() ) { 
+            this.hideMainMenu();
             this.sync();
         }
     },
     
     onUpdateApp: function() {
         if ( !futil.isDoubleTap() ) {
+            this.hideMainMenu();
             Config.updateApp();
         }
     },
     
     onProvisioning: function() {
         if ( !futil.isDoubleTap() ) {
+            this.hideMainMenu();
             Config.provisioning();
         }
     },
@@ -107,9 +110,6 @@ Ext.define('Fpos.controller.MainCtrl', {
         var client = null;
         var profile_rev = null;
         var sync_err = null;
-        
-        // hide menu of shown
-        self.hideMainMenu();
         
         // reload config        
         ViewManager.startLoading("Synchronisiere Datenbank");

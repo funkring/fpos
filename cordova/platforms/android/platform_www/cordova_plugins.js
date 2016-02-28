@@ -210,6 +210,14 @@ module.exports = [
         "clobbers": [
             "window.FileTransfer"
         ]
+    },
+    {
+        "file": "plugins/com.borismus.webintent/www/webintent.js",
+        "id": "com.borismus.webintent.WebIntent",
+        "pluginId": "com.borismus.webintent",
+        "clobbers": [
+            "WebIntent"
+        ]
     }
 ];
 module.exports.metadata = 
@@ -220,7 +228,8 @@ module.exports.metadata =
     "cordova-plugin-poshw": "1.0.3",
     "ca.purplemad.wallpaper": "0.2.0",
     "cordova-plugin-file": "4.1.1",
-    "cordova-plugin-file-transfer": "1.5.0"
+    "cordova-plugin-file-transfer": "1.5.0",
+    "com.borismus.webintent": "1.0.0"
 }
 // BOTTOM OF METADATA
 });
