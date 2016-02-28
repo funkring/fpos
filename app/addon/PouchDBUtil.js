@@ -47,154 +47,91 @@ Ext.define('Ext.proxy.PouchDBUtil',{
       var keys = [];   
       var keyValues = [];      
       var tupl, op, value, field, i;
-      var onlyKeys = true;
-               
+      var res = {};
+      
       // check if only keys     
-      for (i=0; i<domain.length && onlyKeys;i++) {
+      for (i=0; i<domain.length; i++) {
           tupl = domain[i];
           
-          if ( tupl.constructor === Array && tupl.length == 3) {
+          field = null;
+          if ( tupl.constructor === Array && tupl.length == 3 ) {
+              // get data
               field = tupl[0];
               op = tupl[1];
-              value = tupl[2];   
-                              
-              if ( op === '=') {
-                  name = name + "_" + field;
-                  
-                  // field or expression
-                  if ( !field.startsWith("(") ) {
-                       // it's an field
-                       field="doc." + field;
-                  }
-                  
-                  keys.push(field);      
-                  keyValues.push(value || null);     
-              } else {
-                  onlyKeys = false;
+              value = tupl[2];
+          } else if ( typeof tupl == 'string' ) {
+              // get data
+              field = tupl;
+              op = "=";
+              value = null;
+          } else if ( tupl.constructor === Array && tupl.length == 2 ) {
+               // get data
+              field = tupl[0];
+              op = "=";
+              value = tupl[1];
+          }
+            
+          if ( field ) {
+              // add field          
+              name = name + "_" + field;
+              if ( !field.startsWith("(") ) {
+                   // it's an field
+                   field="doc." + field;
               }
+              // add field and value
+              keys.push(field);
+              keyValues.push(value || null);
           } 
       }
       
       // if only keys
       // create index
-      if ( onlyKeys ) {
-          if ( keys.length === 1) {
-              return {
-                  name: name,
-                  key: keyValues[0] || null,
-                  index: {
-                    map: "function(doc) { \n"+
-                         "  var val = " + keys[0] +"; \n" +
-                         "  if (val)  { \n" +
-                         "    emit(val); \n" +
-                         "  } else { \n" +
-                         "    emit(null); " +
-                         "  }" +
-                         "}"
-                  }                    
-              };
-          } else if ( keys.length > 0 ) {
-              var fct = "function(doc) { \n" +
-                        "  var key = []; \n" +
-                        "  var val;\n";
-                        
-              for ( var keyI=0; keyI < keys.length; keyI++) {
-                 fct +=
-                   "  val = " + keys[keyI] +"; \n" +
-                   "  if (val) { \n" +
-                   "    key.push(val); \n" +
-                   "  } else { \n" +
-                   "    key.push(null); \n" +
-                   "  } \n" +
-                   "  \n";               
-              }
-              
-              fct += "  emit(key);\n";
-              fct += "}\n";
-              
-              return {
-                  name: name,
-                  key: keyValues,
-                  index: {
-                    map: fct
-                  }       
-              };
+      if ( keys.length === 1) {
+      
+          res.name = name;
+          res.key = keyValues[0] || null;
+          res.index = {
+            map: "function(doc) { \n"+
+                 "  var val = " + keys[0] +"; \n" +
+                 "  if (val)  { \n" +
+                 "    emit(val); \n" +
+                 "  } else { \n" +
+                 "    emit(null); " +
+                 "  }" +
+                 "}"
+          };
+          
+          return res;
+             
+      } else if ( keys.length > 0 ) {
+      
+          var fct = "function(doc) { \n" +
+                    "  var key = []; \n" +
+                    "  var val;\n";
+                    
+          for ( var keyI=0; keyI < keys.length; keyI++) {
+             fct +=
+               "  val = " + keys[keyI] +"; \n" +
+               "  if (val) { \n" +
+               "    key.push(val); \n" +
+               "  } else { \n" +
+               "    key.push(null); \n" +
+               "  } \n" +
+               "  \n";               
           }
+          
+          fct += "  emit(key);\n";
+          fct += "}\n";
+          
+          res.name = name;
+          res.key = keyValues;
+          res.index = {
+            map: fct
+          };  
+          
+          return res;
       }
-      /*
-      else {
-          // TODO TEST !!!
-          
-          // build search
-          var search = [];
-          var paramIndex = 0;
-          
-          // link
-          var link;
-          var linkStack = [];
-          var stmtCount = 0;
-          
-          // check if only keys     
-          for (i=0; i<domain.length;i++) {
-              tupl = domain[i];
-              
-              if ( tupl.constructor === Array && tupl.length == 3) {
-                  // get link
-                  if ( linkStack.length > 0 ) {
-                      link = linkStack.pop();
-                  } else {
-                      link = "&&";
-                  }
-              
-                  // get values
-                  field = tupl[0];
-                  op = tupl[1];
-                  value = tupl[2];   
-                
-                  // start new statement
-                  if ( search.length > 0 ) {
-                      search.push(link);
-                  } 
-                  search.push("(");
-                  stmtCount++;
-                  
-                  // evalute operator
-                  if ( op === '=') {     
-                      search.push("doc." + field + " === " + JSON.stringify(value));
-                      //keys.push(value[field]);
-                  } else if (op === 'ilike' ) {
-                      search.push("doc." + field + ".lower().indexOf(" + JSON.stringify(value.lower()) +") >= 0");
-                      //keys.push(value[field]);
-                  } else {
-                      // operator not found
-                      search.push("1==1");
-                  }
-              } else if ( tupl == '|' )  {
-                  linkStack.push('||');
-              } else if ( tupl == '&') {
-                  linkStack.push('&&');
-              }
-          }
-          
-          if ( stmtCount > 0 ) {
-              for ( i=0; i<stmtCount; i++ ) {
-                    search.push(")");
-              }
-              
-              var condition = search.join(" "); 
-              var fun = new Function('doc',
-                     "if " + condition + " {\n" +
-                     "  emit(doc._id)\n" +
-                     "}\n"
-                    );
-                     
-              return {
-                  name: 'search',
-                  fun: fun                 
-              };
-        }
-      }*/
-
+      
       return null;
     },  
     
@@ -222,35 +159,43 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                 db.query(view.fun, params, callback);
             } else {
                 // index based query
-                // copy params
+                // copy params                
                 params = JSON.parse(JSON.stringify(params));
-                params.key = view.key;
+                // check if key in params
+                if ( !params.key && !params.startkey && !params.endkey ) {
+                    // if not take it from view
+                    params.key = view.key;
+                }
+                
+                // query             
                 db.query(view.name, params, function(err, res) {                
                     if ( !err ) {
                         // no error result was successfull
-                        if (callback) {
+                        callback(err, res);
+                    } else {
+                        if ( err.name == "not_found" ) {
+                            //create view doc
+                            var doc = {
+                                _id: "_design/" + view.name,
+                                views: {                            
+                                }
+                            };
+                            doc.views[view.name]=view.index;
+                            //put doc
+                            db.put(doc, function(err, res) {
+                                if (err) {
+                                    // error on create index
+                                    if (callback) {
+                                        callback(err, null);
+                                    }
+                                } else {
+                                    // query again
+                                    db.query(view.name, params, callback);
+                                }
+                            });          
+                        } else {
                             callback(err, res);
                         }
-                    } else {
-                        //create view doc
-                        var doc = {
-                            _id: "_design/" + view.name,
-                            views: {                            
-                            }
-                        };
-                        doc.views[view.name]=view.index;
-                        //put doc
-                        db.put(doc, function(err, res) {
-                            if (err) {
-                                // error on create index
-                                if (callback) {
-                                    callback(err, null);
-                                }
-                            } else {
-                                // query again
-                                db.query(view.name, params, callback);
-                            }
-                        });          
                     }
                         
                 });       

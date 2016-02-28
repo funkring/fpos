@@ -19,6 +19,9 @@ Ext.define('Fpos.model.PosOrder', {
                 'send_invoice',
                 'amount_tax',
                 'amount_total',
+                'tag',
+                'turnover',
+                'cpos',
                 {name:'partner', foreignKey: 'partner_id', resModel: 'res.partner', persist:false}],
        identifier: 'uuid',
        proxy: {

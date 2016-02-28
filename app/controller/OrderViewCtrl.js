@@ -206,7 +206,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             if ( !changedLine ) {
                 var db = Config.getDB();
-                changedLine = self.lineStore.add({
+                // build values
+                var values = {
                     'order_id' : self.order.getId(),
                     'name' : product.get('name'),
                     'product_id' : product.getId(),
@@ -217,8 +218,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'subtotal_incl' : 0.0,
                     'discount' : 0.0,
                     'sequence' : self.lineStore.getCount()
-                })[0];
-               
+                };
+                
+                // set tag to other if is an income or expense
+                if ( product.get('income_pdt') ||  product.get('expense_pdt') ) {
+                    values.tag = "o";
+                } else if ( values.tag ) {
+                    values.tag = null;
+                }
+                
+                // add line
+                changedLine = self.lineStore.add(values)[0];
             }
             
             // validate lines
@@ -266,7 +276,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
        var tax_percent = 0.0;
        var tax_fixed = 0.0;
        var total_tax = 0.0;
-       
+              
        Ext.each(tax_ids, function(tax_id) {
             var tax = taxes[tax_id];
             if ( !tax ) {
@@ -339,17 +349,33 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // compute lines
             var amount_total = 0.0;
             var amount_tax = 0.0;
+            var turnover = 0.0;
+            
             self.lineStore.each(function(line) {
-                var total_line = self.validateLine(line, tax_group, tax_ids);                
-                amount_total += total_line.subtotal_incl;
-                amount_tax += total_line.amount_tax;
+                var total_line = self.validateLine(line, tax_group, tax_ids);
+                if ( !line.tag ) {
+                    // add                
+                    amount_total += total_line.subtotal_incl;
+                    amount_tax += total_line.amount_tax;
+                    turnover += total_line.subtotal_incl;
+                } else if ( line.tag == 'b' || line.tag == 'o') {
+                    // add balance and other
+                    amount_total += total_line.subtotal_incl;
+                    amount_tax += total_line.amount_tax;
+                } else if ( line.tag == 'r' ) {
+                    // substract real balance
+                    amount_total -= total_line.subtotal_incl;
+                    amount_tax -= total_line.amount_tax;
+                }
             });
             
             // set values
             self.order.set('tax_ids', tax_ids);
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
+            self.order.set('turnover', turnover);
             self.displayTask.delay(800);
+            
             // sync
             var syncRes = self.lineStore.sync({
                 callback: function() {
@@ -414,7 +440,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var fpos_user_id = Config.getProfile().user_id;
                 
         if ( user_id && fpos_user_id) {
-            var date = futil.datetimeToStr(new Date());        
+            var date = futil.datetimeToStr(new Date());  
             db.post({
                 'fdoo__ir_model' : 'fpos.order',
                 'fpos_user_id' : fpos_user_id,
@@ -753,65 +779,83 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var deferred = Ext.create('Ext.ux.Deferred');
         var db = Config.getDB();
         var profile = Config.getProfile();
-        var orderSeq = 0;
         var hasSeq = false;
-        var seqId = '_local/orderseq';
         
         self.validateLines()['catch'](function(err) {
             deferred.reject(err);
         }).then(function(){
-            return db.get(seqId).then(function(doc) {
-                hasSeq = true;
-                if ( doc.order_id == self.order.getId() ) {
-                    orderSeq = doc.seq;
-                } else {
-                    doc.seq = orderSeq = doc.seq+1;
-                    doc.order_id = self.order.getId();
-                    return db.put(doc);
-                }                
-            })['catch'](function(err) {            
-                if (hasSeq) {
-                    // something goes wrong
-                    // show error and cancel 
-                    deferred.reject({
-                        name: "Buchungsfehler",
-                        message: "Sequenz konnte nicht akualisiert werden"
-                    });
-                } else {
-                    //create first sequence
-                    orderSeq = profile.last_seq+1;
-                    return db.post({
-                        _id: seqId,
-                        seq: orderSeq,
-                        order_id: self.order.getId() 
-                    });                
-                }
-            }).then(function() {
-                var payment_ids = self.order.get('payment_ids');
+            
+            // write order
+            var writeOrder = function(seq, turnover, cpos) {
+                // init vars
+                if ( !cpos ) cpos = 0.0;
+                if ( !turnover ) turnover = 0.0; 
+                var cashJournalId = Config.getCashJournal()._id;
                 
-                // add cash payment if no payment                
+                // add cash payment if no payment
+                var payment_ids = self.order.get('payment_ids');                
                 if ( !payment_ids || payment_ids.length === 0 ) {
                     var amount_total = self.order.get('amount_total');
-                    self.order.set('payment_ids',[
+                    payment_ids = [
                         {
-                            journal_id : Config.getCashJournal()._id,
+                            journal_id : cashJournalId,
                             amount : amount_total,
                             payment : amount_total                     
                         }
-                    ]);
-
+                    ];
+                    self.order.set('payment_ids',payment_ids);
                 }
+                
+                // determine cpos              
+                Ext.each(payment_ids, function(payment) {
+                    if ( payment.journal_id == cashJournalId ) {
+                        cpos += payment.amount;
+                    }
+                });
+                
+                // write order                
                 var date = futil.datetimeToStr(new Date());
                 self.order.set('date', date);
-                self.order.set('seq', orderSeq);
-                self.order.set('name', Config.formatSeq(orderSeq));
+                self.order.set('seq', seq);
+                self.order.set('name', Config.formatSeq(seq));
                 self.order.set('state','paid');
+                
+                // turnover
+                self.order.set('turnover',self.order.get('turnover')+turnover);
+                // cpos
+                self.order.set('cpos', cpos);
+                
+                // save
                 self.order.save({
                     callback: function() {
                         deferred.resolve();           
                     }
                 });
-            });
+            };
+            
+            // query last order
+            try {
+                DBUtil.search(db, ['state','seq'], {
+                    descending: true,
+                    include_docs: true,
+                    inclusive_end: true,
+                    limit: 1,
+                    startkey: ['paid',Number.MAX_VALUE],
+                    endkey: ['paid',0]
+                })['catch'](function(err) {
+                    deferred.reject(err);
+                }).then(function(res) {
+                    // write order
+                    if ( res.rows.length === 0 ) {
+                        writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos);
+                    } else {
+                        var lastOrder = res.rows[0].doc;
+                        writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos);
+                    }
+                });
+            } catch (err) {
+                deferred.reject(err);
+            }
         });    
         return deferred.promise();      
     },

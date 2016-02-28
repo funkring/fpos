@@ -15,7 +15,8 @@ Ext.define('Fpos.model.PosLine', {
                 'subtotal_incl',
                 'discount',
                 'notice',
-                'sequence'],
+                'sequence',
+                'tag'],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',
