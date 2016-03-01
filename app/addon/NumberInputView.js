@@ -23,6 +23,8 @@ Ext.define('Ext.view.NumberInputView', {
         hideOnMaskTap: true,
                 
         hideOnInputDone: true,
+        
+        showButtons: true,
                 
         modal: true,
         
@@ -99,332 +101,335 @@ Ext.define('Ext.view.NumberInputView', {
              self.numField.setInfo(title);
          }
          
-         var bWidth = '72px';
-         var bHeight = '66px';
-         var bSpecialWidth = '80px';
-         var bDoubleWidth = '148px';
-         var bDoubleHeight = '136px';
-         var bTripleWidth = '224px';
-         var bTripleHeight = '206px';
+         if ( self.getShowButtons() ) {
          
-         if ( self.getUi() === 'pin') {
-         
-            /*****************************************************************
-            * PIN LAYOUT
-            *****************************************************************/
-         
-            self.add({
-                    xtype: 'container',
-                    layout: 'vbox',
-                    cls: 'NumInputContainer',
-                    items: [
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {                                
-                                    xtype: 'button',
-                                    text: '7',
-                                    width:  bWidth,
-                                    height: bHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                    
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '8',
-                                    width:  bWidth,
-                                    height: bHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'                                
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '9',
-                                    width:  bWidth,
-                                    height: bHeight,          
-                                    ui: 'numInputButtonBlack',                      
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                }, 
-                                {
-                                    xtype: 'button',
-                                    iconCls: 'delete',
-                                    width: bSpecialWidth,
-                                    height: bHeight,          
-                                    ui: 'numInputButtonRed',                      
-                                    cls: 'NumInputButton',
-                                    action: 'clearInput'
-                                }
-                            ]                    
-                        },
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {
-                                    layout: 'vbox',
-                                    items: [
-                                        {
-                                            layout: 'hbox',
-                                            items: [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '4',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '5',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '6',
-                                                    width:  bWidth,
-                                                    height: bHeight,          
-                                                    ui: 'numInputButtonBlack',                      
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                }
-                                             ]
-                                        },
-                                        {
-                                            layout: 'hbox',
-                                            items: [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '1',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '2',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '3',
-                                                    width:  bWidth,
-                                                    height: bHeight,          
-                                                    ui: 'numInputButtonBlack',                      
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                } 
-                                            ]                   
-                                        },
-                                        {
-                                            layout: 'hbox',
-                                            items:  [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '0',
-                                                    width:  bTripleWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                }
-                                            ]
-                                        }
-                                    
-                                    ]
-                                },
-                                {
-                                    xtype: 'button',
-                                    iconCls: 'action',   
-                                    width: bSpecialWidth,
-                                    height: bTripleHeight,
-                                    ui: 'numInputButtonGreen',
-                                    cls: 'NumInputButton',
-                                    action: 'numInputDone'
-                                }
-                            ]         
-                        }
-                    ]
-                    
-            });
-                
-         } else  {         
-         
-             /*****************************************************************
-              * DEFAULT LAYOUT
-              *****************************************************************/
-         
-             self.add({
-                    xtype: 'container',
-                    layout: 'vbox',
-                    cls: 'NumInputContainer',
-                    items: [
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {                                
-                                    xtype: 'button',
-                                    text: '7',
-                                    width:  bWidth,
-                                    height: bHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                    
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '8',
-                                    width:  bWidth,
-                                    height: bHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'                                
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '9',
-                                    width:  bWidth,
-                                    height: bHeight,          
-                                    ui: 'numInputButtonBlack',                      
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                }, 
-                                {
-                                    xtype: 'button',
-                                    text: 'CE',
-                                    width:  bSpecialWidth,
-                                    height: bHeight,          
-                                    ui: 'numInputButtonRed',                      
-                                    cls: 'NumInputButton',
-                                    action: 'clearInput'
-                                }
-                            ]                    
-                        },
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {                                
-                                    xtype: 'button',
-                                    text: '4',
-                                    width:  bWidth,
-                                    height: bHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '5',
-                                    width:  bWidth,
-                                    height: bHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: '6',
-                                    width:  bWidth,
-                                    height: bHeight,          
-                                    ui: 'numInputButtonBlack',                      
-                                    cls: 'NumInputButton',
-                                    action: 'addNumber'
-                                }
-                            ]                    
-                        },
-                        {
-                            layout: 'hbox',
-                            items: [
-                                {
-                                    layout: 'vbox',
-                                    items: [
-                                        {
-                                            layout: 'hbox',
-                                            items: [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '1',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '2',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '3',
-                                                    width:  bWidth,
-                                                    height: bHeight,          
-                                                    ui: 'numInputButtonBlack',                      
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                } 
-                                            ]                                
-                                        },
-                                        {
-                                            layout: 'hbox',
-                                            items:  [
-                                                {                                
-                                                    xtype: 'button',
-                                                    text: '0',
-                                                    width:  bDoubleWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addNumber'
-                                                },
-                                                {
-                                                    xtype: 'button',
-                                                    text: '.',
-                                                    width:  bWidth,
-                                                    height: bHeight,
-                                                    ui: 'numInputButtonBlack',
-                                                    cls: 'NumInputButton',
-                                                    action: 'addComma'
-                                                }
-                                            ]
-                                        }
-                                    ]                                                            
-                                },
-                                {
-                                    xtype: 'button',
-                                    text: 'OK',
-                                    width: bWidth,
-                                    height: bDoubleHeight,
-                                    ui: 'numInputButtonBlack',
-                                    cls: 'NumInputButton',
-                                    action: 'numInputDone'
-                                }
-                            
-                            ]
-                        }          
-                    ]
-                    
+             var bWidth = '72px';
+             var bHeight = '66px';
+             var bSpecialWidth = '80px';
+             var bDoubleWidth = '148px';
+             var bDoubleHeight = '136px';
+             var bTripleWidth = '224px';
+             var bTripleHeight = '206px';
+                      
+             if ( self.getUi() === 'pin') {
+             
+                /*****************************************************************
+                * PIN LAYOUT
+                *****************************************************************/
+             
+                self.add({
+                        xtype: 'container',
+                        layout: 'vbox',
+                        cls: 'NumInputContainer',
+                        items: [
+                            {
+                                layout: 'hbox',
+                                items: [
+                                    {                                
+                                        xtype: 'button',
+                                        text: '7',
+                                        width:  bWidth,
+                                        height: bHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                        
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: '8',
+                                        width:  bWidth,
+                                        height: bHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'                                
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: '9',
+                                        width:  bWidth,
+                                        height: bHeight,          
+                                        ui: 'numInputButtonBlack',                      
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                    }, 
+                                    {
+                                        xtype: 'button',
+                                        iconCls: 'delete',
+                                        width: bSpecialWidth,
+                                        height: bHeight,          
+                                        ui: 'numInputButtonRed',                      
+                                        cls: 'NumInputButton',
+                                        action: 'clearInput'
+                                    }
+                                ]                    
+                            },
+                            {
+                                layout: 'hbox',
+                                items: [
+                                    {
+                                        layout: 'vbox',
+                                        items: [
+                                            {
+                                                layout: 'hbox',
+                                                items: [
+                                                    {                                
+                                                        xtype: 'button',
+                                                        text: '4',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '5',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '6',
+                                                        width:  bWidth,
+                                                        height: bHeight,          
+                                                        ui: 'numInputButtonBlack',                      
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    }
+                                                 ]
+                                            },
+                                            {
+                                                layout: 'hbox',
+                                                items: [
+                                                    {                                
+                                                        xtype: 'button',
+                                                        text: '1',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '2',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '3',
+                                                        width:  bWidth,
+                                                        height: bHeight,          
+                                                        ui: 'numInputButtonBlack',                      
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    } 
+                                                ]                   
+                                            },
+                                            {
+                                                layout: 'hbox',
+                                                items:  [
+                                                    {                                
+                                                        xtype: 'button',
+                                                        text: '0',
+                                                        width:  bTripleWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    }
+                                                ]
+                                            }
+                                        
+                                        ]
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        iconCls: 'action',   
+                                        width: bSpecialWidth,
+                                        height: bTripleHeight,
+                                        ui: 'numInputButtonGreen',
+                                        cls: 'NumInputButton',
+                                        action: 'numInputDone'
+                                    }
+                                ]         
+                            }
+                        ]
+                        
                 });
+                    
+             } else  {         
+             
+                 /*****************************************************************
+                  * DEFAULT LAYOUT
+                  *****************************************************************/
+             
+                 self.add({
+                        xtype: 'container',
+                        layout: 'vbox',
+                        cls: 'NumInputContainer',
+                        items: [
+                            {
+                                layout: 'hbox',
+                                items: [
+                                    {                                
+                                        xtype: 'button',
+                                        text: '7',
+                                        width:  bWidth,
+                                        height: bHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                        
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: '8',
+                                        width:  bWidth,
+                                        height: bHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'                                
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: '9',
+                                        width:  bWidth,
+                                        height: bHeight,          
+                                        ui: 'numInputButtonBlack',                      
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                    }, 
+                                    {
+                                        xtype: 'button',
+                                        text: 'CE',
+                                        width:  bSpecialWidth,
+                                        height: bHeight,          
+                                        ui: 'numInputButtonRed',                      
+                                        cls: 'NumInputButton',
+                                        action: 'clearInput'
+                                    }
+                                ]                    
+                            },
+                            {
+                                layout: 'hbox',
+                                items: [
+                                    {                                
+                                        xtype: 'button',
+                                        text: '4',
+                                        width:  bWidth,
+                                        height: bHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: '5',
+                                        width:  bWidth,
+                                        height: bHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: '6',
+                                        width:  bWidth,
+                                        height: bHeight,          
+                                        ui: 'numInputButtonBlack',                      
+                                        cls: 'NumInputButton',
+                                        action: 'addNumber'
+                                    }
+                                ]                    
+                            },
+                            {
+                                layout: 'hbox',
+                                items: [
+                                    {
+                                        layout: 'vbox',
+                                        items: [
+                                            {
+                                                layout: 'hbox',
+                                                items: [
+                                                    {                                
+                                                        xtype: 'button',
+                                                        text: '1',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '2',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '3',
+                                                        width:  bWidth,
+                                                        height: bHeight,          
+                                                        ui: 'numInputButtonBlack',                      
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    } 
+                                                ]                                
+                                            },
+                                            {
+                                                layout: 'hbox',
+                                                items:  [
+                                                    {                                
+                                                        xtype: 'button',
+                                                        text: '0',
+                                                        width:  bDoubleWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addNumber'
+                                                    },
+                                                    {
+                                                        xtype: 'button',
+                                                        text: '.',
+                                                        width:  bWidth,
+                                                        height: bHeight,
+                                                        ui: 'numInputButtonBlack',
+                                                        cls: 'NumInputButton',
+                                                        action: 'addComma'
+                                                    }
+                                                ]
+                                            }
+                                        ]                                                            
+                                    },
+                                    {
+                                        xtype: 'button',
+                                        text: 'OK',
+                                        width: bWidth,
+                                        height: bDoubleHeight,
+                                        ui: 'numInputButtonBlack',
+                                        cls: 'NumInputButton',
+                                        action: 'numInputDone'
+                                    }
+                                
+                                ]
+                            }          
+                        ]
+                        
+                    });
+                }
             }
     },
     

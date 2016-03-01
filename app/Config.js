@@ -288,6 +288,10 @@ Ext.define('Fpos.Config', {
             startkey: ['fpos.order','paid',Number.MAX_VALUE],
             endkey: ['fpos.order','paid',0]
         });
-    }    
+    },
+    
+    isMobilePos: function() {
+        return futil.screenWidth() < 600;
+    }
     
 });

@@ -102,20 +102,13 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     mainViewInitialize: function() {
         var self = this;
-        
+                  
         // show form event
         Ext.Viewport.on({
             scope: self,
             showForm: self.showForm
         });
-       
-        // pos reset event
-        /*
-        Ext.Viewport.on({
-            scope: self,
-            posReset: self.resetConfig
-        });*/
-
+            
         // reset config
         self.resetConfig();
         
@@ -506,7 +499,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     openPos: function() {
         var self = this;
         if ( !self.posPanel ) {
-            if ( futil.screenWidth() < 600 ) {
+            if ( Config.isMobilePos() ) {
                 // smaller pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',
@@ -685,7 +678,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         if ( !self.pinInput ) {
             // create
-            self.pinInput = Ext.create('Ext.view.NumberInputView', {
+            var pinInputConfig = {
                     hideOnMaskTap: false,
                     hideOnInputDone: false, 
                     centered : true,
@@ -694,7 +687,14 @@ Ext.define('Fpos.controller.MainCtrl', {
                     minlen: 4,
                     emptyValue: "----",
                     title : "PIN für die Anmeldung"
-                });
+                };
+                
+            if ( Config.isMobilePos() ) {
+                pinInputConfig.showButtons = false;
+                pinInputConfig.width = "300px";
+            }
+            
+            self.pinInput = Ext.create('Ext.view.NumberInputView', pinInputConfig);
                 
             // add handler
             self.pinInput.setHandler(function(view, pin) {
