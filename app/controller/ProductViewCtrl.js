@@ -41,7 +41,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
-        this.cache = {};
+        //this.cache = {};
         
         //search task
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
@@ -58,7 +58,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
-                this.cache = {};
+                //this.cache = {};
                 self.loadCategory(null);
             }
         });     
@@ -149,9 +149,22 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      * load product
      */
     loadProducts: function(categoryId) {
-       var self = this;
+       var self = this;      
+       
        self.categoryId = categoryId;
-
+       
+       // stop search if running
+       if ( Ext.isEmpty(self.searchValue) ) {
+            self.searchTask.cancel();
+            if ( self.getProductSearch().getValue() ) {
+                self.getProductSearch().reset();
+            }
+       }
+       
+       // search
+       self.productStore.searchProductsByCategory(categoryId, self.searchValue);
+       
+        /*
        // search params
        var params = {
            limit: Config.getSearchLimit()
@@ -177,24 +190,23 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             }
             
             // query cache
-            if ( self.categoryId ) {            
-                var cached = self.cache[self.categoryId];
-                if ( cached === undefined ) {
-                    //set cache
-                    cached = [];
-                    self.cache[self.categoryId] = cached;
-                    
-                    // cache
-                    options.callback = function() {
-                        self.productStore.each(function(rec) {
-                            cached.push(rec); 
-                        });
-                    };
-                } else {
-                    // set cached
-                    self.productStore.setData(cached);
-                    return;
-                }
+            var key = self.categoryId || 0;
+            var cached = self.cache[key];
+            if ( cached === undefined ) {
+                //set cache
+                cached = [];
+                self.cache[key] = cached;
+                
+                // cache
+                options.callback = function() {
+                    self.productStore.each(function(rec) {
+                        cached.push(rec); 
+                    });
+                };
+            } else {
+                // set cached
+                self.productStore.setData(cached);
+                return;
             }
             
         } else {
@@ -213,7 +225,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         }
       
         // load
-        self.productStore.load(options);               
+        self.productStore.load(options);     */          
     },
     
     /**

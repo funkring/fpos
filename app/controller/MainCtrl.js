@@ -66,6 +66,38 @@ Ext.define('Fpos.controller.MainCtrl', {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");     
         this.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
+        this.productStore = Ext.StoreMgr.lookup("ProductStore");
+        this.eanDetect = [];
+        
+        /*
+        var self = this;
+        self.eanDetectTask = Ext.create('Ext.util.DelayedTask', function() {
+            var ean = "";
+            if ( self.eanDetect.length == 14 && self.eanDetect[13] == 13 ) {
+                //build ean
+                Ext.each(self.eanDetect, function(e) {
+                    var keycode = e.keyCode ? e.keyCode : e.which;
+                    if ( keycode >= 48 && keycode <= 57 ) {            
+                        var c = String.fromCharCode(keycode);
+                        ean += c;                        
+                    }
+                });
+            } 
+                       
+            // check if it is ean
+            if ( ean.length != 13 ) {
+                Ext.each(self.eanDetect, function(event) {
+                    // post key
+                    Ext.Viewport.fireEvent("posKey",event); 
+                });
+            } else {
+                // post ean
+                Ext.Viewport.fireEvent("posScan",ean); 
+            }
+            
+            // reset
+            self.eanDetect = [];
+        });*/
     },
     
     mainViewInitialize: function() {
@@ -86,6 +118,9 @@ Ext.define('Fpos.controller.MainCtrl', {
 
         // reset config
         self.resetConfig();
+        
+        // add key listener
+        ViewManager.pushKeyboardListener(self);
     },
     
     onSyncTap: function() {        
@@ -227,52 +262,76 @@ Ext.define('Fpos.controller.MainCtrl', {
         });
     },
     
-    loadConfig: function() {
+    loadConfig: function() {        
         var self = this;
         var db = Config.getDB();
+        
+        ViewManager.startLoading('Lade Konfiguration');
+        
         // load config
-        return db.get('_local/config').then(function(config) {                    
-            Config.setSettings(config);
-            // load profile
-            return db.get('_local/profile');           
-        })
-        .then(function(profile) {
-            Config.setProfile(profile);  
-            
-            // reload
-            
-            // load category
-            self.categoryStore.load({
-                callback: function() {
-                    
-                    // load tax
-                    self.taxStore.load({
-                        callback: function() {
+        try {
+            return db.get('_local/config').then(function(config) {                    
+                Config.setSettings(config);
+                // load profile
+                return db.get('_local/profile');           
+            })
+            .then(function(profile) {
+                Config.setProfile(profile);  
+                
+                // reload
+                
+                // load category
+                self.categoryStore.load({
+                    callback: function() {
                         
-                            // load product units
-                            self.unitStore.load({
-                                callback: function() {
-                                    // fire reload
-                                    Ext.Viewport.fireEvent("reloadData");
-                                    // ... and show login
-                                    self.showLogin();                                    
-                                }
-                            });                                        
-                        }
-                    });   
+                        // load tax
+                        self.taxStore.load({
+                            callback: function() {
+                            
+                                // load product units
+                                self.unitStore.load({
+                                    callback: function() {
+                                    
+                                        self.productStore.load({
+                                            callback: function() {
+                                                // build index
+                                                self.productStore.buildIndex();
+                                                
+                                                // stop loading
+                                                ViewManager.stopLoading();
+                                                // fire reload
+                                                Ext.Viewport.fireEvent("reloadData");
+                                                // ... and show login
+                                                self.showLogin();            
+                                            }
+                                            
+                                        });
+                                                              
+                                    }
+                                });                                        
+                            }
+                        });   
+                    }
+                });         
+            })
+            ['catch'](function (error) {
+                ViewManager.stopLoading();
+                if ( error.name === 'not_found') {
+                    self.editConfig();   
+                } else {
+                    ViewManager.handleError(error,{
+                        name: "Fehler beim Laden", 
+                        message: "Konfiguration konnte nicht geladen werden"
+                    }, true);
                 }
-            });         
-        })
-        ['catch'](function (error) {
-            if ( error.name === 'not_found') {
-                self.editConfig();   
-            } else {
-                ViewManager.handleError(error,{
-                    name: "Fehler beim Laden", 
+            }); 
+        } catch (err) {
+            ViewManager.stopLoading();
+            ViewManager.handleError(err,{
+                    name: "Ausnahmefehler beim Laden", 
                     message: "Konfiguration konnte nicht geladen werden"
-                }, true);
-            }
-        }); 
+            }, true);
+        }
     },
             
     resetConfig: function() {
@@ -558,6 +617,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         ViewManager.updateButtonState(newCard, { saveButton: this.getSaveRecordButton(), 
                                                  deleteButton: this.getDeleteRecordButton(),
                                                  menuButton: this.getMainMenuButton() });
+                           
     },
     
     /**
@@ -699,5 +759,15 @@ Ext.define('Fpos.controller.MainCtrl', {
                 Ext.Viewport.hideMenu("left");
            }
         }
+    },
+    
+    onKeyDown: function(e) {
+        var self = this;
+        var mainView = self.getMainView();
+        
+        // check if is active
+        if ( Ext.Viewport.getActiveItem() == mainView && mainView.getActiveItem() == self.basePanel && self.basePanel.getActiveItem() == self.posPanel ) {
+            Ext.Viewport.fireEvent("posKey", e);
+        }        
     }
 });

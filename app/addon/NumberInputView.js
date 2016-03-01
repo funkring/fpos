@@ -1,4 +1,4 @@
-/*global Ext:false, futil:false*/
+/*global Ext:false, futil:false, ViewManager: false*/
 Ext.define('Ext.view.NumberInputView', {
     extend: 'Ext.Panel',
     xtype: 'numberinput',
@@ -6,7 +6,8 @@ Ext.define('Ext.view.NumberInputView', {
         'Ext.Button',
         'Ext.Container',
         'Ext.view.NumDisplay',
-        'Ext.field.PatternText'
+        'Ext.field.PatternText',
+        'Ext.form.ViewManager'
     ],
     config: {    
         layout: 'vbox', 
@@ -89,7 +90,6 @@ Ext.define('Ext.view.NumberInputView', {
          var self = this;
          self.callParent(arguments);
          
-         self.keyInputLister = Ext.bind(self.onKeyDown, self);
          self.numField = Ext.create("Ext.view.NumDisplay"); 
          self.add(self.numField);
          
@@ -512,14 +512,14 @@ Ext.define('Ext.view.NumberInputView', {
     showInput: function()  {
         if ( !this.visible ) {
             this.visible=true;
-            this.setFirstReplace(true);     
-            document.addEventListener("keydown", this.keyInputLister, false);
+            this.setFirstReplace(true);    
+            ViewManager.pushKeyboardListener(this); 
         }
     },    
     
     hideInput: function() {
         if ( this.visible ) {
-            document.removeEventListener("keydown", this.keyInputLister);
+            ViewManager.popKeyboardListener(this);
             this.visible=false;            
             this.removeHandler();
             this.clearInput();
@@ -572,6 +572,10 @@ Ext.define('Ext.view.NumberInputView', {
         if ( keycode >= 48 && keycode <= 57 ) {
             var c = String.fromCharCode(keycode);
             this.addChar(c);
+        } else if ( keycode == 13 ) {
+            this.numInputDone();
+        } else if ( keycode == 8 || keycode == 46 ) {
+            this.clearInput();
         }
     }
 });

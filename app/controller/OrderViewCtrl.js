@@ -178,7 +178,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
      
     orderViewInitialize: function() {
-        var self = this;
+        var self = this;          
         
         // reload event
         Ext.Viewport.on({
@@ -196,6 +196,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         Ext.Viewport.on({
             scope: self,
             validateLines: self.validateLines            
+        });
+        
+        Ext.Viewport.on({
+            scope: self,
+            posKey: self.onKeyDown
         });
         
         // reload data
@@ -834,15 +839,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     self.order.set('payment_ids',payment_ids);
                 }
                 
-                // determine cpos              
+                // determine cpos     
+                var fixed_payments = [];         
                 Ext.each(payment_ids, function(payment) {
                     if ( payment.journal_id == cashJournalId ) {
                         cpos += payment.amount;
+                        fixed_payments.push(payment);
+                    } else if ( payment.amount !== 0 || payment.payment !== 0) {
+                        fixed_payments.push(payment);
                     }
                 });
                 
                 // write order                
                 var date = futil.datetimeToStr(new Date());
+                self.order.set('payment_ids',fixed_payments);
                 self.order.set('date', date);
                 self.order.set('seq', seq);
                 self.order.set('name', Config.formatSeq(seq));
@@ -1295,6 +1305,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     self.printOrder(res.rows[0].doc);
                 }
              });
+        }
+    },
+    
+    onKeyDown: function(e) {
+        var keycode = e.keyCode ? e.keyCode : e.which;
+        if ( keycode >= 48 && keycode <= 57 ) {            
+            var c = String.fromCharCode(keycode);
+            this.inputAction(c);
+        } else if ( keycode == 13 ) {
+            this.onCash();
+        } else if ( keycode == 8 || keycode == 46 ) {
+            this.onInputCancelTap();
         }
     }
     

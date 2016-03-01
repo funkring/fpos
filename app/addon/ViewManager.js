@@ -28,11 +28,11 @@ Ext.define('Ext.form.ViewManager', {
       'Ext.MessageBox'
     ],
     config : {
-        
     },
     
     constructor: function(config) {
         this.initConfig(config);
+        this.keyboardListenerStack=[];
     },
     
     updateButtonState: function(view, items) {
@@ -295,6 +295,35 @@ Ext.define('Ext.form.ViewManager', {
         }
         Ext.Msg.alert(err.name, err.message);
         if (forward) throw err;
+    },
+    
+    pushKeyboardListener: function(listener) {
+        var self = this;
+        if ( !(listener in self.keyboardListenerStack)) {
+            if ( self.keyboardListenerStack.length === 0) {
+                if ( !self.keyInputListener ) {
+                    self.keyInputLister = Ext.bind(self.onKeyDown, self);
+                }
+                document.addEventListener("keydown", self.keyInputLister, false);
+            }
+            self.keyboardListenerStack.push(listener);
+        }
+    },
+    
+    popKeyboardListener: function(listener) {
+        var self = this;
+        while ( self.keyboardListenerStack.length > 0 && self.keyboardListenerStack.pop() != listener);
+
+        if ( self.keyboardListenerStack.length === 0 ) {
+            document.removeEventListener("keydown", self.keyInputLister);
+        }
+    },
+    
+    onKeyDown: function(e) {
+        var len = this.keyboardListenerStack.length;
+        if ( len > 0 ) {
+             this.keyboardListenerStack[len-1].onKeyDown(e);
+        }
     }
     
 });
