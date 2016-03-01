@@ -5,8 +5,7 @@ Ext.define('Fpos.model.PosLine', {
        'Ext.proxy.PouchDB'
    ],
    config: {
-       fields: ['order_id',
-                'name',
+       fields: ['name',
                 'product_id',
                 'uom_id',
                 'tax_ids',
@@ -16,12 +15,6 @@ Ext.define('Fpos.model.PosLine', {
                 'discount',
                 'notice',
                 'sequence',
-                'tag'],
-       identifier: 'uuid',
-       proxy: {
-            type: 'pouchdb',
-            database: 'fpos',
-            resModel: 'fpos.order.line'
-       }
+                'tag']
    }
 });

@@ -211,9 +211,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                    },
                    {
                        model: 'fpos.order'                     
-                   },
-                   {
-                       model: 'fpos.order.line'                       
                    }
                ] 
             });

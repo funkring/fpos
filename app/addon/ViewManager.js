@@ -256,11 +256,15 @@ Ext.define('Ext.form.ViewManager', {
                         var values = view.getValues();
                         // convert records to id
                         record.set(values);
-                        record.save({
-                           callback: function() {
-                              reloadHandler();
-                           }
-                        });
+                        if ( record.getProxy() ) {                            
+                            record.save({
+                               callback: function() {
+                                  reloadHandler();
+                               }
+                            });
+                        } else {
+                            reloadHandler();
+                        }
                     } else {
                         reloadHandler();
                     }

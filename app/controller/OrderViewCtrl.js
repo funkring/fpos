@@ -183,7 +183,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // reload event
         Ext.Viewport.on({
             scope: self,
-            reloadData: self.reloadData
+            reloadData: self.fullDataReload
         });
 
         // product input event         
@@ -222,7 +222,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var db = Config.getDB();
                 // build values
                 var values = {
-                    'order_id' : self.order.getId(),
+                    //'order_id' : self.order.getId(),
                     'name' : product.get('name'),
                     'product_id' : product.getId(),
                     'uom_id' : product.get('uom_id'),
@@ -364,8 +364,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var amount_total = 0.0;
             var amount_tax = 0.0;
             var turnover = 0.0;
+            var lines = [];
+            var updateLines = false;
             
-            self.lineStore.each(function(line) {
+            self.lineStore.each(function(line) {                
                 var total_line = self.validateLine(line, tax_group, tax_ids);
                 var tag = line.get('tag');
                 if ( !tag ) {
@@ -381,7 +383,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     // substract real balance
                     amount_total -= total_line.subtotal_incl;
                     amount_tax -= total_line.amount_tax;
+                }                
+                
+                // add line                
+                if ( line.dirty ) {
+                    updateLines = true;
+                    line.commit();
                 }
+                lines.push(line.getData());
             });
             
             // set values
@@ -389,29 +398,23 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
             self.order.set('turnover', turnover);
-            self.displayTask.delay(800);
+            if ( updateLines ) {
+                self.order.set('line_ids', lines);
+            }
             
-            // sync
-            var syncRes = self.lineStore.sync({
-                callback: function() {
-                    if ( self.order.dirty ) {
-                        self.order.save({
-                            callback: function() {
-                                deferred.resolve();
-                            }
-                        });
-                    } else {
+            // notify display update
+            self.displayTask.delay(800);
+
+            // save            
+            if ( self.order.dirty ) {
+                self.order.save({
+                    callback: function() {
                         deferred.resolve();
                     }
-                }
-            });
-            
-            // if no sync was done resolve, deferred
-            if ( (syncRes.added.length + syncRes.updated.length + syncRes.removed.length) === 0 ) {
-                setTimeout(function() {
-                    deferred.resolve();
-                }, 0);
-            } 
+                });
+            } else {
+                deferred.resolve();
+            }
             
         } else {
             setTimeout(function() {
@@ -431,17 +434,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.getStateDisplay().setRecord(order);
         self.getOrderItemList().deselectAll(true);
         
-        if ( order ) {
-            var options = {
-                params: {
-                    domain : [['order_id','=',order.getId()]]
-                },
-                callback: function() {
-                    self.lineStore.sort('sequence', 'ASC');
-                    self.validateLines();
-                }                
-            };
-            self.lineStore.load(options);             
+        var lines = order.get('line_ids');
+        if ( lines ) {
+            self.lineStore.setData(lines);
         } else {
             self.lineStore.setData([]);
         }        
@@ -464,9 +459,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 'state' : 'draft',
                 'date' : date,
                 'tax_ids' : [],
+                'line_ids' : [],
                 'amount_tax' : 0.0,
                 'amount_total' : 0.0
-            }).then(function(res) {
+            }).then(function(res) {                
                 self.reloadData();
             });
         }
@@ -516,6 +512,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             inputView.setActiveItem(orderItemList);
         }
     },
+    
+    fullDataReload: function() {
+        var self = this;
+        self.printTemplate = null;
+        self.reloadData();
+    },
         
     reloadData: function() {
         var self = this;
@@ -523,7 +525,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var db = Config.getDB();
         var user = Config.getUser();
         
-        self.printTemplate = null;
         self.setMode('*');
         self.resetView();  
                 
@@ -777,7 +778,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( self.order && !futil.isDoubleTap() ) {
             var lines = self.getOrderItemList().getSelection();
             var form;
-            if ( lines.length > 0 && lines[0].get('order_id') == self.order.getId() ) {
+            if ( lines.length > 0 ) {
                 form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
                 form.setRecord(lines[0]);
             } else {
@@ -1027,63 +1028,47 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }                
             );
         }
+
+        // get order if not passed
+        if (!order) {
+            order = this.order.getData();
+        }
+        
         
         // data
         var data = {
-            lines : [],
+            o: order,
+            lines : order.line_ids,
             priceColWidth: "32%",
             attribWidth: "34%",
             date: futil.strToDate(this.order.get('date'))
         };
         
-        // render function
-        var render = function() {
-            // render it
-            var html = self.printTemplate.apply(data);
-            // print/show it
-            if ( !Config.hasPrinter() ) { 
-                html = '<div class="PrintReport">' + html + '</div>';       
-                if ( !self.reportPanel ) {
-                    self.reportPanel = Ext.create('Ext.Panel',{
-                        hideOnMaskTap: true,
-                        modal: true,
-                        centered: true,
-                        scrollable: true,
-                        cls: 'PrintReport',
-                        height: '400px',
-                        width: '300px',
-                        layout: 'vbox',
-                        html: html 
-                    });                
-                    Ext.Viewport.add(self.reportPanel);
-                } else {
-                    self.reportPanel.setHtml(html);
-                    self.reportPanel.show();
-                }
-            } else {
-                Config.printHtml(html);
-            }
-        };
-        
-        // if no order was passed
-        if ( !order ) {
-            data.o = this.order.getData();
-            self.lineStore.each(function(line) {
-               data.lines.push(line.getData()); 
-            });
-            
-            render();
-        } else {
-            data.o = order;
-            // search lines to order
-            DBUtil.search(Config.getDB(), [['fdoo__ir_model','=','fpos.order.line'],['order_id','=',order._id]], {include_docs: true}).then(function(res) {
-                Ext.each(res.rows, function(row) {   
-                    data.lines.push(row.doc); 
+        // render it
+        var html = self.printTemplate.apply(data);
+        // print/show it
+        if ( !Config.hasPrinter() ) { 
+            html = '<div class="PrintReport">' + html + '</div>';       
+            if ( !self.reportPanel ) {
+                self.reportPanel = Ext.create('Ext.Panel',{
+                    hideOnMaskTap: true,
+                    modal: true,
+                    centered: true,
+                    scrollable: true,
+                    cls: 'PrintReport',
+                    height: '400px',
+                    width: '300px',
+                    layout: 'vbox',
+                    html: html 
                 });                
-                render();
-            });
+                Ext.Viewport.add(self.reportPanel);
+            } else {
+                self.reportPanel.setHtml(html);
+                self.reportPanel.show();
+            }
+        } else {
+            Config.printHtml(html);
         }
-       
     },
     
     display: function() {
@@ -1239,49 +1224,42 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 'state' : 'draft',
                                 'date' : date,
                                 'tax_ids' : [],
+                                'line_ids' : [
+                                    {
+                                        // TURNOVER
+                                        'name' : 'Umsatzzähler',
+                                        'brutto_price' : turnover,
+                                        'qty' : 1.0,
+                                        'subtotal_incl' : turnover,
+                                        'discount' : 0.0,
+                                        'sequence' : 0,
+                                        'tag' : 'c'
+                                    },
+                                    {
+                                        // BALANCE
+                                        'name' : 'Kassenstand SOLL',
+                                        'brutto_price' : cpos,
+                                        'qty' : 1.0,
+                                        'subtotal_incl' : cpos,
+                                        'discount' : 0.0,
+                                        'sequence' : 1,
+                                        'tag' : 'b'
+                                    }, 
+                                    {
+                                        // SHOULD
+                                        'name' : 'Kassenstand IST',
+                                        'brutto_price' : cpos,
+                                        'qty' : 1.0,
+                                        'subtotal_incl' : cpos,
+                                        'discount' : 0.0,
+                                        'sequence' : 2,
+                                        'tag' : 'r'
+                                    }
+                                    
+                                ],
                                 'amount_tax' : 0.0,
                                 'amount_total' : 0.0,
                                 'tag' : 's' // CASH STATE
-                        }).then(function(res) { 
-                            order_id = res.id;
-                            // TURNOVER
-                            return db.post({
-                                'fdoo__ir_model' : 'fpos.order.line',
-                                'order_id' : order_id,
-                                'name' : 'Umsatzzähler',
-                                'brutto_price' : turnover,
-                                'qty' : 1.0,
-                                'subtotal_incl' : 0.0,
-                                'discount' : 0.0,
-                                'sequence' : 0,
-                                'tag' : 'c'
-                            });
-                        }).then(function(res) {
-                            // BALANCE
-                            return db.post({
-                                'fdoo__ir_model' : 'fpos.order.line',
-                                'order_id' : order_id,
-                                'name' : 'Kassenstand SOLL',
-                                'brutto_price' : cpos,
-                                'qty' : 1.0,
-                                'subtotal_incl' : 0.0,
-                                'discount' : 0.0,
-                                'sequence' : 1,
-                                'tag' : 'b'
-                            });
-                        }).then(function(res) {
-                            // SHOULD
-                            return db.post({
-                                'fdoo__ir_model' : 'fpos.order.line',
-                                'order_id' : order_id,
-                                'name' : 'Kassenstand IST',
-                                'brutto_price' : cpos,
-                                'qty' : 1.0,
-                                'subtotal_incl' : 0.0,
-                                'discount' : 0.0,
-                                'sequence' : 2,
-                                'tag' : 'r'
-                            });
                         })['catch'](function(err) {          
                            ViewManager.handleError(err,{
                                 name: "Kassensturz Fehler",
