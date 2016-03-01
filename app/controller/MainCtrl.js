@@ -15,7 +15,9 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Fpos.view.ProductView',
         'Fpos.view.OrderView',
         'Fpos.view.OrderInputView',
-        'Fpos.view.TestView'
+        'Fpos.view.TestView',
+        'Fpos.view.ProductViewSmall',
+        'Fpos.view.OrderInputViewSmall'
     ],
     config: {
         refs: {
@@ -40,6 +42,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             'button[action=provisioning]' : {
                 tap: 'onProvisioning'
+            },
+            'button[action=productMenu]' : {
+                tap: 'onShowProductMenu'
             },
             mainView: {
                 initialize: 'mainViewInitialize',
@@ -85,21 +90,21 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     onSyncTap: function() {        
         if ( !futil.isDoubleTap() ) { 
-            Config.hideMainMenu();
+            ViewManager.hideMenus();
             this.sync();
         }
     },
     
     onUpdateApp: function() {
         if ( !futil.isDoubleTap() ) {
-            Config.hideMainMenu();
+            ViewManager.hideMenus();
             Config.updateApp();
         }
     },
     
     onProvisioning: function() {
         if ( !futil.isDoubleTap() ) {
-            Config.hideMainMenu();
+            ViewManager.hideMenus();
             Config.provisioning();
         }
     },
@@ -277,6 +282,8 @@ Ext.define('Fpos.controller.MainCtrl', {
        var self = this;
        var mainView = self.getMainView();
        
+       ViewManager.hideMenus();
+       
        // pop all views, untail base panel
        /*
        while ( mainView.getActiveItem() && mainView.getActiveItem() != self.basePanel ) {
@@ -447,13 +454,10 @@ Ext.define('Fpos.controller.MainCtrl', {
                 // smaller pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',
-                    items: [
-                        {
-                            xtype: 'fpos_product',
-                            flex: 1   
-                        },
+                    items: [                       
                         {
                             layout: 'vbox',
+                            flex: 1,
                             items: [
                                 {
                                     xtype: 'fpos_order',
@@ -461,12 +465,29 @@ Ext.define('Fpos.controller.MainCtrl', {
                                 },
                                 {
                                     xtype: 'fpos_order_input_small'  
-                                }
-                            
+                                }                            
                             ]          
                         }              
                     ]
                 });
+                
+                // set left menu                
+                var productMenu =  Ext.create('Ext.Menu', {
+                        cls: 'ProductMenu',
+                        items: [
+                            {                                
+                                xtype: 'fpos_product_small',
+                                height: '100%',
+                                width: '194px'
+                            }
+                        ]    
+                });                
+                
+                Ext.Viewport.setMenu(productMenu, {
+                     side: "left",
+                     reveal: true
+                });
+                 
             } else {                        
                 // big pos
                 self.posPanel = Ext.create("Ext.Panel", {
@@ -539,8 +560,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         // update buttons
         ViewManager.updateButtonState(newCard, { saveButton: this.getSaveRecordButton(), 
                                                  deleteButton: this.getDeleteRecordButton(),
-                                                 menuButton: this.getMainMenuButton(),
-                                                 menuSide: Config.getMenuSide() });
+                                                 menuButton: this.getMainMenuButton() });
     },
     
     /**
@@ -601,6 +621,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         var self = this;
         var db = Config.getDB();
         
+        ViewManager.hideMenus();
         Config.setAdmin(false);
         Config.setUser(null);
         self.getLoginButton().setText("Anmelden");
@@ -665,7 +686,21 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     onShowMainMenu: function() {
         if ( !futil.isDoubleTap()) {
-            Config.showMainMenu();
+           if ( Ext.Viewport.getMenus().right.isHidden() ) {
+                Ext.Viewport.showMenu("right");
+           } else {
+                Ext.Viewport.hideMenu("right");
+           }
+        }
+    },
+    
+    onShowProductMenu: function() {
+        if ( !futil.isDoubleTap()) {
+           if ( Ext.Viewport.getMenus().left.isHidden() ) {
+                Ext.Viewport.showMenu("left");
+           } else {
+                Ext.Viewport.hideMenu("left");
+           }
         }
     }
 });

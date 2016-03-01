@@ -66,7 +66,7 @@ Ext.define('Ext.form.ViewManager', {
         }
         
         var menu = view.menu || view.config.menu;
-        var menuSide = items.menuSide || 'left';
+        var menuSide = items.menuSide || 'right';
         if ( menu ) {
              Ext.Viewport.setMenu(menu, {
                  side: menuSide,
@@ -79,6 +79,16 @@ Ext.define('Ext.form.ViewManager', {
             items.menuButton.hide();
             Ext.Viewport.removeMenu(menuSide);
         }        
+    },
+    
+    hideMenus: function() {
+        var menus = Ext.Viewport.getMenus();
+        if ( menus.right && !menus.right.isHidden() ) {
+            Ext.Viewport.hideMenu("right");
+        }
+        if ( menus.left && !menus.left.isHidden() ) {
+            Ext.Viewport.hideMenu("left");
+        }
     },
     
     /**

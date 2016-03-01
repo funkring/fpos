@@ -18,7 +18,6 @@ Ext.define('Fpos.Config', {
         searchDelay : 500,
         searchLimit : 100,
         leftMenuWidth: 250,
-        menuSide: 'right',
         maxRows : 10,
         settings : null,
         user : null,
@@ -278,20 +277,6 @@ Ext.define('Fpos.Config', {
                     message: 'Hintergrund kann nicht gesetzt werden'
                 });
             });
-    },
-    
-    hideMainMenu: function() {
-        if ( !Ext.Viewport.getMenus().right.isHidden() ) {
-            Ext.Viewport.hideMenu(this.getMenuSide());
-        }
-    },
-   
-    showMainMenu: function() {
-        if ( Ext.Viewport.getMenus().right.isHidden() ) {
-            Ext.Viewport.showMenu(this.getMenuSide());
-        } else {
-            Ext.Viewport.hideMenu(this.getMenuSide());
-        }
     },
     
     queryLastOrder: function() {

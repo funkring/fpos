@@ -1303,7 +1303,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     onCreateCashState: function() {
         if ( !futil.isDoubleTap() ) {
-            Config.hideMainMenu();
+            ViewManager.hideMenus();
             this.createCashState();
         }
     },
@@ -1311,7 +1311,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onPrintAgain: function() {
         var self = this;
         if ( !futil.isDoubleTap() ) {
-            Config.hideMainMenu();
+            ViewManager.hideMenus();
             Config.queryLastOrder().then(function(res) {
                 if ( res.rows.length > 0 ) {
                     self.printOrder(res.rows[0].doc);

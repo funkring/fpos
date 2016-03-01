@@ -16,6 +16,7 @@
 
 $fpos-input-dark: #525252;
 $fpos-input-grey: #777777;
+$fpos-input-lightgrey: #eeeeee;
 
 // ******************************************************************
 // Invalids
@@ -173,6 +174,7 @@ $fpos-input-grey: #777777;
 
 .ProductContainer {   
     //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: $fpos-input-lightgrey
 }
 
 .ProductCategoryButton {
@@ -202,10 +204,7 @@ $fpos-input-grey: #777777;
 .CategorySelection {
     background-color: $fpos-input-dark !important;
     width: 86px;
-}
-
-.SelectedCategoryButton {
-    width: 70px;
+    padding-left: 2px;
 }
 
 .ProductDataView {
@@ -392,3 +391,12 @@ div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription
     font-weight: bold;
     padding: 4px;
 }
+
+// ******************************************************************
+// Product Menu
+// ******************************************************************
+
+.ProductMenu {
+    padding: 0px;
+}
+
