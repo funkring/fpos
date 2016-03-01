@@ -443,10 +443,29 @@ Ext.define('Fpos.controller.MainCtrl', {
     openPos: function() {
         var self = this;
         if ( !self.posPanel ) {
-            if ( futil.hasSmallRes() ) {
-                // small pos
+            if ( futil.screenWidth() < 600 ) {
+                // smaller pos
                 self.posPanel = Ext.create("Ext.Panel", {
-                               
+                    layout: 'hbox',
+                    items: [
+                        {
+                            xtype: 'fpos_product',
+                            flex: 1   
+                        },
+                        {
+                            layout: 'vbox',
+                            items: [
+                                {
+                                    xtype: 'fpos_order',
+                                    flex: 1                        
+                                },
+                                {
+                                    xtype: 'fpos_order_input_small'  
+                                }
+                            
+                            ]          
+                        }              
+                    ]
                 });
             } else {                        
                 // big pos
