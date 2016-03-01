@@ -281,6 +281,6 @@ Ext.define('Ext.form.ViewManager', {
         }
         Ext.Msg.alert(err.name, err.message);
         if (forward) throw err;
-    } 
+    }
     
 });

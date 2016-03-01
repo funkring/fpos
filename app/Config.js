@@ -278,7 +278,31 @@ Ext.define('Fpos.Config', {
                     message: 'Hintergrund kann nicht gesetzt werden'
                 });
             });
-    }
+    },
     
+    hideMainMenu: function() {
+        if ( !Ext.Viewport.getMenus().right.isHidden() ) {
+            Ext.Viewport.hideMenu(this.getMenuSide());
+        }
+    },
+   
+    showMainMenu: function() {
+        if ( Ext.Viewport.getMenus().right.isHidden() ) {
+            Ext.Viewport.showMenu(this.getMenuSide());
+        } else {
+            Ext.Viewport.hideMenu(this.getMenuSide());
+        }
+    },
+    
+    queryLastOrder: function() {
+        return DBUtil.search(this.getDB(), ['fdoo__ir_model','state','seq'], {
+            descending: true,
+            include_docs: true,
+            inclusive_end: true,
+            limit: 1,
+            startkey: ['fpos.order','paid',Number.MAX_VALUE],
+            endkey: ['fpos.order','paid',0]
+        });
+    }    
     
 });

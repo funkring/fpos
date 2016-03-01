@@ -46,7 +46,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 activeitemchange : 'mainActiveItemChange'                   
             },
             mainMenuButton: {
-                tap: 'showMainMenu'                
+                tap: 'onShowMainMenu'                
             },
             saveRecordButton: {
                 tap: 'saveRecord'
@@ -83,23 +83,23 @@ Ext.define('Fpos.controller.MainCtrl', {
         self.resetConfig();
     },
     
-    onSyncTap: function() {
+    onSyncTap: function() {        
         if ( !futil.isDoubleTap() ) { 
-            this.hideMainMenu();
+            Config.hideMainMenu();
             this.sync();
         }
     },
     
     onUpdateApp: function() {
         if ( !futil.isDoubleTap() ) {
-            this.hideMainMenu();
+            Config.hideMainMenu();
             Config.updateApp();
         }
     },
     
     onProvisioning: function() {
         if ( !futil.isDoubleTap() ) {
-            this.hideMainMenu();
+            Config.hideMainMenu();
             Config.provisioning();
         }
     },
@@ -392,7 +392,19 @@ Ext.define('Fpos.controller.MainCtrl', {
                         xtype: 'button',
                         flex: 1,
                         text: 'Synchronisieren',
-                        action: 'sync'             
+                        action: 'sync'
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Kassensturz',
+                        action: 'createCashState'
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Drucken',
+                        action: 'printAgain'
                     }
                 ]    
          });
@@ -566,20 +578,6 @@ Ext.define('Fpos.controller.MainCtrl', {
         }); 
     },
     
-    hideMainMenu: function() {
-        if ( !Ext.Viewport.getMenus().right.isHidden() ) {
-            Ext.Viewport.hideMenu(Config.getMenuSide());
-        }
-    },
-   
-    showMainMenu: function() {
-        if ( Ext.Viewport.getMenus().right.isHidden() ) {
-            Ext.Viewport.showMenu(Config.getMenuSide());
-        } else {
-            Ext.Viewport.hideMenu(Config.getMenuSide());
-        }
-    },
-    
     showLogin: function() {
         var self = this;
         var db = Config.getDB();
@@ -643,7 +641,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             Ext.Viewport.add( self.pinInput );
         } else {
             self.pinInput.show();   
+        }          
+    },
+    
+    onShowMainMenu: function() {
+        if ( !futil.isDoubleTap()) {
+            Config.showMainMenu();
         }
-          
-    }    
+    }
 });

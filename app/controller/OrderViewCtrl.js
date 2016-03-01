@@ -63,6 +63,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=inputPayment]' : {
                 tap: 'onPayment'
+            },
+            'button[action=createCashState]' : {
+                tap: 'onCreateCashState'
+            },
+            'button[action=printAgain]' : {
+                tap: 'onPrintAgain'
             }
             
         }
@@ -118,6 +124,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     orderItemListInitialize: function(orderItemList) {
         var self = this;
         orderItemList.setItemTpl(Ext.create('Ext.XTemplate',
+                '<tpl if="tag">',
+                '<div class="PaymentName">',
+                    '{name}',
+                '</div>',
+                '<div class="PaymentValue">',
+                     '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
+                '</div>',
+                '<tpl else>',
                 '<div class="PosOrderLineDescription">',
                     '<div class="PosOrderLineName">',
                         '{name}',
@@ -138,14 +152,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '</div>',
                 '<div class="PosOrderLinePrice">',
                     '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
-                '</div>', {
-                
-                getUnit: function(uom_id) {
-                    var uom = self.unitStore.getById(uom_id);
-                    return uom && uom.get('name') || '';
+                '</div>', 
+                '</tpl>',
+                {                
+                    getUnit: function(uom_id) {
+                        var uom = self.unitStore.getById(uom_id);
+                        return uom && uom.get('name') || '';
+                    }                
                 }
-                
-            }
         ));        
         orderItemList.setStore(this.lineStore);
     },    
@@ -353,16 +367,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             self.lineStore.each(function(line) {
                 var total_line = self.validateLine(line, tax_group, tax_ids);
-                if ( !line.tag ) {
+                var tag = line.get('tag');
+                if ( !tag ) {
                     // add                
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
                     turnover += total_line.subtotal_incl;
-                } else if ( line.tag == 'b' || line.tag == 'o') {
+                } else if ( tag == 'b' || tag == 'o') {
                     // add balance and other
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
-                } else if ( line.tag == 'r' ) {
+                } else if ( tag == 'r' ) {
                     // substract real balance
                     amount_total -= total_line.subtotal_incl;
                     amount_tax -= total_line.amount_tax;
@@ -422,6 +437,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     domain : [['order_id','=',order.getId()]]
                 },
                 callback: function() {
+                    self.lineStore.sort('sequence', 'ASC');
                     self.validateLines();
                 }                
             };
@@ -516,7 +532,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 params : {
                     domain : [['user_id','=',user._id],['state','=','draft']]
                 },
-                callback: function() {                    
+                callback: function() {
                     if ( self.orderStore.getCount() === 0 ) {
                         // create new order
                         self.nextOrder();
@@ -626,64 +642,75 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var lines = this.getOrderItemList().getSelection();
             if ( lines.length > 0  ) {            
                 var line = lines[0];
+                var tag = line.get('tag');
+                if ( !tag || tag == 'r') {
                 
-                // switch sign
-                if ( action == "+/-" ) {
-                    if ( this.mode == "*"  || this.mode == "€") {
-                        // special case, only switch sign
-                        if ( this.inputText.length === 0 ) {
-                            if ( this.mode == "*" ) {
-                                line.set('qty',line.get('qty')*-1);
-                            } else {
-                                line.set('brutto_price',line.get('brutto_price')*-1);
-                            }
-                            this.validateLines();
-                            valid = false;
-                        } else {
-                            this.inputSign*=-1;
+                    // set mode to €
+                    // if it is real balance input
+                    if ( tag == 'r') {
+                        if ( this.mode != '€' ) {
+                            this.setMode('€');
                         }
-                    } else {
-                        valid = false;
                     }
-                // add comma
-                } else if ( action == "." ) {
-                    if ( this.inputText.indexOf(".") < 0 ) {
-                        this.inputText += "."; 
-                    } else {
-                        valid = false;
-                    }
-                // default number handling
-                } else {
-                    commaPos = this.inputText.indexOf(".");
-                    if ( commaPos >= 0 ) { 
-                        decimals = this.inputText.length - commaPos; 
-                        if ( this.mode == '*' ) {
-                            // only add if less than max qty decimals
-                            if ( decimals > Config.getQtyDecimals()  ) {
+                    
+                    // switch sign
+                    if ( action == "+/-" ) {
+                        if ( this.mode == "*"  || this.mode == "€") {
+                            // special case, only switch sign
+                            if ( this.inputText.length === 0 ) {
+                                if ( this.mode == "*" ) {
+                                    line.set('qty',line.get('qty')*-1);
+                                } else {
+                                    line.set('brutto_price',line.get('brutto_price')*-1);
+                                }
+                                this.validateLines();
                                 valid = false;
+                            } else {
+                                this.inputSign*=-1;
                             }
-                        // only add if less than max decimals
-                        } else if ( decimals > Config.getDecimals() ) {
+                        } else {
                             valid = false;
-                        }                        
-                    }                    
-                    //add if valid
-                    if ( valid ) 
-                        this.inputText += action;            
-                }
-              
-                // update if valid
-                if ( valid ) {
-                    // update
-                    value = parseFloat(this.inputText);
-                    if ( this.mode == "€" ) {
-                        line.set('brutto_price', value*this.inputSign);
-                    } else if ( this.mode == "%" ) {
-                        line.set('discount', value);
+                        }
+                    // add comma
+                    } else if ( action == "." ) {
+                        if ( this.inputText.indexOf(".") < 0 ) {
+                            this.inputText += "."; 
+                        } else {
+                            valid = false;
+                        }
+                    // default number handling
                     } else {
-                        line.set('qty', value*this.inputSign);
+                        commaPos = this.inputText.indexOf(".");
+                        if ( commaPos >= 0 ) { 
+                            decimals = this.inputText.length - commaPos; 
+                            if ( this.mode == '*' ) {
+                                // only add if less than max qty decimals
+                                if ( decimals > Config.getQtyDecimals()  ) {
+                                    valid = false;
+                                }
+                            // only add if less than max decimals
+                            } else if ( decimals > Config.getDecimals() ) {
+                                valid = false;
+                            }                        
+                        }                    
+                        //add if valid
+                        if ( valid ) 
+                            this.inputText += action;            
                     }
-                    this.validateLines();
+                  
+                    // update if valid
+                    if ( valid ) {
+                        // update
+                        value = parseFloat(this.inputText);
+                        if ( this.mode == "€" ) {
+                            line.set('brutto_price', value*this.inputSign);
+                        } else if ( this.mode == "%" ) {
+                            line.set('discount', value);
+                        } else {
+                            line.set('qty', value*this.inputSign);
+                        }
+                        this.validateLines();
+                    }
                 }
             }
             
@@ -835,14 +862,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             // query last order
             try {
-                DBUtil.search(db, ['state','seq'], {
-                    descending: true,
-                    include_docs: true,
-                    inclusive_end: true,
-                    limit: 1,
-                    startkey: ['paid',Number.MAX_VALUE],
-                    endkey: ['paid',0]
-                })['catch'](function(err) {
+                Config.queryLastOrder()['catch'](function(err) {
                     deferred.reject(err);
                 }).then(function(res) {
                     // write order
@@ -882,7 +902,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }          
     },
     
-    printOrder: function() {
+    printOrder: function(order) {
         var self = this;        
         if ( !self.printTemplate ) {
             var profile = Config.getProfile();
@@ -946,16 +966,30 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="2"><hr/></td>',
                 '</tr>',
                 '<tpl for="lines">',
-                '<tr>',
-                    '<td>{name}</td>',
-                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
-                '</tr>',
-                '<tr>',
-                    '<td colspan="2">',
-                        '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
-                        '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
-                    '</td>',        
-                '</tr>',
+                    '<tpl if="tag==\'c\'">',
+                        '<tr>',
+                            '<td colspan="2">{name}</td>',                        
+                        '</tr>',
+                        '<tr>',
+                            '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}  {[Config.getCurrency()]}</td>',
+                        '</tr>',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
+                        '</tr>',
+                    '<tpl else>',
+                        '<tr>',
+                            '<td>{name}</td>',
+                            '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                        '</tr>',
+                        '<tpl if="!tag">',
+                            '<tr>',
+                                '<td colspan="2">',
+                                    '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
+                                    '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
+                                '</td>',        
+                            '</tr>',
+                        '</tpl>',
+                    '</tpl>',
                 '</tpl>',
                 '<tr>',                
                     '<td colspan="2"><hr/></td>',
@@ -994,44 +1028,62 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             );
         }
         
-        // build data
+        // data
         var data = {
-            o: this.order.getData(),
-            lines: [],
+            lines : [],
             priceColWidth: "32%",
             attribWidth: "34%",
             date: futil.strToDate(this.order.get('date'))
         };
         
-        self.lineStore.each(function(line) {
-           data.lines.push(line.getData()); 
-        });
-        
-        // render it
-        var html = self.printTemplate.apply(data);
-        // print/show it
-        if ( !Config.hasPrinter() ) { 
-            html = '<div class="PrintReport">' + html + '</div>';       
-            if ( !self.reportPanel ) {
-                self.reportPanel = Ext.create('Ext.Panel',{
-                    hideOnMaskTap: true,
-                    modal: true,
-                    centered: true,
-                    scrollable: true,
-                    cls: 'PrintReport',
-                    height: '400px',
-                    width: '300px',
-                    layout: 'vbox',
-                    html: html 
-                });                
-                Ext.Viewport.add(self.reportPanel);
+        // render function
+        var render = function() {
+            // render it
+            var html = self.printTemplate.apply(data);
+            // print/show it
+            if ( !Config.hasPrinter() ) { 
+                html = '<div class="PrintReport">' + html + '</div>';       
+                if ( !self.reportPanel ) {
+                    self.reportPanel = Ext.create('Ext.Panel',{
+                        hideOnMaskTap: true,
+                        modal: true,
+                        centered: true,
+                        scrollable: true,
+                        cls: 'PrintReport',
+                        height: '400px',
+                        width: '300px',
+                        layout: 'vbox',
+                        html: html 
+                    });                
+                    Ext.Viewport.add(self.reportPanel);
+                } else {
+                    self.reportPanel.setHtml(html);
+                    self.reportPanel.show();
+                }
             } else {
-                self.reportPanel.setHtml(html);
-                self.reportPanel.show();
+                Config.printHtml(html);
             }
+        };
+        
+        // if no order was passed
+        if ( !order ) {
+            data.o = this.order.getData();
+            self.lineStore.each(function(line) {
+               data.lines.push(line.getData()); 
+            });
+            
+            render();
         } else {
-            Config.printHtml(html);
+            data.o = order;
+            // search lines to order
+            DBUtil.search(Config.getDB(), [['fdoo__ir_model','=','fpos.order.line'],['order_id','=',order._id]], {include_docs: true}).then(function(res) {
+                Ext.each(res.rows, function(row) {   
+                    data.lines.push(row.doc); 
+                });                
+                render();
+            });
         }
+       
     },
     
     display: function() {
@@ -1152,8 +1204,121 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         } else {
             inputView.setActiveItem(self.getOrderItemList());
         }
-    }  
+    },
     
+    createCashState: function() {
+        var self = this;
+        var db = Config.getDB();
+        var user_id = Config.getUser()._id;
+        var fpos_user_id = Config.getProfile().user_id;
+        
+        var turnover = 0.0;
+        var cpos = 0.0;
+        var date = futil.datetimeToStr(new Date());
+        var order_id;
+
+        if ( user_id && fpos_user_id) {
+            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
+               var bulkUpdate = [];
+               Ext.each(res.rows, function(row) {
+                     row.doc._deleted = true;
+                     bulkUpdate.push(row.doc);
+               });
+               return db.bulkDocs(bulkUpdate);
+            }).then(function(res) {
+                return Config.queryLastOrder().then(function(res) {
+                        if ( res.rows.length > 0 ) {
+                            var lastOrder = res.rows[0].doc;
+                            turnover = lastOrder.turnover;
+                            cpos = lastOrder.cpos;
+                        }    
+                        return db.post({
+                                'fdoo__ir_model' : 'fpos.order',
+                                'fpos_user_id' : fpos_user_id,
+                                'user_id' : user_id,
+                                'state' : 'draft',
+                                'date' : date,
+                                'tax_ids' : [],
+                                'amount_tax' : 0.0,
+                                'amount_total' : 0.0,
+                                'tag' : 's' // CASH STATE
+                        }).then(function(res) { 
+                            order_id = res.id;
+                            // TURNOVER
+                            return db.post({
+                                'fdoo__ir_model' : 'fpos.order.line',
+                                'order_id' : order_id,
+                                'name' : 'Umsatzzähler',
+                                'brutto_price' : turnover,
+                                'qty' : 1.0,
+                                'subtotal_incl' : 0.0,
+                                'discount' : 0.0,
+                                'sequence' : 0,
+                                'tag' : 'c'
+                            });
+                        }).then(function(res) {
+                            // BALANCE
+                            return db.post({
+                                'fdoo__ir_model' : 'fpos.order.line',
+                                'order_id' : order_id,
+                                'name' : 'Kassenstand SOLL',
+                                'brutto_price' : cpos,
+                                'qty' : 1.0,
+                                'subtotal_incl' : 0.0,
+                                'discount' : 0.0,
+                                'sequence' : 1,
+                                'tag' : 'b'
+                            });
+                        }).then(function(res) {
+                            // SHOULD
+                            return db.post({
+                                'fdoo__ir_model' : 'fpos.order.line',
+                                'order_id' : order_id,
+                                'name' : 'Kassenstand IST',
+                                'brutto_price' : cpos,
+                                'qty' : 1.0,
+                                'subtotal_incl' : 0.0,
+                                'discount' : 0.0,
+                                'sequence' : 2,
+                                'tag' : 'r'
+                            });
+                        })['catch'](function(err) {          
+                           ViewManager.handleError(err,{
+                                name: "Kassensturz Fehler",
+                                message: "Kassensturz konnte nicht erstellt werden"
+                           });
+                        }).then(function(res) {
+                            self.reloadData();
+                        });
+                    });
+            })['catch'](function(err) {          
+               ViewManager.handleError(err,{
+                    name: "Kassensturz Fehler",
+                    message: "Kassensturz konnte nicht erstellt werden"
+               });
+            });
+        }
+        
+    },
+    
+    onCreateCashState: function() {
+        if ( !futil.isDoubleTap() ) {
+            Config.hideMainMenu();
+            this.createCashState();
+        }
+    },
+    
+    onPrintAgain: function() {
+        var self = this;
+        if ( !futil.isDoubleTap() ) {
+            Config.hideMainMenu();
+            Config.queryLastOrder().then(function(res) {
+                if ( res.rows.length > 0 ) {
+                    self.printOrder(res.rows[0].doc);
+                }
+             });
+        }
+    }
     
 });
     
