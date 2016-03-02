@@ -654,11 +654,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( lines.length > 0  ) {            
                 var line = lines[0];
                 var tag = line.get('tag');
-                if ( !tag || tag == 'r') {
+                if ( !tag || tag == 'r' || tag == 'o') {
                 
                     // set mode to €
                     // if it is real balance input
-                    if ( tag == 'r') {
+                    // if it is other
+                    if ( tag == 'r' || tag == 'o') {
                         if ( this.mode != '€' ) {
                             this.setMode('€');
                         }
@@ -1216,8 +1217,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var cpos = 0.0;
         var date = futil.datetimeToStr(new Date());
         var order_id;
-
+      
         if ( user_id && fpos_user_id) {
+            ViewManager.startLoading("Kassenstand erstellen");
+
             DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
                var bulkUpdate = [];
                Ext.each(res.rows, function(row) {
@@ -1276,15 +1279,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 'amount_total' : 0.0,
                                 'tag' : 's' // CASH STATE
                         })['catch'](function(err) {          
+                           ViewManager.stopLoading();
                            ViewManager.handleError(err,{
                                 name: "Kassensturz Fehler",
                                 message: "Kassensturz konnte nicht erstellt werden"
                            });
                         }).then(function(res) {
+                            ViewManager.stopLoading();                            
                             self.reloadData();
                         });
                     });
             })['catch'](function(err) {          
+               ViewManager.stopLoading();
                ViewManager.handleError(err,{
                     name: "Kassensturz Fehler",
                     message: "Kassensturz konnte nicht erstellt werden"
