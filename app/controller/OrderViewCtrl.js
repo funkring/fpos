@@ -240,9 +240,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 };
                 
                 // set tag to other if is an income or expense
-                if ( product.get('income_pdt') ||  product.get('expense_pdt') ) {
+                if ( product.get('expense_pdt') ) {
                     values.tag = "o";
-                } else if ( values.tag ) {
+                } else if ( product.get('income_pdt') ) {
+                    values.tag = "i";
+                }  else if ( values.tag ) {
                     values.tag = null;
                 }
                 
@@ -380,7 +382,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
                     turnover += total_line.subtotal_incl;
-                } else if ( tag == 'b' || tag == 'o') {
+                } else if ( tag == 'b' || tag == 'o' || tag == 'i') {
                     // add balance and other
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
@@ -654,14 +656,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( lines.length > 0  ) {            
                 var line = lines[0];
                 var tag = line.get('tag');
-                if ( !tag || tag == 'r' || tag == 'o') {
+                if ( !tag || tag == 'r' || tag == 'o' || tag == 'i') {
                 
                     // set mode to €
                     // if it is real balance input
                     // if it is other
-                    if ( tag == 'r' || tag == 'o') {
+                    if ( tag == 'r' || tag == 'o' || tag == 'i') {
                         if ( this.mode != '€' ) {
                             this.setMode('€');
+                        }
+                        // check input sign
+                        if ( tag == 'o' && this.inputSign !== -1 ) {
+                            this.inputSign = -1;
                         }
                     }
                     
