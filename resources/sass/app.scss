@@ -73,15 +73,6 @@ $fpos-input-lightgrey: #eeeeee;
     padding: 8px;
 }
 
-// ******************************************************************
-// TestButton
-// ******************************************************************
-
-.TestButton {
-    margin: 1px;
-    color: #ffffff !important; 
-    font-size: 1.4em;    
-}
 
 // ******************************************************************
 // Receipt
@@ -153,15 +144,21 @@ $fpos-input-lightgrey: #eeeeee;
 
 .TestInfo {
     background-color: #ffffff !important;
-    margin: 10px; 
+    margin: 4px;
+    font-size: 0.5em; 
 }
+
+// ******************************************************************
+// TestButton
+// ******************************************************************
 
 .TestButton {
-    margin: 6px;
+    margin: 2px;
     color: #ffffff !important; 
-    font-size: 1.4em;
+    width: 72px;
+    height: 56px;
+    font-size: 0.5em;     
 }
-
 
 // ******************************************************************
 // ProductView

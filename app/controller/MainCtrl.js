@@ -328,7 +328,6 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
             
     resetConfig: function() {
-       debugger;
        var self = this;
        var mainView = self.getMainView();
        

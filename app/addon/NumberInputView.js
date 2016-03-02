@@ -494,7 +494,6 @@ Ext.define('Ext.view.NumberInputView', {
     },
     
     numInputDone: function() {
-        debugger;
         if ( !futil.isDoubleTap() ) {
             var value = this.getValue();
             var minlen = this.getMinlen();
