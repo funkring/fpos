@@ -23,8 +23,8 @@ Ext.define('Fpos.controller.TestCtrl', {
             'button[action=testCashdrawer]' : {
                 tap: 'testCashdrawer'  
             },
-            'button[action=testDB]' : {
-                tap: 'testDB'
+            'button[action=testInfo]' : {
+                tap: 'testInfo'
             },
             'button[action=delDB]' : { 
                 tap: 'delDB'
@@ -85,13 +85,14 @@ Ext.define('Fpos.controller.TestCtrl', {
         });  
     },
     
-    testDB : function() {
+    testInfo : function() {
         var self = this;
         self.beforeTest();
         var db = Config.getDB();
-        db.info().then(function(info) {
-           self.getTestLabel().setHtml(
+        db.info().then(function(info) {            
+           self.getTestLabel().setHtml(            
             "<pre>" +
+            "Screen Resolution: " + futil.screenWidth().toString() + "x" + futil.screenHeight().toString() + "\n" +
             JSON.stringify(info, null, 2) +
             "</pre>"
             );

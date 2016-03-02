@@ -494,6 +494,7 @@ Ext.define('Ext.view.NumberInputView', {
     },
     
     numInputDone: function() {
+        debugger;
         if ( !futil.isDoubleTap() ) {
             var value = this.getValue();
             var minlen = this.getMinlen();
@@ -579,7 +580,7 @@ Ext.define('Ext.view.NumberInputView', {
             this.addChar(c);
         } else if ( keycode == 13 ) {
             this.numInputDone();
-        } else if ( keycode == 8 || keycode == 46 ) {
+        } else if ( keycode == 27 ) {
             this.clearInput();
         }
     }

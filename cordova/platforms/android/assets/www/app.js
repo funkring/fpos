@@ -66201,8 +66201,9 @@ Ext.define('Ext.proxy.PouchDBUtil', {
             db = new PouchDB(dbName, {size: 50,
                                       adapter: 'websql' });
             */
-            //db = new PouchDB(dbName, { adapter: 'websql' });
-            db = new PouchDB(dbName);
+            db = new PouchDB(dbName, {
+                adapter: 'websql'
+            });
             self.databases[dbName] = db;
         }
         return db;
@@ -66218,128 +66219,62 @@ Ext.define('Ext.proxy.PouchDBUtil', {
         var keys = [];
         var keyValues = [];
         var tupl, op, value, field, i;
-        var onlyKeys = true;
+        var res = {};
         // check if only keys     
-        for (i = 0; i < domain.length && onlyKeys; i++) {
+        for (i = 0; i < domain.length; i++) {
             tupl = domain[i];
+            field = null;
             if (tupl.constructor === Array && tupl.length == 3) {
+                // get data
                 field = tupl[0];
                 op = tupl[1];
                 value = tupl[2];
-                if (op === '=') {
-                    name = name + "_" + field;
-                    // field or expression
-                    if (!field.startsWith("(")) {
-                        // it's an field
-                        field = "doc." + field;
-                    }
-                    keys.push(field);
-                    keyValues.push(value || null);
-                } else {
-                    onlyKeys = false;
+            } else if (typeof tupl == 'string') {
+                // get data
+                field = tupl;
+                op = "=";
+                value = null;
+            } else if (tupl.constructor === Array && tupl.length == 2) {
+                // get data
+                field = tupl[0];
+                op = "=";
+                value = tupl[1];
+            }
+            if (field) {
+                // add field          
+                name = name + "_" + field;
+                if (!field.startsWith("(")) {
+                    // it's an field
+                    field = "doc." + field;
                 }
+                // add field and value
+                keys.push(field);
+                keyValues.push(value || null);
             }
         }
         // if only keys
         // create index
-        if (onlyKeys) {
-            if (keys.length === 1) {
-                return {
-                    name: name,
-                    key: keyValues[0] || null,
-                    index: {
-                        map: "function(doc) { \n" + "  var val = " + keys[0] + "; \n" + "  if (val)  { \n" + "    emit(val); \n" + "  } else { \n" + "    emit(null); " + "  }" + "}"
-                    }
-                };
-            } else if (keys.length > 0) {
-                var fct = "function(doc) { \n" + "  var key = []; \n" + "  var val;\n";
-                for (var keyI = 0; keyI < keys.length; keyI++) {
-                    fct += "  val = " + keys[keyI] + "; \n" + "  if (val) { \n" + "    key.push(val); \n" + "  } else { \n" + "    key.push(null); \n" + "  } \n" + "  \n";
-                }
-                fct += "  emit(key);\n";
-                fct += "}\n";
-                return {
-                    name: name,
-                    key: keyValues,
-                    index: {
-                        map: fct
-                    }
-                };
+        if (keys.length === 1) {
+            res.name = name;
+            res.key = keyValues[0] || null;
+            res.index = {
+                map: "function(doc) { \n" + "  var val = " + keys[0] + "; \n" + "  if (val)  { \n" + "    emit(val); \n" + "  } else { \n" + "    emit(null); " + "  }" + "}"
+            };
+            return res;
+        } else if (keys.length > 0) {
+            var fct = "function(doc) { \n" + "  var key = []; \n" + "  var val;\n";
+            for (var keyI = 0; keyI < keys.length; keyI++) {
+                fct += "  val = " + keys[keyI] + "; \n" + "  if (val) { \n" + "    key.push(val); \n" + "  } else { \n" + "    key.push(null); \n" + "  } \n" + "  \n";
             }
+            fct += "  emit(key);\n";
+            fct += "}\n";
+            res.name = name;
+            res.key = keyValues;
+            res.index = {
+                map: fct
+            };
+            return res;
         }
-        /*
-      else {
-          // TODO TEST !!!
-          
-          // build search
-          var search = [];
-          var paramIndex = 0;
-          
-          // link
-          var link;
-          var linkStack = [];
-          var stmtCount = 0;
-          
-          // check if only keys     
-          for (i=0; i<domain.length;i++) {
-              tupl = domain[i];
-              
-              if ( tupl.constructor === Array && tupl.length == 3) {
-                  // get link
-                  if ( linkStack.length > 0 ) {
-                      link = linkStack.pop();
-                  } else {
-                      link = "&&";
-                  }
-              
-                  // get values
-                  field = tupl[0];
-                  op = tupl[1];
-                  value = tupl[2];   
-                
-                  // start new statement
-                  if ( search.length > 0 ) {
-                      search.push(link);
-                  } 
-                  search.push("(");
-                  stmtCount++;
-                  
-                  // evalute operator
-                  if ( op === '=') {     
-                      search.push("doc." + field + " === " + JSON.stringify(value));
-                      //keys.push(value[field]);
-                  } else if (op === 'ilike' ) {
-                      search.push("doc." + field + ".lower().indexOf(" + JSON.stringify(value.lower()) +") >= 0");
-                      //keys.push(value[field]);
-                  } else {
-                      // operator not found
-                      search.push("1==1");
-                  }
-              } else if ( tupl == '|' )  {
-                  linkStack.push('||');
-              } else if ( tupl == '&') {
-                  linkStack.push('&&');
-              }
-          }
-          
-          if ( stmtCount > 0 ) {
-              for ( i=0; i<stmtCount; i++ ) {
-                    search.push(")");
-              }
-              
-              var condition = search.join(" "); 
-              var fun = new Function('doc',
-                     "if " + condition + " {\n" +
-                     "  emit(doc._id)\n" +
-                     "}\n"
-                    );
-                     
-              return {
-                  name: 'search',
-                  fun: fun                 
-              };
-        }
-      }*/
         return null;
     },
     search: function(db, domain, params, callback) {
@@ -66364,34 +66299,41 @@ Ext.define('Ext.proxy.PouchDBUtil', {
                 db.query(view.fun, params, callback);
             } else {
                 // index based query
-                // copy params
+                // copy params                
                 params = JSON.parse(JSON.stringify(params));
-                params.key = view.key;
+                // check if key in params
+                if (!params.key && !params.startkey && !params.endkey) {
+                    // if not take it from view
+                    params.key = view.key;
+                }
+                // query             
                 db.query(view.name, params, function(err, res) {
                     if (!err) {
                         // no error result was successfull
-                        if (callback) {
+                        callback(err, res);
+                    } else {
+                        if (err.name == "not_found") {
+                            //create view doc
+                            var doc = {
+                                    _id: "_design/" + view.name,
+                                    views: {}
+                                };
+                            doc.views[view.name] = view.index;
+                            //put doc
+                            db.put(doc, function(err, res) {
+                                if (err) {
+                                    // error on create index
+                                    if (callback) {
+                                        callback(err, null);
+                                    }
+                                } else {
+                                    // query again
+                                    db.query(view.name, params, callback);
+                                }
+                            });
+                        } else {
                             callback(err, res);
                         }
-                    } else {
-                        //create view doc
-                        var doc = {
-                                _id: "_design/" + view.name,
-                                views: {}
-                            };
-                        doc.views[view.name] = view.index;
-                        //put doc
-                        db.put(doc, function(err, res) {
-                            if (err) {
-                                // error on create index
-                                if (callback) {
-                                    callback(err, null);
-                                }
-                            } else {
-                                // query again
-                                db.query(view.name, params, callback);
-                            }
-                        });
                     }
                 });
             }
@@ -67292,6 +67234,10 @@ Ext.define('Fpos.model.PosOrder', {
             'send_invoice',
             'amount_tax',
             'amount_total',
+            'tag',
+            'turnover',
+            'cpos',
+            'line_ids',
             {
                 name: 'partner',
                 foreignKey: 'partner_id',
@@ -67313,7 +67259,6 @@ Ext.define('Fpos.model.PosLine', {
     extend: Ext.data.Model,
     config: {
         fields: [
-            'order_id',
             'name',
             'product_id',
             'uom_id',
@@ -67323,14 +67268,9 @@ Ext.define('Fpos.model.PosLine', {
             'subtotal_incl',
             'discount',
             'notice',
-            'sequence'
-        ],
-        identifier: 'uuid',
-        proxy: {
-            type: 'pouchdb',
-            database: 'fpos',
-            resModel: 'fpos.order.line'
-        }
+            'sequence',
+            'tag'
+        ]
     }
 });
 
@@ -67413,7 +67353,7 @@ Ext.define('Fpos.model.PosPayment', {
     extend: Ext.data.Model,
     config: {
         fields: [
-            'journal_id',
+            'journal',
             'amount',
             'payment'
         ]
@@ -67488,6 +67428,7 @@ Ext.define('Ext.form.ViewManager', {
     config: {},
     constructor: function(config) {
         this.initConfig(config);
+        this.keyboardListenerStack = [];
     },
     updateButtonState: function(view, items) {
         var saveable = false;
@@ -67516,7 +67457,7 @@ Ext.define('Ext.form.ViewManager', {
             }
         }
         var menu = view.menu || view.config.menu;
-        var menuSide = items.menuSide || 'left';
+        var menuSide = items.menuSide || 'right';
         if (menu) {
             Ext.Viewport.setMenu(menu, {
                 side: menuSide,
@@ -67528,6 +67469,15 @@ Ext.define('Ext.form.ViewManager', {
         } else if (items.menuButton) {
             items.menuButton.hide();
             Ext.Viewport.removeMenu(menuSide);
+        }
+    },
+    hideMenus: function() {
+        var menus = Ext.Viewport.getMenus();
+        if (menus.right && !menus.right.isHidden()) {
+            Ext.Viewport.hideMenu("right");
+        }
+        if (menus.left && !menus.left.isHidden()) {
+            Ext.Viewport.hideMenu("left");
         }
     },
     /**
@@ -67673,11 +67623,15 @@ Ext.define('Ext.form.ViewManager', {
                         var values = view.getValues();
                         // convert records to id
                         record.set(values);
-                        record.save({
-                            callback: function() {
-                                reloadHandler();
-                            }
-                        });
+                        if (record.getProxy()) {
+                            record.save({
+                                callback: function() {
+                                    reloadHandler();
+                                }
+                            });
+                        } else {
+                            reloadHandler();
+                        }
                     } else {
                         reloadHandler();
                     }
@@ -67707,6 +67661,31 @@ Ext.define('Ext.form.ViewManager', {
             throw err;
         }
         
+    },
+    pushKeyboardListener: function(listener) {
+        var self = this;
+        if (!(listener in self.keyboardListenerStack)) {
+            if (self.keyboardListenerStack.length === 0) {
+                if (!self.keyInputListener) {
+                    self.keyInputLister = Ext.bind(self.onKeyDown, self);
+                }
+                document.addEventListener("keydown", self.keyInputLister, false);
+            }
+            self.keyboardListenerStack.push(listener);
+        }
+    },
+    popKeyboardListener: function(listener) {
+        var self = this;
+        while (self.keyboardListenerStack.length > 0 && self.keyboardListenerStack.pop() != listener){}
+        if (self.keyboardListenerStack.length === 0) {
+            document.removeEventListener("keydown", self.keyInputLister);
+        }
+    },
+    onKeyDown: function(e) {
+        var len = this.keyboardListenerStack.length;
+        if (len > 0) {
+            this.keyboardListenerStack[len - 1].onKeyDown(e);
+        }
     }
 });
 
@@ -67870,7 +67849,6 @@ Ext.define('Fpos.Config', {
         searchDelay: 500,
         searchLimit: 100,
         leftMenuWidth: 250,
-        menuSide: 'right',
         maxRows: 10,
         settings: null,
         user: null,
@@ -68106,6 +68084,31 @@ Ext.define('Fpos.Config', {
                 message: 'Hintergrund kann nicht gesetzt werden'
             });
         });
+    },
+    queryLastOrder: function() {
+        return DBUtil.search(this.getDB(), [
+            'fdoo__ir_model',
+            'state',
+            'seq'
+        ], {
+            descending: true,
+            include_docs: true,
+            inclusive_end: true,
+            limit: 1,
+            startkey: [
+                'fpos.order',
+                'paid',
+                Number.MAX_VALUE
+            ],
+            endkey: [
+                'fpos.order',
+                'paid',
+                0
+            ]
+        });
+    },
+    isMobilePos: function() {
+        return futil.screenWidth() < 600;
     }
 });
 
@@ -68289,7 +68292,7 @@ Ext.define('Ext.view.NumDisplay', {
     }
 });
 
-/*global Ext:false, futil:false*/
+/*global Ext:false, futil:false, ViewManager: false*/
 Ext.define('Ext.view.NumberInputView', {
     extend: Ext.Panel,
     xtype: 'numberinput',
@@ -68301,6 +68304,7 @@ Ext.define('Ext.view.NumberInputView', {
         editHandler: null,
         hideOnMaskTap: true,
         hideOnInputDone: true,
+        showButtons: true,
         modal: true,
         emptyValue: 0,
         maxlen: 0,
@@ -68356,7 +68360,6 @@ Ext.define('Ext.view.NumberInputView', {
     initialize: function() {
         var self = this;
         self.callParent(arguments);
-        self.keyInputLister = Ext.bind(self.onKeyDown, self);
         self.numField = Ext.create("Ext.view.NumDisplay");
         self.add(self.numField);
         self.setValue(self.getEmptyValue());
@@ -68364,320 +68367,322 @@ Ext.define('Ext.view.NumberInputView', {
         if (title) {
             self.numField.setInfo(title);
         }
-        var bWidth = '72px';
-        var bHeight = '66px';
-        var bSpecialWidth = '80px';
-        var bDoubleWidth = '148px';
-        var bDoubleHeight = '136px';
-        var bTripleWidth = '224px';
-        var bTripleHeight = '206px';
-        if (self.getUi() === 'pin') {
-            /*****************************************************************
-            * PIN LAYOUT
-            *****************************************************************/
-            self.add({
-                xtype: 'container',
-                layout: 'vbox',
-                cls: 'NumInputContainer',
-                items: [
-                    {
-                        layout: 'hbox',
-                        items: [
-                            {
-                                xtype: 'button',
-                                text: '7',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: '8',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: '9',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                iconCls: 'delete',
-                                width: bSpecialWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonRed',
-                                cls: 'NumInputButton',
-                                action: 'clearInput'
-                            }
-                        ]
-                    },
-                    {
-                        layout: 'hbox',
-                        items: [
-                            {
-                                layout: 'vbox',
-                                items: [
-                                    {
-                                        layout: 'hbox',
-                                        items: [
-                                            {
-                                                xtype: 'button',
-                                                text: '4',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '5',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '6',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        layout: 'hbox',
-                                        items: [
-                                            {
-                                                xtype: 'button',
-                                                text: '1',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '2',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '3',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        layout: 'hbox',
-                                        items: [
-                                            {
-                                                xtype: 'button',
-                                                text: '0',
-                                                width: bTripleWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                xtype: 'button',
-                                iconCls: 'action',
-                                width: bSpecialWidth,
-                                height: bTripleHeight,
-                                ui: 'numInputButtonGreen',
-                                cls: 'NumInputButton',
-                                action: 'numInputDone'
-                            }
-                        ]
-                    }
-                ]
-            });
-        } else {
-            /*****************************************************************
-              * DEFAULT LAYOUT
-              *****************************************************************/
-            self.add({
-                xtype: 'container',
-                layout: 'vbox',
-                cls: 'NumInputContainer',
-                items: [
-                    {
-                        layout: 'hbox',
-                        items: [
-                            {
-                                xtype: 'button',
-                                text: '7',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: '8',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: '9',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: 'CE',
-                                width: bSpecialWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonRed',
-                                cls: 'NumInputButton',
-                                action: 'clearInput'
-                            }
-                        ]
-                    },
-                    {
-                        layout: 'hbox',
-                        items: [
-                            {
-                                xtype: 'button',
-                                text: '4',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: '5',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            },
-                            {
-                                xtype: 'button',
-                                text: '6',
-                                width: bWidth,
-                                height: bHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'addNumber'
-                            }
-                        ]
-                    },
-                    {
-                        layout: 'hbox',
-                        items: [
-                            {
-                                layout: 'vbox',
-                                items: [
-                                    {
-                                        layout: 'hbox',
-                                        items: [
-                                            {
-                                                xtype: 'button',
-                                                text: '1',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '2',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '3',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        layout: 'hbox',
-                                        items: [
-                                            {
-                                                xtype: 'button',
-                                                text: '0',
-                                                width: bDoubleWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addNumber'
-                                            },
-                                            {
-                                                xtype: 'button',
-                                                text: '.',
-                                                width: bWidth,
-                                                height: bHeight,
-                                                ui: 'numInputButtonBlack',
-                                                cls: 'NumInputButton',
-                                                action: 'addComma'
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                xtype: 'button',
-                                text: 'OK',
-                                width: bWidth,
-                                height: bDoubleHeight,
-                                ui: 'numInputButtonBlack',
-                                cls: 'NumInputButton',
-                                action: 'numInputDone'
-                            }
-                        ]
-                    }
-                ]
-            });
+        if (self.getShowButtons()) {
+            var bWidth = '72px';
+            var bHeight = '66px';
+            var bSpecialWidth = '80px';
+            var bDoubleWidth = '148px';
+            var bDoubleHeight = '136px';
+            var bTripleWidth = '224px';
+            var bTripleHeight = '206px';
+            if (self.getUi() === 'pin') {
+                /*****************************************************************
+                * PIN LAYOUT
+                *****************************************************************/
+                self.add({
+                    xtype: 'container',
+                    layout: 'vbox',
+                    cls: 'NumInputContainer',
+                    items: [
+                        {
+                            layout: 'hbox',
+                            items: [
+                                {
+                                    xtype: 'button',
+                                    text: '7',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: '8',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: '9',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    iconCls: 'delete',
+                                    width: bSpecialWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonRed',
+                                    cls: 'NumInputButton',
+                                    action: 'clearInput'
+                                }
+                            ]
+                        },
+                        {
+                            layout: 'hbox',
+                            items: [
+                                {
+                                    layout: 'vbox',
+                                    items: [
+                                        {
+                                            layout: 'hbox',
+                                            items: [
+                                                {
+                                                    xtype: 'button',
+                                                    text: '4',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '5',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '6',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            layout: 'hbox',
+                                            items: [
+                                                {
+                                                    xtype: 'button',
+                                                    text: '1',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '2',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '3',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            layout: 'hbox',
+                                            items: [
+                                                {
+                                                    xtype: 'button',
+                                                    text: '0',
+                                                    width: bTripleWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    xtype: 'button',
+                                    iconCls: 'action',
+                                    width: bSpecialWidth,
+                                    height: bTripleHeight,
+                                    ui: 'numInputButtonGreen',
+                                    cls: 'NumInputButton',
+                                    action: 'numInputDone'
+                                }
+                            ]
+                        }
+                    ]
+                });
+            } else {
+                /*****************************************************************
+                  * DEFAULT LAYOUT
+                  *****************************************************************/
+                self.add({
+                    xtype: 'container',
+                    layout: 'vbox',
+                    cls: 'NumInputContainer',
+                    items: [
+                        {
+                            layout: 'hbox',
+                            items: [
+                                {
+                                    xtype: 'button',
+                                    text: '7',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: '8',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: '9',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: 'CE',
+                                    width: bSpecialWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonRed',
+                                    cls: 'NumInputButton',
+                                    action: 'clearInput'
+                                }
+                            ]
+                        },
+                        {
+                            layout: 'hbox',
+                            items: [
+                                {
+                                    xtype: 'button',
+                                    text: '4',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: '5',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: '6',
+                                    width: bWidth,
+                                    height: bHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'addNumber'
+                                }
+                            ]
+                        },
+                        {
+                            layout: 'hbox',
+                            items: [
+                                {
+                                    layout: 'vbox',
+                                    items: [
+                                        {
+                                            layout: 'hbox',
+                                            items: [
+                                                {
+                                                    xtype: 'button',
+                                                    text: '1',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '2',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '3',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            layout: 'hbox',
+                                            items: [
+                                                {
+                                                    xtype: 'button',
+                                                    text: '0',
+                                                    width: bDoubleWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addNumber'
+                                                },
+                                                {
+                                                    xtype: 'button',
+                                                    text: '.',
+                                                    width: bWidth,
+                                                    height: bHeight,
+                                                    ui: 'numInputButtonBlack',
+                                                    cls: 'NumInputButton',
+                                                    action: 'addComma'
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    xtype: 'button',
+                                    text: 'OK',
+                                    width: bWidth,
+                                    height: bDoubleHeight,
+                                    ui: 'numInputButtonBlack',
+                                    cls: 'NumInputButton',
+                                    action: 'numInputDone'
+                                }
+                            ]
+                        }
+                    ]
+                });
+            }
         }
     },
     addComma: function() {
@@ -68733,6 +68738,7 @@ Ext.define('Ext.view.NumberInputView', {
         this.setValue(val);
     },
     numInputDone: function() {
+        debugger;
         if (!futil.isDoubleTap()) {
             var value = this.getValue();
             var minlen = this.getMinlen();
@@ -68756,12 +68762,12 @@ Ext.define('Ext.view.NumberInputView', {
         if (!this.visible) {
             this.visible = true;
             this.setFirstReplace(true);
-            document.addEventListener("keydown", this.keyInputLister, false);
+            ViewManager.pushKeyboardListener(this);
         }
     },
     hideInput: function() {
         if (this.visible) {
-            document.removeEventListener("keydown", this.keyInputLister);
+            ViewManager.popKeyboardListener(this);
             this.visible = false;
             this.removeHandler();
             this.clearInput();
@@ -68807,6 +68813,10 @@ Ext.define('Ext.view.NumberInputView', {
         if (keycode >= 48 && keycode <= 57) {
             var c = String.fromCharCode(keycode);
             this.addChar(c);
+        } else if (keycode == 13) {
+            this.numInputDone();
+        } else if (keycode == 27) {
+            this.clearInput();
         }
     }
 });
@@ -68975,12 +68985,37 @@ Ext.define('Fpos.view.OrderView', {
                 ]
             },
             {
-                xtype: 'scrolllist',
-                id: 'orderItemList',
-                cls: 'Receipt',
-                itemCls: 'PosOrderItem',
+                id: 'orderInputView',
+                layout: 'card',
+                xtype: 'panel',
                 flex: 1,
-                allowDeselect: true
+                items: [
+                    {
+                        xtype: 'scrolllist',
+                        id: 'orderItemList',
+                        cls: 'Receipt',
+                        itemCls: 'PosOrderItem',
+                        allowDeselect: true
+                    },
+                    {
+                        layout: 'vbox',
+                        xtype: 'panel',
+                        id: 'paymentPanel',
+                        items: [
+                            {
+                                id: 'paymentItemList',
+                                itemCls: 'PaymentListItem',
+                                xtype: 'scrolllist',
+                                flex: 1
+                            },
+                            {
+                                id: 'paymentSummary',
+                                cls: 'PaymentSummary',
+                                xtype: 'label'
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     }
@@ -69178,9 +69213,10 @@ Ext.define('Fpos.view.OrderInputView', {
                             {
                                 xtype: 'button',
                                 iconCls: 'action',
-                                action: 'inputMenu',
+                                action: 'inputPayment',
                                 width: '77px',
                                 height: '77px',
+                                id: 'inputButtonPayment',
                                 ui: 'posInputButtonOrange',
                                 cls: 'PosInputButton'
                             },
@@ -69213,13 +69249,13 @@ Ext.define('Fpos.view.TestView', {
                 xtype: 'panel',
                 layout: 'vbox',
                 cls: 'TestContainer',
+                width: '77px',
+                scrollable: 'vertical',
                 items: [
                     {
                         xtype: 'button',
                         text: 'Test Interface',
                         action: 'testInterface',
-                        width: '250px',
-                        height: '77px',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
@@ -69227,8 +69263,6 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Test Print',
                         action: 'testPrint',
-                        width: '250px',
-                        height: '77px',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
@@ -69236,8 +69270,6 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Test Display',
                         action: 'testDisplay',
-                        width: '250px',
-                        height: '77px',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
@@ -69245,17 +69277,13 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Test Cashdrawer',
                         action: 'testCashdrawer',
-                        width: '250px',
-                        height: '77px',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
                     {
                         xtype: 'button',
-                        text: 'Test Database',
-                        action: 'testDB',
-                        width: '250px',
-                        height: '77px',
+                        text: 'Systeminfo',
+                        action: 'testInfo',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
@@ -69263,8 +69291,6 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Delete Database',
                         action: 'delDB',
-                        width: '250px',
-                        height: '77px',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     }
@@ -69275,6 +69301,125 @@ Ext.define('Fpos.view.TestView', {
                 id: 'testLabel',
                 cls: 'TestInfo',
                 flex: 1
+            }
+        ]
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.view.ProductViewSmall', {
+    extend: Ext.Panel,
+    xtype: 'fpos_product_small',
+    id: 'productView',
+    config: {
+        layout: 'vbox',
+        cls: 'ProductContainer',
+        items: [
+            {
+                layout: "vbox",
+                flex: 1,
+                items: [
+                    {
+                        xtype: 'toolbar',
+                        ui: 'categoryToolbar',
+                        items: [
+                            {
+                                flex: 1,
+                                xtype: 'searchfield',
+                                placeholder: 'Suche',
+                                id: 'productSearch'
+                            }
+                        ]
+                    },
+                    {
+                        layout: "hbox",
+                        flex: 1,
+                        items: [
+                            {
+                                xtype: 'dataview',
+                                cls: 'CategorySelection',
+                                useComponents: true,
+                                id: 'categoryDataView',
+                                defaultType: 'fpos_category_item',
+                                hidden: true,
+                                store: 'CategoryStore'
+                            },
+                            {
+                                cls: 'ProductDataView',
+                                xtype: 'dataview',
+                                useComponents: true,
+                                defaultType: 'fpos_product_item',
+                                flex: 1,
+                                store: "ProductStore"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+});
+
+/*global Ext:false*/
+Ext.define('Fpos.view.OrderInputViewSmall', {
+    extend: Ext.Panel,
+    xtype: 'fpos_order_input_small',
+    config: {
+        cls: 'PosInputContainer',
+        items: [
+            {
+                layout: 'hbox',
+                items: [
+                    {
+                        xtype: 'button',
+                        text: 'P',
+                        id: 'productMenuButton',
+                        action: 'productMenu',
+                        ui: 'posInputButtonOrange',
+                        cls: 'PosInputButton',
+                        flex: 1,
+                        height: '56px'
+                    },
+                    {
+                        xtype: 'button',
+                        text: '+/-',
+                        action: 'inputNumber',
+                        width: '66px',
+                        height: '56px',
+                        ui: 'posInputButtonBlack',
+                        cls: 'PosInputButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: '*',
+                        action: 'inputModeSwitch',
+                        flex: 1,
+                        height: '56px',
+                        ui: 'posInputButtonGray',
+                        id: 'inputButtonAmount',
+                        cls: 'PosInputButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: '%',
+                        action: 'inputModeSwitch',
+                        flex: 1,
+                        height: '56px',
+                        ui: 'posInputButtonBlack',
+                        id: 'inputButtonDiscount',
+                        cls: 'PosInputButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: '€',
+                        action: 'inputModeSwitch',
+                        flex: 1,
+                        height: '56px',
+                        ui: 'posInputButtonBlack',
+                        id: 'inputButtonPrice',
+                        cls: 'PosInputButton'
+                    }
+                ]
             }
         ]
     }
@@ -69307,12 +69452,15 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=provisioning]': {
                 tap: 'onProvisioning'
             },
+            'button[action=productMenu]': {
+                tap: 'onShowProductMenu'
+            },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange: 'mainActiveItemChange'
             },
             mainMenuButton: {
-                tap: 'showMainMenu'
+                tap: 'onShowMainMenu'
             },
             saveRecordButton: {
                 tap: 'saveRecord'
@@ -69326,7 +69474,38 @@ Ext.define('Fpos.controller.MainCtrl', {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
         this.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
+        this.productStore = Ext.StoreMgr.lookup("ProductStore");
+        this.eanDetect = [];
     },
+    /*
+        var self = this;
+        self.eanDetectTask = Ext.create('Ext.util.DelayedTask', function() {
+            var ean = "";
+            if ( self.eanDetect.length == 14 && self.eanDetect[13] == 13 ) {
+                //build ean
+                Ext.each(self.eanDetect, function(e) {
+                    var keycode = e.keyCode ? e.keyCode : e.which;
+                    if ( keycode >= 48 && keycode <= 57 ) {            
+                        var c = String.fromCharCode(keycode);
+                        ean += c;                        
+                    }
+                });
+            } 
+                       
+            // check if it is ean
+            if ( ean.length != 13 ) {
+                Ext.each(self.eanDetect, function(event) {
+                    // post key
+                    Ext.Viewport.fireEvent("posKey",event); 
+                });
+            } else {
+                // post ean
+                Ext.Viewport.fireEvent("posScan",ean); 
+            }
+            
+            // reset
+            self.eanDetect = [];
+        });*/
     mainViewInitialize: function() {
         var self = this;
         // show form event
@@ -69334,30 +69513,26 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showForm: self.showForm
         });
-        // pos reset event
-        /*
-        Ext.Viewport.on({
-            scope: self,
-            posReset: self.resetConfig
-        });*/
+        // add key listener
+        ViewManager.pushKeyboardListener(self);
         // reset config
         self.resetConfig();
     },
     onSyncTap: function() {
         if (!futil.isDoubleTap()) {
-            this.hideMainMenu();
+            ViewManager.hideMenus();
             this.sync();
         }
     },
     onUpdateApp: function() {
         if (!futil.isDoubleTap()) {
-            this.hideMainMenu();
+            ViewManager.hideMenus();
             Config.updateApp();
         }
     },
     onProvisioning: function() {
         if (!futil.isDoubleTap()) {
-            this.hideMainMenu();
+            ViewManager.hideMenus();
             Config.provisioning();
         }
     },
@@ -69474,9 +69649,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                     },
                     {
                         model: 'fpos.order'
-                    },
-                    {
-                        model: 'fpos.order.line'
                     }
                 ]
             });
@@ -69495,47 +69667,67 @@ Ext.define('Fpos.controller.MainCtrl', {
     loadConfig: function() {
         var self = this;
         var db = Config.getDB();
+        ViewManager.startLoading('Lade Konfiguration');
         // load config
-        return db.get('_local/config').then(function(config) {
-            Config.setSettings(config);
-            // load profile
-            return db.get('_local/profile');
-        }).then(function(profile) {
-            Config.setProfile(profile);
-            // reload
-            // load category
-            self.categoryStore.load({
-                callback: function() {
-                    // load tax
-                    self.taxStore.load({
-                        callback: function() {
-                            // load product units
-                            self.unitStore.load({
-                                callback: function() {
-                                    // fire reload
-                                    Ext.Viewport.fireEvent("reloadData");
-                                    // ... and show login
-                                    self.showLogin();
-                                }
-                            });
-                        }
-                    });
+        try {
+            return db.get('_local/config').then(function(config) {
+                Config.setSettings(config);
+                // load profile
+                return db.get('_local/profile');
+            }).then(function(profile) {
+                Config.setProfile(profile);
+                // reload
+                // load category
+                self.categoryStore.load({
+                    callback: function() {
+                        // load tax
+                        self.taxStore.load({
+                            callback: function() {
+                                // load product units
+                                self.unitStore.load({
+                                    callback: function() {
+                                        self.productStore.load({
+                                            callback: function() {
+                                                // build index
+                                                self.productStore.buildIndex();
+                                                // stop loading
+                                                ViewManager.stopLoading();
+                                                // fire reload
+                                                Ext.Viewport.fireEvent("reloadData");
+                                                // ... and show login
+                                                self.showLogin();
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            })['catch'](function(error) {
+                ViewManager.stopLoading();
+                if (error.name === 'not_found') {
+                    self.editConfig();
+                } else {
+                    ViewManager.handleError(error, {
+                        name: "Fehler beim Laden",
+                        message: "Konfiguration konnte nicht geladen werden"
+                    }, true);
                 }
             });
-        })['catch'](function(error) {
-            if (error.name === 'not_found') {
-                self.editConfig();
-            } else {
-                ViewManager.handleError(error, {
-                    name: "Fehler beim Laden",
-                    message: "Konfiguration konnte nicht geladen werden"
-                }, true);
-            }
-        });
+        } catch (err) {
+            ViewManager.stopLoading();
+            ViewManager.handleError(err, {
+                name: "Ausnahmefehler beim Laden",
+                message: "Konfiguration konnte nicht geladen werden"
+            }, true);
+        }
     },
     resetConfig: function() {
+        debugger;
         var self = this;
         var mainView = self.getMainView();
+        ViewManager.hideMenus();
         // pop all views, untail base panel
         /*
        while ( mainView.getActiveItem() && mainView.getActiveItem() != self.basePanel ) {
@@ -69633,6 +69825,18 @@ Ext.define('Fpos.controller.MainCtrl', {
                         flex: 1,
                         text: 'Synchronisieren',
                         action: 'sync'
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Kassensturz',
+                        action: 'createCashState'
+                    },
+                    {
+                        xtype: 'button',
+                        flex: 1,
+                        text: 'Drucken',
+                        action: 'printAgain'
                     }
                 ]
             });
@@ -69668,9 +69872,41 @@ Ext.define('Fpos.controller.MainCtrl', {
     openPos: function() {
         var self = this;
         if (!self.posPanel) {
-            if (futil.hasSmallRes()) {
-                // small pos
-                self.posPanel = Ext.create("Ext.Panel", {});
+            if (Config.isMobilePos()) {
+                // smaller pos
+                self.posPanel = Ext.create("Ext.Panel", {
+                    layout: 'hbox',
+                    items: [
+                        {
+                            layout: 'vbox',
+                            flex: 1,
+                            items: [
+                                {
+                                    xtype: 'fpos_order',
+                                    flex: 1
+                                },
+                                {
+                                    xtype: 'fpos_order_input_small'
+                                }
+                            ]
+                        }
+                    ]
+                });
+                // set left menu                
+                var productMenu = Ext.create('Ext.Menu', {
+                        cls: 'ProductMenu',
+                        items: [
+                            {
+                                xtype: 'fpos_product_small',
+                                height: '100%',
+                                width: '194px'
+                            }
+                        ]
+                    });
+                Ext.Viewport.setMenu(productMenu, {
+                    side: "left",
+                    reveal: true
+                });
             } else {
                 // big pos
                 self.posPanel = Ext.create("Ext.Panel", {
@@ -69735,8 +69971,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         ViewManager.updateButtonState(newCard, {
             saveButton: this.getSaveRecordButton(),
             deleteButton: this.getDeleteRecordButton(),
-            menuButton: this.getMainMenuButton(),
-            menuSide: Config.getMenuSide()
+            menuButton: this.getMainMenuButton()
         });
     },
     /**
@@ -69786,36 +70021,30 @@ Ext.define('Fpos.controller.MainCtrl', {
             load({});
         });
     },
-    hideMainMenu: function() {
-        if (!Ext.Viewport.getMenus().right.isHidden()) {
-            Ext.Viewport.hideMenu(Config.getMenuSide());
-        }
-    },
-    showMainMenu: function() {
-        if (Ext.Viewport.getMenus().right.isHidden()) {
-            Ext.Viewport.showMenu(Config.getMenuSide());
-        } else {
-            Ext.Viewport.hideMenu(Config.getMenuSide());
-        }
-    },
     showLogin: function() {
         var self = this;
         var db = Config.getDB();
+        ViewManager.hideMenus();
         Config.setAdmin(false);
         Config.setUser(null);
         self.getLoginButton().setText("Anmelden");
         if (!self.pinInput) {
             // create
-            self.pinInput = Ext.create('Ext.view.NumberInputView', {
-                hideOnMaskTap: false,
-                hideOnInputDone: false,
-                centered: true,
-                ui: "pin",
-                maxlen: 4,
-                minlen: 4,
-                emptyValue: "----",
-                title: "PIN für die Anmeldung"
-            });
+            var pinInputConfig = {
+                    hideOnMaskTap: false,
+                    hideOnInputDone: false,
+                    centered: true,
+                    ui: "pin",
+                    maxlen: 4,
+                    minlen: 4,
+                    emptyValue: "----",
+                    title: "PIN für die Anmeldung"
+                };
+            if (Config.isMobilePos()) {
+                pinInputConfig.showButtons = false;
+                pinInputConfig.width = "300px";
+            }
+            self.pinInput = Ext.create('Ext.view.NumberInputView', pinInputConfig);
             // add handler
             self.pinInput.setHandler(function(view, pin) {
                 var settings = Config.getSettings();
@@ -69854,6 +70083,32 @@ Ext.define('Fpos.controller.MainCtrl', {
         } else {
             self.pinInput.show();
         }
+    },
+    onShowMainMenu: function() {
+        if (!futil.isDoubleTap()) {
+            if (Ext.Viewport.getMenus().right.isHidden()) {
+                Ext.Viewport.showMenu("right");
+            } else {
+                Ext.Viewport.hideMenu("right");
+            }
+        }
+    },
+    onShowProductMenu: function() {
+        if (!futil.isDoubleTap()) {
+            if (Ext.Viewport.getMenus().left.isHidden()) {
+                Ext.Viewport.showMenu("left");
+            } else {
+                Ext.Viewport.hideMenu("left");
+            }
+        }
+    },
+    onKeyDown: function(e) {
+        var self = this;
+        var mainView = self.getMainView();
+        // check if is active
+        if (Ext.Viewport.getActiveItem() == mainView && mainView.getActiveItem() == self.basePanel && self.basePanel.getActiveItem() == self.posPanel) {
+            Ext.Viewport.fireEvent("posKey", e);
+        }
     }
 });
 
@@ -69878,8 +70133,8 @@ Ext.define('Fpos.controller.TestCtrl', {
             'button[action=testCashdrawer]': {
                 tap: 'testCashdrawer'
             },
-            'button[action=testDB]': {
-                tap: 'testDB'
+            'button[action=testInfo]': {
+                tap: 'testInfo'
             },
             'button[action=delDB]': {
                 tap: 'delDB'
@@ -69927,12 +70182,12 @@ Ext.define('Fpos.controller.TestCtrl', {
                 self.getTestLabel().setHtml(err);
             });
     },
-    testDB: function() {
+    testInfo: function() {
         var self = this;
         self.beforeTest();
         var db = Config.getDB();
         db.info().then(function(info) {
-            self.getTestLabel().setHtml("<pre>" + JSON.stringify(info, null, 2) + "</pre>");
+            self.getTestLabel().setHtml("<pre>" + "Screen Resolution: " + futil.screenWidth().toString() + "x" + futil.screenHeight().toString() + "\n" + JSON.stringify(info, null, 2) + "</pre>");
         });
     },
     delDB: function() {
@@ -69986,7 +70241,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
-        this.cache = {};
+        //this.cache = {};
         //search task
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
             self.loadProducts(self.categoryId, self.searchValue);
@@ -69999,7 +70254,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
-                this.cache = {};
+                //this.cache = {};
                 self.loadCategory(null);
             }
         });
@@ -70057,120 +70312,87 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      * clear search
      */
     searchItemClearIconTap: function() {
-        this.loadProducts(this.categoryId);
-    },
-    search: function() {
-        var self = this;
-        var storeInst = self.getStore();
-        var searchValue = self.getSearchValue();
-        var searchField = self.getDisplayField();
-        // search params
-        var params = {
-                limit: self.getLimit()
-            };
-        // options
-        var options = {
-                params: params
-            };
-        // build search domain
-        if (!Ext.isEmpty(searchValue) && searchValue.length >= 3) {
-            var expr = "(doc." + searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0, 3)) + ") >= 0)";
-            params.domain = [
-                [
-                    expr,
-                    '=',
-                    true
-                ]
-            ];
-        }
-        // search text or not
-        if (!Ext.isEmpty(searchValue)) {
-            options.filters = [
-                {
-                    property: searchField,
-                    value: searchValue,
-                    anyMatch: true
-                }
-            ];
-        }
-        // load
-        storeInst.load(options);
+        this.searchValue = null;
+        this.searchTask.delay(Config.getSearchDelay());
     },
     /**
      * load product
      */
-    loadProducts: function(categoryId, search) {
+    loadProducts: function(categoryId) {
         var self = this;
         self.categoryId = categoryId;
-        // search params
-        var params = {
-                limit: Config.getSearchLimit()
-            };
-        // options
-        var options = {
-                params: params
-            };
-        // category        
-        if (self.categoryId) {
-            options.params = {
-                domain: [
-                    [
-                        'pos_categ_id',
-                        '=',
-                        categoryId
-                    ]
-                ]
-            };
-        }
-        // build search domain        
+        // stop search if running
         if (Ext.isEmpty(self.searchValue)) {
-            self.searchValue = null;
             self.searchTask.cancel();
-            self.getProductSearch().reset();
-            // query cache
-            if (self.categoryId) {
-                var cached = self.cache[self.categoryId];
-                if (cached === undefined) {
-                    //set cache
-                    cached = [];
-                    self.cache[self.categoryId] = cached;
-                    // cache
-                    options.callback = function() {
-                        self.productStore.each(function(rec) {
-                            cached.push(rec);
-                        });
-                    };
-                } else {
-                    // set cached
-                    self.productStore.setData(cached);
-                    return;
-                }
+            if (self.getProductSearch().getValue()) {
+                self.getProductSearch().reset();
             }
+        }
+        // search
+        self.productStore.searchProductsByCategory(categoryId, self.searchValue);
+    },
+    /*
+       // search params
+       var params = {
+           limit: Config.getSearchLimit()
+       };
+       
+       // options
+       var options = {
+           params : params
+       };
+       
+        // category        
+        if ( self.categoryId ) {
+            options.params = {
+                domain : [['pos_categ_id','=',categoryId]]
+            };
+        } 
+
+        // build search domain        
+        if ( Ext.isEmpty(self.searchValue) ) {
+            self.searchTask.cancel();
+            if ( self.getProductSearch().getValue() ) {
+                self.getProductSearch().reset();
+            }
+            
+            // query cache
+            var key = self.categoryId || 0;
+            var cached = self.cache[key];
+            if ( cached === undefined ) {
+                //set cache
+                cached = [];
+                self.cache[key] = cached;
+                
+                // cache
+                options.callback = function() {
+                    self.productStore.each(function(rec) {
+                        cached.push(rec); 
+                    });
+                };
+            } else {
+                // set cached
+                self.productStore.setData(cached);
+                return;
+            }
+            
         } else {
             // build search token
-            if (self.searchValue.length >= 3) {
-                var searchStr = JSON.stringify(self.searchValue.substring(0, 3).toLowerCase());
-                var expr = "(doc.name && doc.name.toLowerCase().indexOf(" + searchStr + ") >= 0)";
-                params.domain = [
-                    [
-                        expr,
-                        '=',
-                        true
-                    ]
-                ];
+            if ( self.searchValue.length >= 3 ) {            
+               var searchStr = JSON.stringify(self.searchValue.substring(0,3).toLowerCase());
+               var expr = "(doc.name && doc.name.toLowerCase().indexOf(" + searchStr +") >= 0)";
+               params.domain = [[expr,'=',true]];           
             }
             // add search filter
-            options.filters = [
-                {
-                    property: 'name',
-                    value: search,
-                    anyMatch: true
-                }
-            ];
+            options.filters = [{
+                property: 'name',
+                value: self.searchValue,
+                anyMatch: true
+            }];
         }
+      
         // load
-        self.productStore.load(options);
-    },
+        self.productStore.load(options);     */
     /**
      * load category
      */
@@ -70584,10 +70806,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             orderView: '#orderView',
             posDisplay: '#posDisplayLabel',
             orderItemList: '#orderItemList',
+            paymentItemList: '#paymentItemList',
+            paymentPanel: '#paymentPanel',
             stateDisplay: '#posDisplayState',
             inputButtonAmount: '#inputButtonAmount',
             inputButtonDiscount: '#inputButtonDiscount',
-            inputButtonPrice: '#inputButtonPrice'
+            inputButtonPrice: '#inputButtonPrice',
+            inputButtonPayment: '#inputButtonPayment',
+            orderInputView: '#orderInputView',
+            paymentSummary: '#paymentSummary'
         },
         control: {
             orderView: {
@@ -70603,6 +70830,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 initialize: 'orderItemListInitialize',
                 selectionchange: 'onItemSelectionChange'
             },
+            paymentItemList: {
+                initialize: 'paymentItemListInitialize',
+                selectionchange: 'onItemSelectionChange'
+            },
+            // is the same as in item list, because only mode was reset
+            orderInputView: {
+                activeitemchange: 'orderInputActiveItemChange'
+            },
             'button[action=inputCancel]': {
                 tap: 'onInputCancelTap'
             },
@@ -70617,6 +70852,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=inputCash]': {
                 tap: 'onCash'
+            },
+            'button[action=inputPayment]': {
+                tap: 'onPayment'
+            },
+            'button[action=createCashState]': {
+                tap: 'onCreateCashState'
+            },
+            'button[action=printAgain]': {
+                tap: 'onPrintAgain'
             }
         }
     },
@@ -70624,12 +70868,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         this.order = null;
         this.printTemplate = null;
+        this.paymentEnabled = false;
         this.mode = '*';
         this.resetInputText();
         this.lineStore = Ext.StoreMgr.lookup("PosLineStore");
         this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.paymentStore = Ext.StoreMgr.lookup("PosPaymentStore");
         this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
             self.display();
         });
@@ -70642,7 +70888,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     orderItemListInitialize: function(orderItemList) {
         var self = this;
-        orderItemList.setItemTpl(Ext.create('Ext.XTemplate', '<div class="PosOrderLineDescription">', '<div class="PosOrderLineName">', '{name}', '</div>', '<div class="PosOrderLineAmount">', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}', ' ', '{[this.getUnit(values.uom_id)]}', ' * ', '{[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}', ' ', '<tpl if="discount &gt; 0.0">', '<span class="PosOrderLineDiscount">', '- {[futil.formatFloat(values.discount,Config.getDecimals())]} %', '</span>', '</tpl>', '</div>', '</div>', '<div class="PosOrderLinePrice">', '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}', '</div>', {
+        orderItemList.setItemTpl(Ext.create('Ext.XTemplate', '<tpl if="tag">', '<div class="PaymentName">', '{name}', '</div>', '<div class="PaymentValue">', '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}', '</div>', '<tpl else>', '<div class="PosOrderLineDescription">', '<div class="PosOrderLineName">', '{name}', '</div>', '<div class="PosOrderLineAmount">', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}', ' ', '{[this.getUnit(values.uom_id)]}', ' * ', '{[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}', ' ', '<tpl if="discount &gt; 0.0">', '<span class="PosOrderLineDiscount">', '- {[futil.formatFloat(values.discount,Config.getDecimals())]} %', '</span>', '</tpl>', '</div>', '</div>', '<div class="PosOrderLinePrice">', '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}', '</div>', '</tpl>', {
             getUnit: function(uom_id) {
                 var uom = self.unitStore.getById(uom_id);
                 return uom && uom.get('name') || '';
@@ -70650,12 +70896,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }));
         orderItemList.setStore(this.lineStore);
     },
+    paymentItemListInitialize: function(paymentItemList) {
+        var self = this;
+        paymentItemList.setItemTpl(Ext.create('Ext.XTemplate', '<div class="PaymentName">', '{journal.name}', '</div>', '<div class="PaymentValue">', '{[futil.formatFloat(values.payment)]}', '</div>'));
+        paymentItemList.setStore(this.paymentStore);
+    },
     orderViewInitialize: function() {
         var self = this;
         // reload event
         Ext.Viewport.on({
             scope: self,
-            reloadData: self.reloadData
+            reloadData: self.fullDataReload
         });
         // product input event         
         Ext.Viewport.on({
@@ -70666,6 +70917,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         Ext.Viewport.on({
             scope: self,
             validateLines: self.validateLines
+        });
+        Ext.Viewport.on({
+            scope: self,
+            posKey: self.onKeyDown
         });
         // reload data
         self.reloadData();
@@ -70687,18 +70942,27 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             //stop iteration
             if (!changedLine) {
                 var db = Config.getDB();
-                changedLine = self.lineStore.add({
-                    'order_id': self.order.getId(),
-                    'name': product.get('name'),
-                    'product_id': product.getId(),
-                    'uom_id': product.get('uom_id'),
-                    'tax_ids': product.get('taxes_id'),
-                    'brutto_price': product.get('brutto_price'),
-                    'qty': toWeight ? 0 : 1,
-                    'subtotal_incl': 0,
-                    'discount': 0,
-                    'sequence': self.lineStore.getCount()
-                })[0];
+                // build values
+                var values = {
+                        //'order_id' : self.order.getId(),
+                        'name': product.get('name'),
+                        'product_id': product.getId(),
+                        'uom_id': product.get('uom_id'),
+                        'tax_ids': product.get('taxes_id'),
+                        'brutto_price': product.get('brutto_price'),
+                        'qty': toWeight ? 0 : 1,
+                        'subtotal_incl': 0,
+                        'discount': 0,
+                        'sequence': self.lineStore.getCount()
+                    };
+                // set tag to other if is an income or expense
+                if (product.get('income_pdt') || product.get('expense_pdt')) {
+                    values.tag = "o";
+                } else if (values.tag) {
+                    values.tag = null;
+                }
+                // add line
+                changedLine = self.lineStore.add(values)[0];
             }
             // validate lines
             self.validateLines().then(function() {
@@ -70805,35 +71069,52 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // compute lines
             var amount_total = 0;
             var amount_tax = 0;
+            var turnover = 0;
+            var lines = [];
+            var updateLines = false;
             self.lineStore.each(function(line) {
                 var total_line = self.validateLine(line, tax_group, tax_ids);
-                amount_total += total_line.subtotal_incl;
-                amount_tax += total_line.amount_tax;
+                var tag = line.get('tag');
+                if (!tag) {
+                    // add                
+                    amount_total += total_line.subtotal_incl;
+                    amount_tax += total_line.amount_tax;
+                    turnover += total_line.subtotal_incl;
+                } else if (tag == 'b' || tag == 'o') {
+                    // add balance and other
+                    amount_total += total_line.subtotal_incl;
+                    amount_tax += total_line.amount_tax;
+                } else if (tag == 'r') {
+                    // substract real balance
+                    amount_total -= total_line.subtotal_incl;
+                    amount_tax -= total_line.amount_tax;
+                }
+                // add line                
+                if (line.dirty) {
+                    updateLines = true;
+                    line.commit();
+                }
+                lines.push(line.getData());
             });
             // set values
             self.order.set('tax_ids', tax_ids);
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
+            self.order.set('turnover', turnover);
+            if (updateLines) {
+                self.order.set('line_ids', lines);
+            }
+            // notify display update
             self.displayTask.delay(800);
-            // sync
-            var syncRes = self.lineStore.sync({
+            // save            
+            if (self.order.dirty) {
+                self.order.save({
                     callback: function() {
-                        if (self.order.dirty) {
-                            self.order.save({
-                                callback: function() {
-                                    deferred.resolve();
-                                }
-                            });
-                        } else {
-                            deferred.resolve();
-                        }
+                        deferred.resolve();
                     }
                 });
-            // if no sync was done resolve, deferred
-            if ((syncRes.added.length + syncRes.updated.length + syncRes.removed.length) === 0) {
-                setTimeout(function() {
-                    deferred.resolve();
-                }, 0);
+            } else {
+                deferred.resolve();
             }
         } else {
             setTimeout(function() {
@@ -70849,22 +71130,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
         self.getOrderItemList().deselectAll(true);
-        if (order) {
-            var options = {
-                    params: {
-                        domain: [
-                            [
-                                'order_id',
-                                '=',
-                                order.getId()
-                            ]
-                        ]
-                    },
-                    callback: function() {
-                        self.validateLines();
-                    }
-                };
-            self.lineStore.load(options);
+        var lines = order.get('line_ids');
+        if (lines) {
+            self.lineStore.setData(lines);
         } else {
             self.lineStore.setData([]);
         }
@@ -70884,6 +71152,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 'state': 'draft',
                 'date': date,
                 'tax_ids': [],
+                'line_ids': [],
                 'amount_tax': 0,
                 'amount_total': 0
             }).then(function(res) {
@@ -70909,16 +71178,46 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }
         });
     },
+    orderInputActiveItemChange: function(view, newCard) {
+        var self = this;
+        var paymentButton = self.getInputButtonPayment();
+        if (newCard == self.getPaymentPanel()) {
+            if (paymentButton) {
+                paymentButton.setUi('posInputButtonGray');
+            }
+            self.paymentEnabled = true;
+        } else {
+            if (paymentButton) {
+                paymentButton.setUi('posInputButtonOrange');
+            }
+            self.paymentEnabled = false;
+        }
+        self.setMode('*');
+    },
     resetInputText: function() {
         this.inputSign = 1;
         this.inputText = '';
+    },
+    resetView: function() {
+        // reset current view 
+        var self = this;
+        var orderItemList = self.getOrderItemList();
+        var inputView = self.getOrderInputView();
+        if (inputView.getActiveItem() != orderItemList) {
+            inputView.setActiveItem(orderItemList);
+        }
+    },
+    fullDataReload: function() {
+        var self = this;
+        self.printTemplate = null;
+        self.reloadData();
     },
     reloadData: function() {
         var self = this;
         var db = Config.getDB();
         var user = Config.getUser();
-        self.printTemplate = null;
         self.setMode('*');
+        self.resetView();
         if (user) {
             var options = {
                     params: {
@@ -70953,7 +71252,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     isEditable: function() {
-        return this.order && this.order.get('state') == 'draft';
+        return this.order && this.order.get('state') == 'draft' && !this.paymentEnabled;
     },
     // validates and stop loading
     finalValidate: function() {
@@ -70967,6 +71266,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onInputCancelTap: function() {
         var self = this;
         this.resetInputText();
+        // default editing
         if (self.isEditable()) {
             ViewManager.startLoading("Zurücksetzen");
             var records = self.getOrderItemList().getSelection();
@@ -71006,6 +71306,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             } else {
                 ViewManager.stopLoading();
             }
+        } else if (this.paymentEnabled) {
+            // handle payment
+            var payments = this.getPaymentItemList().getSelection();
+            if (payments.length > 0) {
+                var payment = payments[0];
+                payment.set('payment', 0);
+                this.validatePayment();
+            }
         }
     },
     getInputTextFromLine: function(line) {
@@ -71018,28 +71326,96 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     inputAction: function(action) {
+        var valid = true;
+        var commaPos, decimals, value;
         if (this.isEditable()) {
             var lines = this.getOrderItemList().getSelection();
             if (lines.length > 0) {
                 var line = lines[0];
-                var valid = true;
+                var tag = line.get('tag');
+                if (!tag || tag == 'r') {
+                    // set mode to €
+                    // if it is real balance input
+                    if (tag == 'r') {
+                        if (this.mode != '€') {
+                            this.setMode('€');
+                        }
+                    }
+                    // switch sign
+                    if (action == "+/-") {
+                        if (this.mode == "*" || this.mode == "€") {
+                            // special case, only switch sign
+                            if (this.inputText.length === 0) {
+                                if (this.mode == "*") {
+                                    line.set('qty', line.get('qty') * -1);
+                                } else {
+                                    line.set('brutto_price', line.get('brutto_price') * -1);
+                                }
+                                this.validateLines();
+                                valid = false;
+                            } else {
+                                this.inputSign *= -1;
+                            }
+                        } else {
+                            valid = false;
+                        }
+                    }
+                    // add comma
+                    else if (action == ".") {
+                        if (this.inputText.indexOf(".") < 0) {
+                            this.inputText += ".";
+                        } else {
+                            valid = false;
+                        }
+                    } else // default number handling
+                    {
+                        commaPos = this.inputText.indexOf(".");
+                        if (commaPos >= 0) {
+                            decimals = this.inputText.length - commaPos;
+                            if (this.mode == '*') {
+                                // only add if less than max qty decimals
+                                if (decimals > Config.getQtyDecimals()) {
+                                    valid = false;
+                                }
+                            }
+                            // only add if less than max decimals
+                            else if (decimals > Config.getDecimals()) {
+                                valid = false;
+                            }
+                        }
+                        //add if valid
+                        if (valid)  {
+                            this.inputText += action;
+                        }
+                        
+                    }
+                    // update if valid
+                    if (valid) {
+                        // update
+                        value = parseFloat(this.inputText);
+                        if (this.mode == "€") {
+                            line.set('brutto_price', value * this.inputSign);
+                        } else if (this.mode == "%") {
+                            line.set('discount', value);
+                        } else {
+                            line.set('qty', value * this.inputSign);
+                        }
+                        this.validateLines();
+                    }
+                }
+            }
+        } else if (this.paymentEnabled) {
+            var payments = this.getPaymentItemList().getSelection();
+            if (payments.length > 0) {
+                var payment = payments[0];
                 // switch sign
                 if (action == "+/-") {
-                    if (this.mode == "*" || this.mode == "€") {
-                        // special case, only switch sign
-                        if (this.inputText.length === 0) {
-                            if (this.mode == "*") {
-                                line.set('qty', line.get('qty') * -1);
-                            } else {
-                                line.set('brutto_price', line.get('brutto_price') * -1);
-                            }
-                            this.validateLines();
-                            valid = false;
-                        } else {
-                            this.inputSign *= -1;
-                        }
-                    } else {
+                    if (this.inputText.length === 0) {
+                        payment.set('payment', payment.get('payment') * -1);
+                        this.validatePayment();
                         valid = false;
+                    } else {
+                        this.inputSign *= -1;
                     }
                 }
                 // add comma
@@ -71051,17 +71427,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     }
                 } else // default number handling
                 {
-                    var commaPos = this.inputText.indexOf(".");
+                    commaPos = this.inputText.indexOf(".");
                     if (commaPos >= 0) {
-                        var decimals = this.inputText.length - commaPos;
-                        if (this.mode == '*') {
-                            // only add if less than max qty decimals
-                            if (decimals > Config.getQtyDecimals()) {
-                                valid = false;
-                            }
-                        }
-                        // only add if less than max decimals
-                        else if (decimals > Config.getDecimals()) {
+                        decimals = this.inputText.length - commaPos;
+                        if (decimals > Config.getDecimals()) {
                             valid = false;
                         }
                     }
@@ -71074,15 +71443,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // update if valid
                 if (valid) {
                     // update
-                    var value = parseFloat(this.inputText);
-                    if (this.mode == "€") {
-                        line.set('brutto_price', value * this.inputSign);
-                    } else if (this.mode == "%") {
-                        line.set('discount', value);
-                    } else {
-                        line.set('qty', value * this.inputSign);
-                    }
-                    this.validateLines();
+                    value = parseFloat(this.inputText);
+                    payment.set('payment', value * this.inputSign);
+                    this.validatePayment();
                 }
             }
         }
@@ -71101,7 +71464,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if (self.order && !futil.isDoubleTap()) {
             var lines = self.getOrderItemList().getSelection();
             var form;
-            if (lines.length > 0 && lines[0].get('order_id') == self.order.getId()) {
+            if (lines.length > 0) {
                 form = Ext.create("Fpos.view.OrderLineFormView", {
                     'title': 'Position'
                 });
@@ -71132,68 +71495,85 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var deferred = Ext.create('Ext.ux.Deferred');
         var db = Config.getDB();
         var profile = Config.getProfile();
-        var orderSeq = 0;
         var hasSeq = false;
-        var seqId = '_local/orderseq';
         self.validateLines()['catch'](function(err) {
             deferred.reject(err);
         }).then(function() {
-            return db.get(seqId).then(function(doc) {
-                hasSeq = true;
-                if (doc.order_id == self.order.getId()) {
-                    orderSeq = doc.seq;
-                } else {
-                    doc.seq = orderSeq = doc.seq + 1;
-                    doc.order_id = self.order.getId();
-                    return db.put(doc);
-                }
-            })['catch'](function(err) {
-                if (hasSeq) {
-                    // something goes wrong
-                    // show error and cancel 
-                    deferred.reject({
-                        name: "Buchungsfehler",
-                        message: "Sequenz konnte nicht akualisiert werden"
-                    });
-                } else {
-                    //create first sequence
-                    orderSeq = profile.last_seq + 1;
-                    return db.post({
-                        _id: seqId,
-                        seq: orderSeq,
-                        order_id: self.order.getId()
-                    });
-                }
-            }).then(function() {
-                var payment_ids = self.order.get('payment_ids');
-                // add cash payment if no payment                
-                if (!payment_ids || payment_ids.length === 0) {
-                    var amount_total = self.order.get('amount_total');
-                    self.order.set('payment_ids', [
-                        {
-                            journal_id: Config.getCashJournal()._id,
-                            amount: amount_total,
-                            payment: amount_total
+            // write order
+            var writeOrder = function(seq, turnover, cpos) {
+                    // init vars
+                    if (!cpos)  {
+                        cpos = 0;
+                    }
+                    
+                    if (!turnover)  {
+                        turnover = 0;
+                    }
+                    
+                    var cashJournalId = Config.getCashJournal()._id;
+                    // add cash payment if no payment
+                    var payment_ids = self.order.get('payment_ids');
+                    if (!payment_ids || payment_ids.length === 0) {
+                        var amount_total = self.order.get('amount_total');
+                        payment_ids = [
+                            {
+                                journal_id: cashJournalId,
+                                amount: amount_total,
+                                payment: amount_total
+                            }
+                        ];
+                        self.order.set('payment_ids', payment_ids);
+                    }
+                    // determine cpos     
+                    var fixed_payments = [];
+                    Ext.each(payment_ids, function(payment) {
+                        if (payment.journal_id == cashJournalId) {
+                            cpos += payment.amount;
+                            fixed_payments.push(payment);
+                        } else if (payment.amount !== 0 || payment.payment !== 0) {
+                            fixed_payments.push(payment);
                         }
-                    ]);
-                }
-                var date = futil.datetimeToStr(new Date());
-                self.order.set('date', date);
-                self.order.set('seq', orderSeq);
-                self.order.set('name', Config.formatSeq(orderSeq));
-                self.order.set('state', 'paid');
-                self.order.save({
-                    callback: function() {
-                        deferred.resolve();
+                    });
+                    // write order                
+                    var date = futil.datetimeToStr(new Date());
+                    self.order.set('payment_ids', fixed_payments);
+                    self.order.set('date', date);
+                    self.order.set('seq', seq);
+                    self.order.set('name', Config.formatSeq(seq));
+                    self.order.set('state', 'paid');
+                    // turnover
+                    self.order.set('turnover', self.order.get('turnover') + turnover);
+                    // cpos
+                    self.order.set('cpos', cpos);
+                    // save
+                    self.order.save({
+                        callback: function() {
+                            deferred.resolve();
+                        }
+                    });
+                };
+            // query last order
+            try {
+                Config.queryLastOrder()['catch'](function(err) {
+                    deferred.reject(err);
+                }).then(function(res) {
+                    // write order
+                    if (res.rows.length === 0) {
+                        writeOrder(profile.last_seq + 1, profile.last_turnover, profile.last_cpos);
+                    } else {
+                        var lastOrder = res.rows[0].doc;
+                        writeOrder(lastOrder.seq + 1, lastOrder.turnover, lastOrder.cpos);
                     }
                 });
-            });
+            } catch (err) {
+                deferred.reject(err);
+            }
         });
         return deferred.promise();
     },
     onCash: function() {
         var self = this;
-        if (self.isEditable()) {
+        if (self.isEditable() || (self.paymentEnabled && self.validatePayment())) {
             //self.printOrder();
             // add payment
             // and print
@@ -71212,11 +71592,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.reloadData();
         }
     },
-    printOrder: function() {
+    printOrder: function(order) {
         var self = this;
         if (!self.printTemplate) {
             var profile = Config.getProfile();
-            self.printTemplate = Ext.create('Ext.XTemplate', profile.receipt_header || '', '<table width="100%">', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td width="{attribWidth}">Beleg:</td>', '<td>{o.name}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Datum:</td>', '<td>{date:date("d.m.Y H:i:s")}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Kasse:</td>', '<td>{[Config.getProfile().name]}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Bediener:</td>', '<td>{[Config.getUser().name]}</td>', '</tr>', '<tpl if="o.ref">', '<tr>', '<td width="{attribWidth}">Referenz:</td>', '<td>{o.ref}</td>', '</tr>', '</tpl>', '</table>', '<tpl if="o.partner">', '<table width="100%">', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>K U N D E</td>', '</tr>', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>', '{o.partner.name}', '<tpl if="o.partner.street"><br/>{o.partner.street}</tpl>', '<tpl if="o.partner.street2"><br/>{o.partner.street2}</tpl>', '<tpl if="o.partner.zip && o.partner.city"><br/>{o.partner.zip} {o.partner.city}</tpl>', '</td>', '</tr>', '</table>', '</tpl>', '<br/>', '<table width="100%">', '<tr>', '<td>Bezeichnung</td>', '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="lines">', '<tr>', '<td>{name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>', '</tr>', '<tr>', '<td colspan="2">', '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}', '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>', '</td>', '</tr>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td align="right"><b>S U M M E</b></td>', '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>', '</tr>', '<tpl for="o.payment_ids">', '<tr>', '<td align="right">{[this.getJournal(values.journal_id)]}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="o.tax_ids">', '<tr>', '<td align="right">inkl. {name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '</table>', profile.receipt_footer || '', {
+            self.printTemplate = Ext.create('Ext.XTemplate', profile.receipt_header || '', '<table width="100%">', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td width="{attribWidth}">Beleg:</td>', '<td>{o.name}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Datum:</td>', '<td>{date:date("d.m.Y H:i:s")}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Kasse:</td>', '<td>{[Config.getProfile().name]}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Bediener:</td>', '<td>{[Config.getUser().name]}</td>', '</tr>', '<tpl if="o.ref">', '<tr>', '<td width="{attribWidth}">Referenz:</td>', '<td>{o.ref}</td>', '</tr>', '</tpl>', '</table>', '<tpl if="o.partner">', '<table width="100%">', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>K U N D E</td>', '</tr>', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>', '{o.partner.name}', '<tpl if="o.partner.street"><br/>{o.partner.street}</tpl>', '<tpl if="o.partner.street2"><br/>{o.partner.street2}</tpl>', '<tpl if="o.partner.zip && o.partner.city"><br/>{o.partner.zip} {o.partner.city}</tpl>', '</td>', '</tr>', '</table>', '</tpl>', '<br/>', '<table width="100%">', '<tr>', '<td>Bezeichnung</td>', '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="lines">', '<tpl if="tag==\'c\'">', '<tr>', '<td colspan="2">{name}</td>', '</tr>', '<tr>', '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}  {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl else>', '<tr>', '<td>{name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>', '</tr>', '<tpl if="!tag">', '<tr>', '<td colspan="2">', '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}', '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>', '</td>', '</tr>', '</tpl>', '</tpl>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td align="right"><b>S U M M E</b></td>', '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>', '</tr>', '<tpl for="o.payment_ids">', '<tr>', '<td align="right">{[this.getJournal(values.journal_id)]}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="o.tax_ids">', '<tr>', '<td align="right">inkl. {name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '</table>', profile.receipt_footer || '', {
                 getUnit: function(uom_id) {
                     var uom = self.unitStore.getById(uom_id);
                     return uom ? uom.get('name') : '';
@@ -71227,17 +71607,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
             });
         }
-        // build data
+        // get order if not passed
+        if (!order) {
+            order = this.order.getData();
+        }
+        // data
         var data = {
-                o: this.order.getData(),
-                lines: [],
+                o: order,
+                lines: order.line_ids,
                 priceColWidth: "32%",
                 attribWidth: "34%",
                 date: futil.strToDate(this.order.get('date'))
             };
-        self.lineStore.each(function(line) {
-            data.lines.push(line.getData());
-        });
         // render it
         var html = self.printTemplate.apply(data);
         // print/show it
@@ -71267,9 +71648,215 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     display: function() {
         var amount_total = this.order ? this.order.get('amount_total') : null;
         if (amount_total) {
-            Config.display(amount_total.toString());
+            Config.display(amount_total.toFixed(2));
         } else {
-            Config.display("0");
+            Config.display("0.00");
+        }
+    },
+    validatePayment: function() {
+        var self = this;
+        if (!self.summaryTemplate) {
+            self.summaryTemplate = Ext.create('Ext.XTemplate', '<div class="PaymentItem">', '<div class="PaymentName">', 'Bezahlt', '</div>', '<div class="PaymentValue">', '{[futil.formatFloat(values.payment)]}', '</div>', '</div>', '<div class="PaymentItem">', '<div class="PaymentName">', 'Restbetrag', '</div>', '<div class="PaymentValue">', '{[futil.formatFloat(values.rest)]}', '</div>', '</div>', '<div class="PaymentChangeItem">', '<div class="PaymentName">', 'Wechelgeld', '</div>', '<div class="PaymentValue">', '{[futil.formatFloat(values.change)]}', '</div>', '</div>', '</div>');
+        }
+        var payment_ids = [];
+        // calc
+        var change = 0;
+        var total = self.order.get('amount_total');
+        var rest = total;
+        self.paymentStore.each(function(data) {
+            var payment = data.get('payment');
+            var journal = data.get('journal');
+            var curRest = rest;
+            //calc
+            if (payment >= rest) {
+                change += (payment - rest);
+                rest = 0;
+            } else {
+                rest -= payment;
+            }
+            // add payment
+            payment_ids.push({
+                journal_id: journal._id,
+                amount: curRest - rest,
+                payment: payment
+            });
+        });
+        // update label
+        var html = self.summaryTemplate.apply({
+                change: change,
+                rest: rest,
+                payment: total - rest
+            });
+        self.getPaymentSummary().setHtml(html);
+        // set payment
+        self.order.set('payment_ids', payment_ids);
+        // check if it is valid
+        return rest === 0;
+    },
+    onPayment: function() {
+        var self = this;
+        var inputView = self.getOrderInputView();
+        if (inputView.getActiveItem() != self.getPaymentPanel()) {
+            // init payment
+            var amount_total = self.order.get('amount_total');
+            var profile = Config.getProfile();
+            // first payment line is cash line
+            var payment = [
+                    {
+                        journal: Config.getCashJournal(),
+                        amount: amount_total,
+                        payment: amount_total
+                    }
+                ];
+            // process other
+            Ext.each(profile.journal_ids, function(journal) {
+                if (journal.type !== 'cash') {
+                    payment.push({
+                        journal: journal,
+                        amount: 0,
+                        payment: 0
+                    });
+                }
+            });
+            // set initial payment
+            self.paymentStore.setData(payment);
+            self.validatePayment();
+            self.getPaymentItemList().selectRange(0, 0, false);
+            // view payment
+            inputView.setActiveItem(self.getPaymentPanel());
+        } else {
+            inputView.setActiveItem(self.getOrderItemList());
+        }
+    },
+    createCashState: function() {
+        var self = this;
+        var db = Config.getDB();
+        var user_id = Config.getUser()._id;
+        var fpos_user_id = Config.getProfile().user_id;
+        var turnover = 0;
+        var cpos = 0;
+        var date = futil.datetimeToStr(new Date());
+        var order_id;
+        if (user_id && fpos_user_id) {
+            DBUtil.search(db, [
+                [
+                    'fdoo__ir_model',
+                    '=',
+                    'fpos.order'
+                ],
+                [
+                    'state',
+                    '=',
+                    'draft'
+                ]
+            ], {
+                include_docs: true
+            }).then(function(res) {
+                var bulkUpdate = [];
+                Ext.each(res.rows, function(row) {
+                    row.doc._deleted = true;
+                    bulkUpdate.push(row.doc);
+                });
+                return db.bulkDocs(bulkUpdate);
+            }).then(function(res) {
+                return Config.queryLastOrder().then(function(res) {
+                    if (res.rows.length > 0) {
+                        var lastOrder = res.rows[0].doc;
+                        turnover = lastOrder.turnover;
+                        cpos = lastOrder.cpos;
+                    }
+                    return db.post({
+                        'fdoo__ir_model': 'fpos.order',
+                        'fpos_user_id': fpos_user_id,
+                        'user_id': user_id,
+                        'state': 'draft',
+                        'date': date,
+                        'tax_ids': [],
+                        'line_ids': [
+                            {
+                                // TURNOVER
+                                'name': 'Umsatzzähler',
+                                'brutto_price': turnover,
+                                'qty': 1,
+                                'subtotal_incl': turnover,
+                                'discount': 0,
+                                'sequence': 0,
+                                'tag': 'c'
+                            },
+                            {
+                                // BALANCE
+                                'name': 'Kassenstand SOLL',
+                                'brutto_price': cpos,
+                                'qty': 1,
+                                'subtotal_incl': cpos,
+                                'discount': 0,
+                                'sequence': 1,
+                                'tag': 'b'
+                            },
+                            {
+                                // SHOULD
+                                'name': 'Kassenstand IST',
+                                'brutto_price': cpos,
+                                'qty': 1,
+                                'subtotal_incl': cpos,
+                                'discount': 0,
+                                'sequence': 2,
+                                'tag': 'r'
+                            }
+                        ],
+                        'amount_tax': 0,
+                        'amount_total': 0,
+                        'tag': 's'
+                    })[// CASH STATE
+                    'catch'](function(err) {
+                        ViewManager.handleError(err, {
+                            name: "Kassensturz Fehler",
+                            message: "Kassensturz konnte nicht erstellt werden"
+                        });
+                    }).then(function(res) {
+                        self.reloadData();
+                    });
+                });
+            })['catch'](function(err) {
+                ViewManager.handleError(err, {
+                    name: "Kassensturz Fehler",
+                    message: "Kassensturz konnte nicht erstellt werden"
+                });
+            });
+        }
+    },
+    onCreateCashState: function() {
+        if (!futil.isDoubleTap()) {
+            ViewManager.hideMenus();
+            this.createCashState();
+        }
+    },
+    onPrintAgain: function() {
+        var self = this;
+        if (!futil.isDoubleTap()) {
+            ViewManager.hideMenus();
+            Config.queryLastOrder().then(function(res) {
+                if (res.rows.length > 0) {
+                    self.printOrder(res.rows[0].doc);
+                }
+            });
+        }
+    },
+    onKeyDown: function(e) {
+        var keycode = e.keyCode ? e.keyCode : e.which;
+        if (keycode >= 48 && keycode <= 57) {
+            var c = String.fromCharCode(keycode);
+            this.inputAction(c);
+        } else if (keycode == 13) {
+            this.onCash();
+        } else if (keycode == 27) {
+            this.onInputCancelTap();
+        } else if (keycode === 0) {
+            this.onEditOrder();
+        } else if (keycode == 190) {
+            this.inputAction('.');
+        } else if (keycode == 8) {
+            this.onPayment();
         }
     }
 });
@@ -71509,6 +72096,66 @@ Ext.define('Fpos.store.ProductStore', {
     config: {
         model: 'Fpos.model.Product',
         sorters: 'name'
+    },
+    constructor: function(config) {
+        this.resetIndex();
+        this.callParent(arguments);
+    },
+    resetIndex: function() {
+        this.productByCategoryId = {};
+        this.productByEan = {};
+        this.allProducts = [];
+        this.productQueue = [];
+    },
+    buildIndex: function() {
+        var self = this;
+        this.resetIndex();
+        self.each(function(product) {
+            // all products
+            self.allProducts.push(product);
+            if (self.productQueue.length < 30) {
+                self.productQueue.push(product);
+            }
+            // product by ean
+            var ean = product.get('ean13');
+            if (ean) {
+                self.productByEan[ean] = product;
+            }
+            // add category
+            var categ_id = product.get('pos_categ_id');
+            if (categ_id) {
+                var list = self.productByCategoryId[categ_id];
+                if (!list) {
+                    list = [];
+                    self.productByCategoryId[categ_id] = list;
+                }
+                list.push(product);
+            }
+        });
+    },
+    searchProductsByCategory: function(categoryId, textSearch) {
+        var products;
+        if (!categoryId) {
+            products = this.allProducts;
+        } else {
+            products = this.productByCategoryId[categoryId] || [];
+        }
+        if (!Ext.isEmpty(textSearch)) {
+            var filtered = [];
+            textSearch = textSearch.toLowerCase();
+            Ext.each(products, function(product) {
+                if (product.get('name').toLowerCase().indexOf(textSearch) >= 0) {
+                    filtered.push(product);
+                }
+            });
+            this.setData(filtered);
+        } else {
+            if (!categoryId) {
+                this.setData(this.productQueue);
+            } else {
+                this.setData(products);
+            }
+        }
     }
 });
 
@@ -71559,12 +72206,20 @@ Ext.define('Fpos.store.PartnerStore', {
 });
 
 /*global Ext:false*/
+Ext.define('Fpos.store.PosPaymentStore', {
+    extend: Ext.data.Store,
+    config: {
+        model: 'Fpos.model.PosPayment'
+    }
+});
+
+/*global Ext:false*/
 /**
  * funkring util lib
  */
 var futil = {
         comma: ",",
-        activetap: false
+        activetap: Date.now()
     };
 futil.keys = function(obj) {
     if (typeof obj != "object" && typeof obj != "function" || obj === null) {
@@ -71602,14 +72257,9 @@ futil.strToLocalDateTime = function(str) {
     var date = futil.strToDate(str);
 };
 futil.isDoubleTap = function() {
-    if (!futil.activetap) {
-        futil.activetap = true;
-        setTimeout(function() {
-            futil.activetap = false;
-        }, 500);
-        return false;
-    }
-    return true;
+    var cur = Date.now();
+    var res = (cur - futil.activetap) < 500;
+    futil.activetap = cur;
 };
 futil.screenWidth = function() {
     var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
@@ -81546,7 +82196,8 @@ Ext.application({
         'PosLineStore',
         'AccountTaxStore',
         'ProductUnitStore',
-        'PartnerStore'
+        'PartnerStore',
+        'PosPaymentStore'
     ],
     controllers: [
         'MainCtrl',

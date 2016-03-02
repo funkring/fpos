@@ -2629,6 +2629,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.store.PartnerStore": [],
   "Fpos.store.PosLineStore": [],
   "Fpos.store.PosOrderStore": [],
+  "Fpos.store.PosPaymentStore": [],
   "Fpos.store.ProductStore": [],
   "Fpos.store.ProductUnitStore": [],
   "Fpos.view.CategoryItem": [],
@@ -2636,12 +2637,14 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.Main": [],
   "Fpos.view.OrderFormView": [],
   "Fpos.view.OrderInputView": [],
+  "Fpos.view.OrderInputViewSmall": [],
   "Fpos.view.OrderLineFormView": [],
   "Fpos.view.OrderView": [],
   "Fpos.view.PartnerListSelect": [],
   "Fpos.view.PartnerView": [],
   "Fpos.view.ProductItem": [],
   "Fpos.view.ProductView": [],
+  "Fpos.view.ProductViewSmall": [],
   "Fpos.view.ScaleView": [],
   "Fpos.view.TestView": []
 });
@@ -3644,6 +3647,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.store.PartnerStore": [],
   "Fpos.store.PosLineStore": [],
   "Fpos.store.PosOrderStore": [],
+  "Fpos.store.PosPaymentStore": [],
   "Fpos.store.ProductStore": [],
   "Fpos.store.ProductUnitStore": [],
   "Fpos.view.CategoryItem": [
@@ -3660,6 +3664,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.OrderInputView": [
     "widget.fpos_order_input"
+  ],
+  "Fpos.view.OrderInputViewSmall": [
+    "widget.fpos_order_input_small"
   ],
   "Fpos.view.OrderLineFormView": [
     "widget.fpos_line_form"
@@ -3678,6 +3685,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.ProductView": [
     "widget.fpos_product"
+  ],
+  "Fpos.view.ProductViewSmall": [
+    "widget.fpos_product_small"
   ],
   "Fpos.view.ScaleView": [
     "widget.fpos_scale"

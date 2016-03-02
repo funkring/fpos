@@ -493,11 +493,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     orderInputActiveItemChange: function(view, newCard) {
         var self = this;
+        var paymentButton = self.getInputButtonPayment();
         if ( newCard == self.getPaymentPanel()  ) {
-            self.getInputButtonPayment().setUi('posInputButtonGray');
+            if ( paymentButton ) {
+                paymentButton.setUi('posInputButtonGray');
+            }
             self.paymentEnabled = true;
         } else {
-            self.getInputButtonPayment().setUi('posInputButtonOrange');
+            if ( paymentButton ) { 
+                paymentButton.setUi('posInputButtonOrange');
+            }
             self.paymentEnabled = false;
         }
         self.setMode('*');
@@ -1315,8 +1320,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             this.inputAction(c);
         } else if ( keycode == 13 ) {
             this.onCash();
-        } else if ( keycode == 8 || keycode == 46 ) {
+        } else if ( keycode == 27 ) {
             this.onInputCancelTap();
+        } else if ( keycode === 0 ) {
+            this.onEditOrder();
+        } else if ( keycode == 190 ) {
+            this.inputAction('.');
+        } else if ( keycode ==8 ) {
+            this.onPayment();
         }
     }
     

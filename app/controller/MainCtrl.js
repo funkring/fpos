@@ -108,12 +108,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showForm: self.showForm
         });
-            
-        // reset config
-        self.resetConfig();
-        
+      
         // add key listener
         ViewManager.pushKeyboardListener(self);
+              
+        // reset config
+        self.resetConfig();        
     },
     
     onSyncTap: function() {        
@@ -260,7 +260,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         var db = Config.getDB();
         
         ViewManager.startLoading('Lade Konfiguration');
-        
+              
         // load config
         try {
             return db.get('_local/config').then(function(config) {                    
@@ -328,6 +328,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
             
     resetConfig: function() {
+       debugger;
        var self = this;
        var mainView = self.getMainView();
        
