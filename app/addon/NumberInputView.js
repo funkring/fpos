@@ -142,7 +142,7 @@ Ext.define('Ext.view.NumberInputView', {
                                         height: bHeight,
                                         ui: 'numInputButtonBlack',
                                         cls: 'NumInputButton',
-                                        action: 'addNumber'                                
+                                        action: 'addNumber'                        
                                     },
                                     {
                                         xtype: 'button',

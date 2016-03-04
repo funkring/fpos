@@ -66201,9 +66201,8 @@ Ext.define('Ext.proxy.PouchDBUtil', {
             db = new PouchDB(dbName, {size: 50,
                                       adapter: 'websql' });
             */
-            db = new PouchDB(dbName, {
-                adapter: 'websql'
-            });
+            //db = new PouchDB(dbName, { adapter: 'websql' });
+            db = new PouchDB(dbName);
             self.databases[dbName] = db;
         }
         return db;
@@ -67884,16 +67883,15 @@ Ext.define('Fpos.Config', {
             window.PosHw.getStatus(function(hwstatus) {
                 // set first status            
                 self.setHwStatus(hwstatus);
+                /*
                 // init interval
                 self.setHwStatusId(setInterval(function() {
                     window.PosHw.getStatus(function(hwstatus) {
-                        self.setHwStatus(hwstatus);
+                       self.setHwStatus(hwstatus); 
                     }, function(err) {
-                        self.setHwStatus({
-                            err: err
-                        });
+                       self.setHwStatus({ err : err});
                     });
-                }, 1000));
+                 }, 1000));*/
                 // resolve
                 deferred.resolve(hwstatus);
             }, function(err) {
@@ -68394,7 +68392,8 @@ Ext.define('Ext.view.NumberInputView', {
                                     height: bHeight,
                                     ui: 'numInputButtonBlack',
                                     cls: 'NumInputButton',
-                                    action: 'addNumber'
+                                    action: 'addNumber',
+                                    pressedDelay: 1
                                 },
                                 {
                                     xtype: 'button',
@@ -68403,7 +68402,8 @@ Ext.define('Ext.view.NumberInputView', {
                                     height: bHeight,
                                     ui: 'numInputButtonBlack',
                                     cls: 'NumInputButton',
-                                    action: 'addNumber'
+                                    action: 'addNumber',
+                                    pressedDelay: 1
                                 },
                                 {
                                     xtype: 'button',
@@ -68412,7 +68412,8 @@ Ext.define('Ext.view.NumberInputView', {
                                     height: bHeight,
                                     ui: 'numInputButtonBlack',
                                     cls: 'NumInputButton',
-                                    action: 'addNumber'
+                                    action: 'addNumber',
+                                    pressedDelay: 1
                                 },
                                 {
                                     xtype: 'button',
@@ -68738,7 +68739,6 @@ Ext.define('Ext.view.NumberInputView', {
         this.setValue(val);
     },
     numInputDone: function() {
-        debugger;
         if (!futil.isDoubleTap()) {
             var value = this.getValue();
             var minlen = this.getMinlen();
@@ -69249,33 +69249,33 @@ Ext.define('Fpos.view.TestView', {
                 xtype: 'panel',
                 layout: 'vbox',
                 cls: 'TestContainer',
-                width: '77px',
+                width: '74px',
                 scrollable: 'vertical',
                 items: [
                     {
                         xtype: 'button',
-                        text: 'Test Interface',
+                        text: 'HW Iface',
                         action: 'testInterface',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
                     {
                         xtype: 'button',
-                        text: 'Test Print',
+                        text: 'Print',
                         action: 'testPrint',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
                     {
                         xtype: 'button',
-                        text: 'Test Display',
+                        text: 'POS Display',
                         action: 'testDisplay',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
                     {
                         xtype: 'button',
-                        text: 'Test Cashdrawer',
+                        text: 'Cashdrawer',
                         action: 'testCashdrawer',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
@@ -69289,7 +69289,7 @@ Ext.define('Fpos.view.TestView', {
                     },
                     {
                         xtype: 'button',
-                        text: 'Delete Database',
+                        text: 'Delete DB',
                         action: 'delDB',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
@@ -69724,7 +69724,6 @@ Ext.define('Fpos.controller.MainCtrl', {
         }
     },
     resetConfig: function() {
-        debugger;
         var self = this;
         var mainView = self.getMainView();
         ViewManager.hideMenus();
@@ -70956,8 +70955,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         'sequence': self.lineStore.getCount()
                     };
                 // set tag to other if is an income or expense
-                if (product.get('income_pdt') || product.get('expense_pdt')) {
+                if (product.get('expense_pdt')) {
                     values.tag = "o";
+                } else if (product.get('income_pdt')) {
+                    values.tag = "i";
                 } else if (values.tag) {
                     values.tag = null;
                 }
@@ -71080,7 +71081,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
                     turnover += total_line.subtotal_incl;
-                } else if (tag == 'b' || tag == 'o') {
+                } else if (tag == 'b' || tag == 'o' || tag == 'i') {
                     // add balance and other
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
@@ -71333,12 +71334,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if (lines.length > 0) {
                 var line = lines[0];
                 var tag = line.get('tag');
-                if (!tag || tag == 'r') {
+                if (!tag || tag == 'r' || tag == 'o' || tag == 'i') {
                     // set mode to €
                     // if it is real balance input
-                    if (tag == 'r') {
+                    // if it is other
+                    if (tag == 'r' || tag == 'o' || tag == 'i') {
                         if (this.mode != '€') {
                             this.setMode('€');
+                        }
+                        // check input sign
+                        if (tag == 'o' && this.inputSign !== -1) {
+                            this.inputSign = -1;
                         }
                     }
                     // switch sign
@@ -71738,6 +71744,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var date = futil.datetimeToStr(new Date());
         var order_id;
         if (user_id && fpos_user_id) {
+            ViewManager.startLoading("Kassenstand erstellen");
             DBUtil.search(db, [
                 [
                     'fdoo__ir_model',
@@ -71809,15 +71816,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         'tag': 's'
                     })[// CASH STATE
                     'catch'](function(err) {
+                        ViewManager.stopLoading();
                         ViewManager.handleError(err, {
                             name: "Kassensturz Fehler",
                             message: "Kassensturz konnte nicht erstellt werden"
                         });
                     }).then(function(res) {
+                        ViewManager.stopLoading();
                         self.reloadData();
                     });
                 });
             })['catch'](function(err) {
+                ViewManager.stopLoading();
                 ViewManager.handleError(err, {
                     name: "Kassensturz Fehler",
                     message: "Kassensturz konnte nicht erstellt werden"
@@ -72219,7 +72229,7 @@ Ext.define('Fpos.store.PosPaymentStore', {
  */
 var futil = {
         comma: ",",
-        activetap: Date.now()
+        activetap: false
     };
 futil.keys = function(obj) {
     if (typeof obj != "object" && typeof obj != "function" || obj === null) {
@@ -72257,9 +72267,14 @@ futil.strToLocalDateTime = function(str) {
     var date = futil.strToDate(str);
 };
 futil.isDoubleTap = function() {
-    var cur = Date.now();
-    var res = (cur - futil.activetap) < 500;
-    futil.activetap = cur;
+    if (!futil.activetap) {
+        futil.activetap = true;
+        setTimeout(function() {
+            futil.activetap = false;
+        }, 500);
+        return false;
+    }
+    return true;
 };
 futil.screenWidth = function() {
     var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;

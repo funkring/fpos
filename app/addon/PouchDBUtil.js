@@ -28,7 +28,8 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                                       adapter: 'websql' });
             */     
                                             
-            db = new PouchDB(dbName, { adapter: 'websql' });
+            //db = new PouchDB(dbName, { adapter: 'websql' });
+            db = new PouchDB(dbName);
             self.databases[dbName] = db;
         }
         return db;

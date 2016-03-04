@@ -57,6 +57,7 @@ Ext.define('Fpos.Config', {
                 // set first status            
                 self.setHwStatus(hwstatus);
                 
+                /*
                 // init interval
                 self.setHwStatusId(setInterval(function() {
                     window.PosHw.getStatus(function(hwstatus) {
@@ -64,7 +65,7 @@ Ext.define('Fpos.Config', {
                     }, function(err) {
                        self.setHwStatus({ err : err});
                     });
-                 }, 1000));
+                 }, 1000));*/
                  
                  // resolve
                  deferred.resolve(hwstatus);
