@@ -60,7 +60,7 @@ Ext.application({
         '114': 'resources/icons/Icon@2x.png',
         '144': 'resources/icons/Icon~ipad@2x.png'
     },
-
+    
     isIconPrecomposed: true,
 
     startupImage: {
@@ -71,7 +71,21 @@ Ext.application({
         '1536x2008': 'resources/startup/1536x2008.png',
         '1496x2048': 'resources/startup/1496x2048.png'
     },
-
+    
+    eventPublishers: {
+        touchGesture: {
+            recognizers: {
+                doubleTap : null,                
+                // don't disable this one unless you don't want your list to scroll!   drag : null,
+                edgeSwipe : null,
+                longPress : null,
+                pinch : null,
+                rotate : null,
+                swipe : null
+            }
+        }        
+    },
+      
     launch: function() {
         // Destroy the #appLoadingIndicator element
         Ext.fly('appLoadingIndicator').destroy();

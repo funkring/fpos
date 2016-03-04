@@ -7,6 +7,10 @@ Ext.define('Fpos.view.Main', {
         
     ],
     config: {
+        layout: {
+            type: 'card',
+            animation: false
+        },
         navigationBar: {
             items: [
                 {
