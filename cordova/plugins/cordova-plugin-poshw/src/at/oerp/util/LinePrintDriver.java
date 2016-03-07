@@ -10,6 +10,7 @@ public interface LinePrintDriver {
 	public final static int FONT_SMALL = 2; 
 	
 	// Style
+	public final static int STYLE_NONE = 0;
 	public final static int STYLE_BOLD = 1 << 0;
 	
 	/**

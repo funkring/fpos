@@ -10,12 +10,6 @@
         "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-crosswalk-webview": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
-        "cordova-plugin-poshw": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
         "ca.purplemad.wallpaper": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
@@ -23,6 +17,12 @@
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
         "com.borismus.webintent": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-crosswalk-webview": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },

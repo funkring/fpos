@@ -46,7 +46,9 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				try {
-					String test = "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
+					String test =
+							   "<br>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
+							   "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
 			                   "<br>um zu testen ob der Druck" +
 			                   "<br>funktioniert"+
 			                   "<br><br><br><br><br><br>";

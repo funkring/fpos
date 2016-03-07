@@ -13,26 +13,6 @@
                             "count": 1
                         },
                         {
-                            "xml": "<preference name=\"webView\" value=\"org.crosswalk.engine.XWalkWebViewEngine\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<preference default=\"15+\" name=\"xwalkVersion\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<preference default=\"--disable-pull-to-refresh-effect\" name=\"xwalkCommandLine\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<preference default=\"embedded\" name=\"xwalkMode\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<preference default=\"true\" name=\"xwalkMultipleApk\" />",
-                            "count": 1
-                        },
-                        {
                             "xml": "<feature name=\"Wallpaper\"><param name=\"android-package\" value=\"ca.purplemad.wallpaper.Wallpaper\" /></feature>",
                             "count": 1
                         },
@@ -47,6 +27,26 @@
                         {
                             "xml": "<feature name=\"WebIntent\"><param name=\"android-package\" value=\"com.borismus.webintent.WebIntent\" /></feature>",
                             "count": 1
+                        },
+                        {
+                            "xml": "<preference name=\"webView\" value=\"org.crosswalk.engine.XWalkWebViewEngine\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference default=\"16+\" name=\"xwalkVersion\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference default=\"--disable-pull-to-refresh-effect\" name=\"xwalkCommandLine\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference default=\"embedded\" name=\"xwalkMode\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference default=\"true\" name=\"xwalkMultipleApk\" />",
+                            "count": 1
                         }
                     ]
                 }
@@ -56,18 +56,18 @@
                     "/*": [
                         {
                             "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
-                            "count": 2
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />",
-                            "count": 2
+                            "count": 1
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
-                            "count": 3
+                            "count": 1
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />",
                             "count": 1
                         },
                         {
@@ -88,6 +88,62 @@
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.INTERNET\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PRINTER\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_MSR\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_CONTACTLESS_CARD\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_SMARTCARD\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_SERIAL\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_LED\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_CUSTOMER_DISPLAY\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_GET_PIN_BLOCK\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_MAC\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_ENCRYPT_DATA\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_UPDATA_USER_KEY\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_UPDATE_MASTER_KEY\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_IDCard\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_MONEYBOX\" />",
                             "count": 1
                         }
                     ],
@@ -127,12 +183,6 @@
         "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-crosswalk-webview": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
-        "cordova-plugin-poshw": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
         "ca.purplemad.wallpaper": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
@@ -144,6 +194,12 @@
         },
         "com.borismus.webintent": {
             "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-crosswalk-webview": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-poshw": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
     "dependent_plugins": {},
@@ -153,14 +209,6 @@
             "id": "cordova-plugin-whitelist.whitelist",
             "pluginId": "cordova-plugin-whitelist",
             "runs": true
-        },
-        {
-            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
-            "id": "cordova-plugin-poshw.PosHw",
-            "pluginId": "cordova-plugin-poshw",
-            "clobbers": [
-                "PosHw"
-            ]
         },
         {
             "file": "plugins/ca.purplemad.wallpaper/www/wallpaper.js",
@@ -366,15 +414,23 @@
             "clobbers": [
                 "WebIntent"
             ]
+        },
+        {
+            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+            "id": "cordova-plugin-poshw.PosHw",
+            "pluginId": "cordova-plugin-poshw",
+            "clobbers": [
+                "PosHw"
+            ]
         }
     ],
     "plugin_metadata": {
         "cordova-plugin-whitelist": "1.2.0",
-        "cordova-plugin-crosswalk-webview": "1.4.0",
-        "cordova-plugin-poshw": "1.0.3",
         "ca.purplemad.wallpaper": "0.2.0",
         "cordova-plugin-file": "4.1.1",
         "cordova-plugin-file-transfer": "1.5.0",
-        "com.borismus.webintent": "1.0.0"
+        "com.borismus.webintent": "1.0.0",
+        "cordova-plugin-crosswalk-webview": "1.5.0",
+        "cordova-plugin-poshw": "1.0.5"
     }
 }

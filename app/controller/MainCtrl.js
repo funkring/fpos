@@ -392,13 +392,13 @@ Ext.define('Fpos.controller.MainCtrl', {
         }
        
        // load hardware
-       Config.setupHardware().then(function() {
-            self.loadConfig();  
-       })['catch'](function(err) {
+       Config.setupHardware()['catch'](function(err) {
             ViewManager.handleError(err, {
                 name: "Unerwarteter Fehler", 
                 message: "Hardware konnte nicht initialisiert werden"
             }, false);          
+       }).then(function() {
+            self.loadConfig();  
        });
     },
     

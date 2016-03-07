@@ -1091,6 +1091,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         } else {
             Config.printHtml(html);
         }
+       
+        // open cash drawer
+        Config.openCashDrawer();
     },
     
     display: function() {
@@ -1317,9 +1320,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         if ( !futil.isDoubleTap() ) {
             ViewManager.hideMenus();
+            var db = Config.getDB();
             Config.queryLastOrder().then(function(res) {
                 if ( res.rows.length > 0 ) {
-                    self.printOrder(res.rows[0].doc);
+                    var order = res.rows[0].doc;
+                    if ( order.partner_id ) {
+                        db.get(order.partner_id).then(function(partner) {
+                            order.partner = partner;
+                            self.printOrder(order);
+                        })['catch'](function(err) {
+                            self.printOrder(order);
+                        });
+                    } else {
+                        self.printOrder(order);
+                    }
                 }
              });
         }

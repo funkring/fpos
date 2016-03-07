@@ -166,7 +166,7 @@ public class PosHwPlugin extends CordovaPlugin {
 			}
 
 			// no service
-			if ( service == null ) {
+			if ( service == null ) {				
 				inCallbackContext.error("No Service");
 				return true;
 			}

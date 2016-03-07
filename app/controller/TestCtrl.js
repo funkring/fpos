@@ -93,6 +93,7 @@ Ext.define('Fpos.controller.TestCtrl', {
            self.getTestLabel().setHtml(            
             "<pre>" +
             "Screen Resolution: " + futil.screenWidth().toString() + "x" + futil.screenHeight().toString() + "\n" +
+            "Physical Resolution: " + futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + "\n" +
             JSON.stringify(info, null, 2) +
             "</pre>"
             );

@@ -146,9 +146,9 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 
 	@Override
 	public synchronized boolean openCashDrawer() {
-		Ioctl.activate(16, 1);
 		try {
-			Thread.sleep(66);
+			Ioctl.activate(16, 1);
+			Thread.sleep(122);
 			Ioctl.activate(16, 0);
 		} catch ( InterruptedException e ) {
 			try {

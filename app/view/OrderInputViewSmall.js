@@ -26,10 +26,10 @@ Ext.define('Fpos.view.OrderInputViewSmall', {
                         xtype: 'button',
                         text: '+/-',    
                         action: 'inputNumber',
-                        width: '66px',
+                        flex: 1,
                         height: '56px',  
                         ui: 'posInputButtonBlack',
-                        cls : 'PosInputButton'
+                        cls : 'PosInputButtonSmallFont'
                     },                           
                     {
                         xtype: 'button',

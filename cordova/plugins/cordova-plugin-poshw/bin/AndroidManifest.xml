@@ -10,7 +10,25 @@
        
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET" />
     
+    <!-- cloudpos permissions -->
+    <uses-permission android:name="android.permission.CLOUDPOS_PRINTER" />
+    <uses-permission android:name="android.permission.CLOUDPOS_MSR"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_CONTACTLESS_CARD"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_SMARTCARD"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_SERIAL"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_LED" />
+    <uses-permission android:name="android.permission.CLOUDPOS_CUSTOMER_DISPLAY" />
+    <uses-permission android:name="android.permission.CLOUDPOS_PIN_GET_PIN_BLOCK"/> 
+    <uses-permission android:name="android.permission.CLOUDPOS_PIN_MAC" />
+    <uses-permission android:name="android.permission.CLOUDPOS_PIN_ENCRYPT_DATA"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_PIN_UPDATA_USER_KEY"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_PIN_UPDATE_MASTER_KEY"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_IDCard"/>
+    <uses-permission android:name="android.permission.CLOUDPOS_MONEYBOX"/>
+        
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"

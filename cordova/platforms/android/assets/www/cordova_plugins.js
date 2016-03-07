@@ -7,14 +7,6 @@ module.exports = [
         "runs": true
     },
     {
-        "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
-        "id": "cordova-plugin-poshw.PosHw",
-        "pluginId": "cordova-plugin-poshw",
-        "clobbers": [
-            "PosHw"
-        ]
-    },
-    {
         "file": "plugins/ca.purplemad.wallpaper/www/wallpaper.js",
         "id": "ca.purplemad.wallpaper.Wallpaper",
         "pluginId": "ca.purplemad.wallpaper",
@@ -218,18 +210,26 @@ module.exports = [
         "clobbers": [
             "WebIntent"
         ]
+    },
+    {
+        "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+        "id": "cordova-plugin-poshw.PosHw",
+        "pluginId": "cordova-plugin-poshw",
+        "clobbers": [
+            "PosHw"
+        ]
     }
 ];
 module.exports.metadata = 
 // TOP OF METADATA
 {
     "cordova-plugin-whitelist": "1.2.0",
-    "cordova-plugin-crosswalk-webview": "1.4.0",
-    "cordova-plugin-poshw": "1.0.3",
     "ca.purplemad.wallpaper": "0.2.0",
     "cordova-plugin-file": "4.1.1",
     "cordova-plugin-file-transfer": "1.5.0",
-    "com.borismus.webintent": "1.0.0"
+    "com.borismus.webintent": "1.0.0",
+    "cordova-plugin-crosswalk-webview": "1.5.0",
+    "cordova-plugin-poshw": "1.0.5"
 }
 // BOTTOM OF METADATA
 });

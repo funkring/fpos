@@ -292,6 +292,11 @@ Ext.define('Ext.form.ViewManager', {
             } else {
                 err = alternativeError;
             }
+        } else if ( typeof err === 'string' ) {
+            err = {
+                name : alternativeError.name,
+                message : err
+            };
         }
         Ext.Msg.alert(err.name, err.message);
         if (forward) throw err;

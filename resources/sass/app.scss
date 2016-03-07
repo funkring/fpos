@@ -100,6 +100,12 @@ $fpos-input-lightgrey: #eeeeee;
     font-size: 1.4em;    
 }
 
+.PosInputButtonSmallFont {
+    margin: 1px;
+    color: #ffffff !important; 
+    font-size: 1.2em;    
+}
+
 .PosInputContainer {
     background-color: $fpos-input-dark !important;
     padding: 2px;

@@ -3,12 +3,14 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-poshw"
-        version="1.0.3">
+        version="1.0.5">
 
     <name>POS Hardware Plugin</name>
     <description>
         Support for POS Hardware
-        - Jepower T508A        
+        - Jepower T508A  
+        - WizarPOS
+        - TS7001      
     </description>
     <license>Apache 2.0</license>
     <keywords>cordova,pos</keywords>
@@ -31,24 +33,6 @@
     <platform name="android">
         <framework src="com.android.support:support-v4:+" />
         
-        <source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs/" />
-		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs/" />
-		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs/" />
-		
-		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi/" />
-		
-		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi-v7a/" />
-        <source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi-v7a/" />
-        <source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi-v7a/" />
-        <source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi-v7a/" />
-        <source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi-v7a/" />
-        <source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi-v7a/" />
-        
 		<source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
 		<source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
 		<source-file src="src/at/oerp/pos/ReadConfig.java" target-dir="src/at/oerp/pos/" />
@@ -63,6 +47,10 @@
 		<source-file src="src/at/oerp/pos/hw/t508aq/T508AQService.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/pos/hw/t508aq/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/ts7002/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
+		<source-file src="src/at/oerp/pos/hw/ts7002/TS7002PosService.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
+		<source-file src="src/at/oerp/pos/hw/h510/H510PosService.java" target-dir="src/at/oerp/pos/hw/h510/" />
+		<source-file src="src/at/oerp/pos/hw/h510/Printer58mm.java" target-dir="src/at/oerp/pos/hw/h510/" />
 		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
 		<source-file src="src/at/oerp/util/StringUtil.java" target-dir="src/at/oerp/util/" />
 		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
@@ -70,8 +58,61 @@
 		<source-file src="src/android_serialport_api/SerialPort.java" target-dir="src/android_serialport_api/" />
 		<source-file src="src/com/ctrl/gpio/Ioctl.java" target-dir="src/com/ctrl/gpio/" />
 		<source-file src="src/com/ctrl/gpio/GpioControl.java" target-dir="src/com/ctrl/gpio/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/MoneyboxInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/PinpadInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/HALMsrInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/LEDInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/ContactlessInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/IDCardProperty.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/CustomerDisplayInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/IDCardJniInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/ContactlessEvent.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardSlotInfo.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardEvent.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/PrinterInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SerialPortInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/android/pt/Cprinter.java" target-dir="src/android/pt/" />
 		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio/" />
-
+		
+		<source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs/" />
+		<source-file src="libs/allutils.jar" target-dir="libs/" />
+		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs/" />
+		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs/" />
+		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_idcard.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_pinpad.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_printer.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_smartcard.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_serial.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libDecodeWlt.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_customerdisplay.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_contactlesscard.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_moneybox.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_led.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_msr.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi-v7a/libJNIEMV.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libN20Epp.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_idcard.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_pinpad.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_printer.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libJNISerial.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_smartcard.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libserial_port.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_serial.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libDecodeWlt.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libctrl_gpio.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_customerdisplay.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_contactlesscard.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_moneybox.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libwltdecode.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_led.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_msr.so" target-dir="libs/armeabi-v7a/" />
 
         <config-file target="config.xml" parent="/*">
             <feature name="PosHw">
@@ -79,7 +120,7 @@
             </feature>            
         </config-file>
         
-         <config-file target="AndroidManifest.xml" parent="/*">
+        <config-file target="AndroidManifest.xml" parent="/*">
             <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -89,6 +130,22 @@
             <uses-permission android:name="android.permission.NFC" />
             <uses-permission android:name="android.permission.WAKE_LOCK" />
             <uses-permission android:name="android.permission.INTERNET" />
+    
+		    <!-- cloudpos permissions -->
+		    <uses-permission android:name="android.permission.CLOUDPOS_PRINTER" />
+		    <uses-permission android:name="android.permission.CLOUDPOS_MSR"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_CONTACTLESS_CARD"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_SMARTCARD"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_SERIAL"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_LED" />
+		    <uses-permission android:name="android.permission.CLOUDPOS_CUSTOMER_DISPLAY" />
+		    <uses-permission android:name="android.permission.CLOUDPOS_PIN_GET_PIN_BLOCK"/> 
+		    <uses-permission android:name="android.permission.CLOUDPOS_PIN_MAC" />
+		    <uses-permission android:name="android.permission.CLOUDPOS_PIN_ENCRYPT_DATA"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_PIN_UPDATA_USER_KEY"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_PIN_UPDATE_MASTER_KEY"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_IDCard"/>
+		    <uses-permission android:name="android.permission.CLOUDPOS_MONEYBOX"/>
         </config-file>
          
     </platform>

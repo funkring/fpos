@@ -2,7 +2,9 @@ package at.oerp.pos;
 
 import java.io.IOException;
 
+import at.oerp.pos.hw.h510.H510PosService;
 import at.oerp.pos.hw.t508aq.T508AQService;
+import at.oerp.pos.hw.ts7002.TS7002PosService;
 
 public abstract class PosHwService {
 
@@ -17,6 +19,10 @@ public abstract class PosHwService {
 	public static PosHwService create() {
 		if ( T508AQService.isHardware() ) {
 			return new T508AQService();
+		} else if ( H510PosService.isHardware() ) {
+			return new H510PosService();
+		} else if ( TS7002PosService.isHardware() ) {
+			return new TS7002PosService();
 		}
 		return null;
 	}

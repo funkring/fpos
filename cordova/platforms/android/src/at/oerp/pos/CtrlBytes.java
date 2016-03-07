@@ -1,7 +1,7 @@
 package at.oerp.pos;
 
 public interface CtrlBytes {
-
+	
 	public static final byte HT 	=	0x09; 
 	public static final byte LF 	=	0x0A; 
 	public static final byte CR 	= 	0x0D; 
@@ -22,4 +22,5 @@ public interface CtrlBytes {
 	public static final byte SOH 	= 	0x01;
 	public static final byte NULL 	=	0x00;
 	
+	public static final byte[] LF_CMD	=	new byte[] { 0x0A };
 }
