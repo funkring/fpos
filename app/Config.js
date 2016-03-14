@@ -296,7 +296,7 @@ Ext.define('Fpos.Config', {
     },
     
     openCashDrawer: function() {
-        if ( window.PosHw.openCashDrawer ) {
+        if ( window.PosHw ) {
             return window.PosHw.openCashDrawer();
         }
         return false;

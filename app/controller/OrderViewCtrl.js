@@ -1009,11 +1009,30 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '<tpl if="!tag">',
                             '<tr>',
                                 '<td colspan="2">',
-                                    '&nbsp;{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
-                                    '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
+                                    '<table width="100%">',
+                                    '<tr>',
+                                    '<td width="5%">&nbsp;</td>',
+                                    '<td>',
+                                        '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
+                                        '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
+                                    '</td>',
+                                    '</tr>',
+                                    '</table>',
                                 '</td>',        
                             '</tr>',
                         '</tpl>',
+                    '</tpl>',
+                    '<tpl if="notice">',
+                    '<tr>',
+                        '<td colspan="2">',
+                            '<table width="100%">',
+                                '<tr>',
+                                    '<td width="5%">&nbsp;</td>',
+                                    '<td>{[this.formatText(values.notice)]}</td>',
+                                '</tr>',
+                            '</table>',
+                        '</td>',
+                    '</tr>',
                     '</tpl>',
                 '</tpl>',
                 '<tr>',                
@@ -1048,6 +1067,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     getJournal: function(journal_id) {
                         var journal = Config.getJournal(journal_id);
                         return journal ? journal.name : '';
+                    },
+                    formatText: function(text) {
+                        return text ? text.replace(/\n/g,'<br/>') : '';
                     }
                 }                
             );
@@ -1057,7 +1079,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if (!order) {
             order = this.order.getData();
         }
-        
         
         // data
         var data = {
