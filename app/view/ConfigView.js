@@ -100,6 +100,11 @@ Ext.define('Fpos.view.ConfigView', {
                         xtype: 'togglefield',
                         name: 'scale',
                         label: 'Waage'  
+                    },
+                    {
+                        xtype: 'togglefield',
+                        name: 'nogroup',
+                        label: 'Nicht Gruppieren'  
                     }
                 ]
             }

@@ -213,7 +213,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
             var changedLine = null;
             var toWeight = product.get('to_weight');
-            if ( !toWeight ) {
+            var settings = Config.getSettings();
+            
+            if ( !toWeight && !settings.nogroup ) {
                 self.lineStore.each(function(line) {
                     if ( line.get('product_id') === product.getId() ) {
                         line.set('qty',(line.get('qty') || 0.0) + 1);
@@ -382,11 +384,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
                     turnover += total_line.subtotal_incl;
-                } else if ( tag == 'b' || tag == 'o' || tag == 'i') {
+                } else if ( tag == 'r' || tag == 'o' || tag == 'i') {
                     // add balance and other
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
-                } else if ( tag == 'r' ) {
+                } else if ( tag == 'b' ) {
                     // substract real balance
                     amount_total -= total_line.subtotal_incl;
                     amount_tax -= total_line.amount_tax;

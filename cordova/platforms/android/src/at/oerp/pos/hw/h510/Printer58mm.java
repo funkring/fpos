@@ -55,6 +55,8 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 				PrinterInterface.PrinterWrite(LF_CMD, LF_CMD.length);
 				PrinterInterface.PrinterWrite(LF_CMD, LF_CMD.length);
 				PrinterInterface.PrinterWrite(LF_CMD, LF_CMD.length);
+				PrinterInterface.PrinterWrite(LF_CMD, LF_CMD.length);
+				PrinterInterface.PrinterWrite(LF_CMD, LF_CMD.length);
 			} finally {
 				PrinterInterface.PrinterEnd();
 				PrinterInterface.PrinterClose();
