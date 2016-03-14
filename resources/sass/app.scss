@@ -223,6 +223,40 @@ $fpos-input-lightgrey: #eeeeee;
     word-wrap:break-word;
 }
 
+.ProductButtonSmall {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    word-wrap:break-word;
+}
+
+.ProductItemNoCat {
+    display: table;
+}
+
+.ProductButtonNoCat {
+    margin: 2px;
+    height: 100px;
+    font-size: 0.7em;
+    word-wrap:break-word;
+}
+
+.ProductTextBigNoCat {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    font-size: 2em;
+}
+
+.ProductTextNoCat {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    font-size: 1.5em;    
+}
+
 .ProductPrice {
     position: absolute;
     top: 2px;
@@ -235,9 +269,15 @@ $fpos-input-lightgrey: #eeeeee;
     border-radius: 2px;
 }
 
-.ProductImage  {
+.ProductImageNoCat  {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    padding-right: 6px;
+}
+
+.ProductImage {
     position: relative;
-    background-color: #ffffff !important;
     text-align: center;   
 }
 

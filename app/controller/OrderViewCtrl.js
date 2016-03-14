@@ -213,9 +213,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
             var changedLine = null;
             var toWeight = product.get('to_weight');
-            var settings = Config.getSettings();
+            var profile = Config.getProfile();
             
-            if ( !toWeight && !settings.nogroup ) {
+            if ( !toWeight && !profile.iface_nogroup ) {
                 self.lineStore.each(function(line) {
                     if ( line.get('product_id') === product.getId() ) {
                         line.set('qty',(line.get('qty') || 0.0) + 1);

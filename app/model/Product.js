@@ -18,7 +18,8 @@ Ext.define('Fpos.model.Product', {
                 'to_weight',
                 'taxes_id',
                 'price',                
-                'brutto_price'],
+                'brutto_price',
+                'sequence'],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',

@@ -4,7 +4,16 @@ Ext.define('Fpos.store.ProductStore', {
     extend: 'Ext.data.Store',      
     config: {
         model: 'Fpos.model.Product',
-        sorters: 'name'
+        sorters: [
+         {
+            property: 'sequence',
+            direction: 'ASC'
+         },
+         {
+            property: 'name',
+            direction: 'ASC'
+         }
+        ] 
     },
     
     constructor: function(config) {

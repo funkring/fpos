@@ -59,6 +59,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             scope: self,
             reloadData: function() {
                 //this.cache = {};
+                self.productButtonTmpl = null;
                 self.loadCategory(null);
             }
         });     
@@ -85,36 +86,69 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     /**
      * set product item template
      */  
-    productButtonInitialize: function(button) {
-        var self = this;
+    productButtonInitialize: function(button) {     
+        var self = this;   
         if ( !self.productButtonTmpl ) {
-            self.productButtonTmpl = Ext.create('Ext.XTemplate',
-                  '<tpl if="image_small">',
-                      '<div class="ProductImage">',
-                        '<img src="data:image/jpeg;base64,{image_small}"/>',                                        
-                      '</div>',
-                      '<div class="ProductText">',
-                        '{name}',
-                      '</div>',
-                      '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
-                  '<tpl elseif="name.length &lt;= 7">',
-                     '<div class="ProductTextOnlyBig">',
-                        '{name}',
-                      '</div>',
-                      '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
-                  '<tpl else>',
-                     '<div class="ProductTextOnly">',
-                        '{name}',
-                      '</div>',
-                      '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
-                  '</tpl>',{
+            if ( self.allCategoryStore.getCount() > 0 ) {
+                if ( futil.screenWidth() < 720 ) {       
+                    self.productButtonCls = 'ProductButtonSmall';
+                } else {
+                    self.productButtonCls = 'ProductButton';
+                }
+                
+                self.productButtonTmpl = Ext.create('Ext.XTemplate',
+                      '<tpl if="image_small">',
+                          '<div class="ProductImage">',
+                            '<img src="data:image/jpeg;base64,{image_small}"/>',                                        
+                          '</div>',
+                          '<div class="ProductText">',
+                            '{name}',
+                          '</div>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                      '<tpl elseif="name.length &lt;= 7">',
+                         '<div class="ProductTextOnlyBig">',
+                            '{name}',
+                          '</div>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                      '<tpl else>',
+                         '<div class="ProductTextOnly">',
+                            '{name}',
+                          '</div>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                      '</tpl>',{
+                          getUnit: function(uom_id) {
+                            var uom = self.unitStore.getById(uom_id);
+                            return uom && uom.get('name') || '';
+                          }
+                          
+                      });
+            } else {              
+                self.productButtonCls = 'ProductButtonNoCat';  
+                self.productButtonTmpl = Ext.create('Ext.XTemplate',
+                 '<div class="ProductItemNoCat">',
+                     '<tpl if="image_small">',
+                         '<div class="ProductImageNoCat">',
+                            '<img src="data:image/jpeg;base64,{image_small}"/>',                                        
+                         '</div>',
+                         '<div class="ProductTextNoCat">',
+                           '{name}',
+                         '</div>',
+                     '<tpl else>',
+                         '<div class="ProductTextBigNoCat">',
+                           '{name}',
+                         '</div>',
+                     '</tpl>',
+                 '</div>', 
+                 '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                 {
                       getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
                         return uom && uom.get('name') || '';
                       }
-                      
-                  });
+                 });
+            }
         }
+        button.setCls(self.productButtonCls);
         button.setTpl(self.productButtonTmpl);
     },
     
@@ -244,7 +278,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         // load categories
         var categories = [];
         self.allCategoryStore.each(function(childCategory) {
-            if ( childCategory.get('parent_id') == categoryId ) {
+            if ( childCategory.get('parent_id') == categoryId ) {       
                 childCategory.set('selected',false);
                 childCategory.set('parent',false);
                 categories.push(childCategory);
