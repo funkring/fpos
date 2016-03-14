@@ -19,7 +19,8 @@ Ext.define('Fpos.model.Product', {
                 'taxes_id',
                 'price',                
                 'brutto_price',
-                'sequence'],
+                'sequence',
+                'pos_name'],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',
