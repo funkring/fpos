@@ -89,8 +89,10 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     productButtonInitialize: function(button) {     
         var self = this;   
         if ( !self.productButtonTmpl ) {
-            if ( self.allCategoryStore.getCount() > 0 ) {
-                if ( futil.screenWidth() < 720 ) {       
+            self.productButtonWidth = null;
+            var screenWidth = futil.screenWidth();
+            if ( self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
+                if ( screenWidth < 720 ) {       
                     self.productButtonCls = 'ProductButtonSmall';
                 } else {
                     self.productButtonCls = 'ProductButton';
@@ -122,7 +124,14 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                           }
                           
                       });
-            } else {              
+            } else {     
+                //set width 
+                if ( screenWidth == 600 ) {
+                    self.productButtonWidth = "190px";
+                } else if ( screenWidth == 320 ) {
+                    self.productButtonWidth = "186px";
+                }
+                
                 self.productButtonCls = 'ProductButtonNoCat';  
                 self.productButtonTmpl = Ext.create('Ext.XTemplate',
                  '<div class="ProductItemNoCat">',
@@ -148,6 +157,11 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                  });
             }
         }
+        
+        if ( self.productButtonWidth ) {
+            button.setWidth(self.productButtonWidth);
+        } 
+        
         button.setCls(self.productButtonCls);
         button.setTpl(self.productButtonTmpl);
     },

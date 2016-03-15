@@ -47,6 +47,7 @@ Ext.define('Fpos.view.ProductViewSmall', {
                                 cls: 'ProductDataView',
                                 xtype: 'dataview',
                                 useComponents: true,
+                                scroll: 'vertical',
                                 defaultType: 'fpos_product_item',
                                 flex: 1,    
                                 store: "ProductStore"        
