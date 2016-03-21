@@ -145,13 +145,13 @@ $fpos-input-lightgrey: #eeeeee;
 
 .TestContainer {
     padding: 10px;
-    margin-left: 10px;
 }
 
 .TestInfo {
     background-color: #ffffff !important;
     margin: 4px;
-    font-size: 0.5em; 
+    font-size: 0.6em;
+    white-space: normal;
 }
 
 // ******************************************************************
@@ -159,11 +159,15 @@ $fpos-input-lightgrey: #eeeeee;
 // ******************************************************************
 
 .TestButton {
-    margin: 2px;
+    margin: 2px 4px;
     color: #ffffff !important; 
     width: 72px;
     height: 56px;
-    font-size: 0.5em;     
+    font-size: 0.8em;     
+}
+
+div.TestButton > span.x-button-label {
+   white-space: normal;
 }
 
 // ******************************************************************

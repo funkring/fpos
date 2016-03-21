@@ -378,6 +378,18 @@ Ext.define('Ext.proxy.PouchDBUtil',{
         delete self.databases[dbName];
         db.destroy(callback);
     },
+    
+    resetOdoo: function(db, client, name) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        // invoke before sync
+        client.invoke("jdoc.jdoc","jdoc_couchdb_sync",[{ "name" : name, "reset" : true}])
+            ['catch'](function(err) {
+                deferred.reject(err);  
+            }).then(function(couchdb_config) {
+                deferred.resolve(couchdb_config);
+            });
+        return deferred.promise();
+    },
 
     syncWithOdoo: function(db, client, sync_config) {
         var deferred = Ext.create('Ext.ux.Deferred');

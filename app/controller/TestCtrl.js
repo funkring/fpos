@@ -28,6 +28,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=delDB]' : { 
                 tap: 'delDB'
+            },
+            'button[action=resetDB]' : {
+                tap: 'resetDB'
             }
         }
     },
@@ -111,6 +114,48 @@ Ext.define('Fpos.controller.TestCtrl', {
                 })['catch'](function(err) {
                     self.getTestLabel().setHtml(err);
                 });
+            }
+        });
+    },
+    
+    resetDB: function() {
+        var self = this;
+        self.beforeTest();
+        Ext.Msg.confirm('Zurücksetzung','Wollen sie wirklich alle Daten zurücksetzen?', function(buttonId) {
+            if ( buttonId == 'yes' && !Config.getUser() ) {          
+                
+                var name = "fpos";
+                var db = Config.getDB();
+                var client = Config.newClient();
+                var settings = Config.getSettings();
+                
+                // try connect
+                client.connect()['catch'](function(err) {
+                    self.getTestLabel().setHtml(err);                
+                }).then(function(res) {
+                    // reset database
+                    DBUtil.resetDB(name, function(err) {
+                        if ( !err ) {
+                            // get new db
+                            db = Config.getDB();
+                            // post config
+                            delete settings._rev;             
+                            db.post(settings)['catch'](function(err) {
+                                self.getTestLabel().setHtml(err);
+                            }).then(function(res) {
+                                // reset odoo database and reload
+                                DBUtil.resetOdoo(db, client, name)['catch'](function(err) {
+                                     self.getTestLabel().setHtml(err);
+                                }).then(function(res) {
+                                    window.location.reload();    
+                                });
+                                    
+                            });
+                        } else {
+                            self.getTestLabel().setHtml(err);
+                        }
+                    });
+                });        
             }
         });
     }

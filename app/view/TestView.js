@@ -15,7 +15,7 @@ Ext.define('Fpos.view.TestView', {
                 xtype: 'panel',
                 layout: 'vbox',
                 cls: 'TestContainer',
-                width: '74px',
+                width: '76px',
                 scrollable: 'vertical',
                 items: [
                     {
@@ -41,14 +41,14 @@ Ext.define('Fpos.view.TestView', {
                      },
                      {
                         xtype: 'button',
-                        text: 'Cashdrawer',    
+                        text: 'Cash Drawer',    
                         action: 'testCashdrawer',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
                         xtype: 'button',
-                        text: 'Systeminfo',    
+                        text: 'System Info',    
                         action: 'testInfo',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
@@ -57,6 +57,13 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Delete DB',    
                         action: 'delDB',
+                        ui: 'posInputButtonBlack',
+                        cls : 'TestButton'
+                     },
+                     {
+                        xtype: 'button',
+                        text: 'Reset DB',    
+                        action: 'resetDB',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      }
