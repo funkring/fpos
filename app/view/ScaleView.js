@@ -26,7 +26,7 @@ Ext.define('Fpos.view.ScaleView', {
                     {
                         xtype: 'button',
                         text: 'Tara',    
-                        action: 'scaleTara',
+                        id: 'taraButton',
                         width: '200px',
                         height: '77px',  
                         ui: 'posInputButtonGreen',

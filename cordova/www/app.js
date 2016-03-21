@@ -65851,6 +65851,21 @@ Ext.define('Ext.proxy.PouchDBUtil', {
         delete self.databases[dbName];
         db.destroy(callback);
     },
+    resetOdoo: function(db, client, name) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        // invoke before sync
+        client.invoke("jdoc.jdoc", "jdoc_couchdb_sync", [
+            {
+                "name": name,
+                "reset": true
+            }
+        ])['catch'](function(err) {
+            deferred.reject(err);
+        }).then(function(couchdb_config) {
+            deferred.resolve(couchdb_config);
+        });
+        return deferred.promise();
+    },
     syncWithOdoo: function(db, client, sync_config) {
         var deferred = Ext.create('Ext.ux.Deferred');
         // invoke before sync
@@ -66599,6 +66614,7 @@ Ext.define('Fpos.model.PosLine', {
             'tax_ids',
             'brutto_price',
             'qty',
+            'tara',
             'subtotal_incl',
             'discount',
             'notice',
@@ -67186,7 +67202,7 @@ Ext.define('Fpos.Config', {
     singleton: true,
     alternateClassName: 'Config',
     config: {
-        version: '3.0.1',
+        version: '3.0.2',
         log: 'Ext.store.LogStore',
         databaseName: 'fpos',
         searchDelay: 500,
@@ -68278,6 +68294,7 @@ Ext.define('Fpos.view.ProductView', {
                                 cls: 'ProductDataView',
                                 xtype: 'dataview',
                                 useComponents: true,
+                                scroll: 'vertical',
                                 defaultType: 'fpos_product_item',
                                 flex: 1,
                                 store: "ProductStore"
@@ -68596,7 +68613,7 @@ Ext.define('Fpos.view.TestView', {
                 xtype: 'panel',
                 layout: 'vbox',
                 cls: 'TestContainer',
-                width: '74px',
+                width: '76px',
                 scrollable: 'vertical',
                 items: [
                     {
@@ -68622,14 +68639,14 @@ Ext.define('Fpos.view.TestView', {
                     },
                     {
                         xtype: 'button',
-                        text: 'Cashdrawer',
+                        text: 'Cash Drawer',
                         action: 'testCashdrawer',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     },
                     {
                         xtype: 'button',
-                        text: 'Systeminfo',
+                        text: 'System Info',
                         action: 'testInfo',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
@@ -68638,6 +68655,13 @@ Ext.define('Fpos.view.TestView', {
                         xtype: 'button',
                         text: 'Delete DB',
                         action: 'delDB',
+                        ui: 'posInputButtonBlack',
+                        cls: 'TestButton'
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Reset DB',
+                        action: 'resetDB',
                         ui: 'posInputButtonBlack',
                         cls: 'TestButton'
                     }
@@ -68695,6 +68719,7 @@ Ext.define('Fpos.view.ProductViewSmall', {
                                 cls: 'ProductDataView',
                                 xtype: 'dataview',
                                 useComponents: true,
+                                scroll: 'vertical',
                                 defaultType: 'fpos_product_item',
                                 flex: 1,
                                 store: "ProductStore"
@@ -69484,6 +69509,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=delDB]': {
                 tap: 'delDB'
+            },
+            'button[action=resetDB]': {
+                tap: 'resetDB'
             }
         }
     },
@@ -69546,6 +69574,44 @@ Ext.define('Fpos.controller.TestCtrl', {
                     window.location.reload();
                 })['catch'](function(err) {
                     self.getTestLabel().setHtml(err);
+                });
+            }
+        });
+    },
+    resetDB: function() {
+        var self = this;
+        self.beforeTest();
+        Ext.Msg.confirm('Zurücksetzung', 'Wollen sie wirklich alle Daten zurücksetzen?', function(buttonId) {
+            if (buttonId == 'yes' && !Config.getUser()) {
+                var name = "fpos";
+                var db = Config.getDB();
+                var client = Config.newClient();
+                var settings = Config.getSettings();
+                // try connect
+                client.connect()['catch'](function(err) {
+                    self.getTestLabel().setHtml(err);
+                }).then(function(res) {
+                    // reset database
+                    DBUtil.resetDB(name, function(err) {
+                        if (!err) {
+                            // get new db
+                            db = Config.getDB();
+                            // post config
+                            delete settings._rev;
+                            db.post(settings)['catch'](function(err) {
+                                self.getTestLabel().setHtml(err);
+                            }).then(function(res) {
+                                // reset odoo database and reload
+                                DBUtil.resetOdoo(db, client, name)['catch'](function(err) {
+                                    self.getTestLabel().setHtml(err);
+                                }).then(function(res) {
+                                    window.location.reload();
+                                });
+                            });
+                        } else {
+                            self.getTestLabel().setHtml(err);
+                        }
+                    });
                 });
             }
         });
@@ -69629,8 +69695,10 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     productButtonInitialize: function(button) {
         var self = this;
         if (!self.productButtonTmpl) {
-            if (self.allCategoryStore.getCount() > 0) {
-                if (futil.screenWidth() < 720) {
+            self.productButtonWidth = null;
+            var screenWidth = futil.screenWidth();
+            if (self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
+                if (screenWidth < 720) {
                     self.productButtonCls = 'ProductButtonSmall';
                 } else {
                     self.productButtonCls = 'ProductButton';
@@ -69642,6 +69710,12 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                     }
                 });
             } else {
+                //set width 
+                if (screenWidth == 600) {
+                    self.productButtonWidth = "190px";
+                } else if (screenWidth == 320) {
+                    self.productButtonWidth = "186px";
+                }
                 self.productButtonCls = 'ProductButtonNoCat';
                 self.productButtonTmpl = Ext.create('Ext.XTemplate', '<div class="ProductItemNoCat">', '<tpl if="image_small">', '<div class="ProductImageNoCat">', '<img src="data:image/jpeg;base64,{image_small}"/>', '</div>', '<div class="ProductTextNoCat">', '{pos_name}', '</div>', '<tpl else>', '<div class="ProductTextBigNoCat">', '{pos_name}', '</div>', '</tpl>', '</div>', '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>', {
                     getUnit: function(uom_id) {
@@ -69650,6 +69724,9 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                     }
                 });
             }
+        }
+        if (self.productButtonWidth) {
+            button.setWidth(self.productButtonWidth);
         }
         button.setCls(self.productButtonCls);
         button.setTpl(self.productButtonTmpl);
@@ -70140,8 +70217,8 @@ Ext.define('Fpos.view.ScaleView', {
                 items: [
                     {
                         xtype: 'button',
-                        text: 'Übernehmen',
-                        action: 'stopScale',
+                        text: 'Tara',
+                        id: 'taraButton',
                         width: '200px',
                         height: '77px',
                         ui: 'posInputButtonGreen',
@@ -70329,6 +70406,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 // add line
                 changedLine = self.lineStore.add(values)[0];
+                if (changedLine) {
+                    changedLine.dirty = true;
+                }
             }
             // validate lines
             self.validateLines().then(function() {
@@ -70378,7 +70458,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             fdoo__ir_model: 'fpos.order.tax',
                             tax_id: tax_id,
                             name: taxDef.get('name'),
-                            amount_tax: 0
+                            amount_tax: 0,
+                            amount_netto: 0
                         };
                     if (taxlist)  {
                         taxlist.push(taxsum);
@@ -70412,6 +70493,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 amount_tax = (tax.amount * qty);
             }
             tax.sum.amount_tax += amount_tax;
+            tax.sum.amount_netto += total_netto;
             total_tax += amount_tax;
         });
         // set subtotal if dirty
@@ -70967,7 +71049,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         if (!self.printTemplate) {
             var profile = Config.getProfile();
-            self.printTemplate = Ext.create('Ext.XTemplate', profile.receipt_header || '', '<table width="100%">', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td width="{attribWidth}">Beleg:</td>', '<td>{o.name}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Datum:</td>', '<td>{date:date("d.m.Y H:i:s")}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Kasse:</td>', '<td>{[Config.getProfile().name]}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Bediener:</td>', '<td>{[Config.getUser().name]}</td>', '</tr>', '<tpl if="o.ref">', '<tr>', '<td width="{attribWidth}">Referenz:</td>', '<td>{o.ref}</td>', '</tr>', '</tpl>', '</table>', '<tpl if="o.partner">', '<table width="100%">', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>K U N D E</td>', '</tr>', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>', '{o.partner.name}', '<tpl if="o.partner.street"><br/>{o.partner.street}</tpl>', '<tpl if="o.partner.street2"><br/>{o.partner.street2}</tpl>', '<tpl if="o.partner.zip && o.partner.city"><br/>{o.partner.zip} {o.partner.city}</tpl>', '</td>', '</tr>', '</table>', '</tpl>', '<br/>', '<table width="100%">', '<tr>', '<td>Bezeichnung</td>', '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="lines">', '<tpl if="tag==\'c\'">', '<tr>', '<td colspan="2">{name}</td>', '</tr>', '<tr>', '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}  {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl else>', '<tr>', '<td>{name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>', '</tr>', '<tpl if="!tag">', '<tr>', '<td colspan="2">', '<table width="100%">', '<tr>', '<td width="5%">&nbsp;</td>', '<td>', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}', '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>', '</td>', '</tr>', '</table>', '</td>', '</tr>', '</tpl>', '</tpl>', '<tpl if="notice">', '<tr>', '<td colspan="2">', '<table width="100%">', '<tr>', '<td width="5%">&nbsp;</td>', '<td>{[this.formatText(values.notice)]}</td>', '</tr>', '</table>', '</td>', '</tr>', '</tpl>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td align="right"><b>S U M M E</b></td>', '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>', '</tr>', '<tpl for="o.payment_ids">', '<tr>', '<td align="right">{[this.getJournal(values.journal_id)]}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="o.tax_ids">', '<tr>', '<td align="right">inkl. {name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '</table>', profile.receipt_footer || '', {
+            self.printTemplate = Ext.create('Ext.XTemplate', profile.receipt_header || '', '<table width="100%">', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td width="{attribWidth}">Beleg:</td>', '<td>{o.name}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Datum:</td>', '<td>{date:date("d.m.Y H:i:s")}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Kasse:</td>', '<td>{[Config.getProfile().name]}</td>', '</tr>', '<tr>', '<td width="{attribWidth}">Bediener:</td>', '<td>{[Config.getUser().name]}</td>', '</tr>', '<tpl if="o.ref">', '<tr>', '<td width="{attribWidth}">Referenz:</td>', '<td>{o.ref}</td>', '</tr>', '</tpl>', '</table>', '<tpl if="o.partner">', '<table width="100%">', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>K U N D E</td>', '</tr>', '<tr>', '<td><hr/></td>', '</tr>', '<tr>', '<td>', '{o.partner.name}', '<tpl if="o.partner.street"><br/>{o.partner.street}</tpl>', '<tpl if="o.partner.street2"><br/>{o.partner.street2}</tpl>', '<tpl if="o.partner.zip && o.partner.city"><br/>{o.partner.zip} {o.partner.city}</tpl>', '</td>', '</tr>', '</table>', '</tpl>', '<br/>', '<table width="100%">', '<tr>', '<td>Bezeichnung</td>', '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="lines">', '<tpl if="tag==\'c\'">', '<tr>', '<td colspan="2">{name}</td>', '</tr>', '<tr>', '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl else>', '<tr>', '<td>{name}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>', '</tr>', '<tpl if="!tag">', '<tr>', '<td colspan="2">', '<table width="100%">', '<tr>', '<td width="5%">&nbsp;</td>', '<td>', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}', '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>', '</td>', '</tr>', '</table>', '</td>', '</tr>', '</tpl>', '</tpl>', '<tpl if="notice">', '<tr>', '<td colspan="2">', '<table width="100%">', '<tr>', '<td width="5%">&nbsp;</td>', '<td>{[this.formatText(values.notice)]}</td>', '</tr>', '</table>', '</td>', '</tr>', '</tpl>', '</tpl>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tr>', '<td align="right"><b>S U M M E</b></td>', '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>', '</tr>', '<tpl for="o.payment_ids">', '<tr>', '<td align="right">{[this.getJournal(values.journal_id)]}</td>', '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '</table>', '<tpl if="o.tax_ids">', '<br/>', '<table width="100%">', '<tr>', '<td width="70%">Steuer</td>', '<td align="right" width="30%">Netto {[Config.getCurrency()]}</td>', '</tr>', '<tr>', '<td colspan="2"><hr/></td>', '</tr>', '<tpl for="o.tax_ids">', '<tr>', '<td width="70%">{name} {[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>', '<td align="right" width="30%">{[futil.formatFloat(values.amount_netto,Config.getDecimals())]}</td>', '</tr>', '</tpl>', '</table>', '</tpl>', profile.receipt_footer || '', {
                 getUnit: function(uom_id) {
                     var uom = self.unitStore.getById(uom_id);
                     return uom ? uom.get('name') : '';
@@ -71360,11 +71442,12 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
     config: {
         refs: {
             scaleView: '#scaleView',
-            scaleLabel: '#scaleLabel'
+            scaleLabel: '#scaleLabel',
+            taraButton: '#taraButton'
         },
         control: {
-            'button[action=stopScale]': {
-                tap: 'onStopScale'
+            taraButton: {
+                tap: 'onTara'
             },
             scaleView: {
                 startScale: 'startScale',
@@ -71376,68 +71459,96 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         }
     },
     init: function() {
-        this.reinit = false;
-        this.price = 0;
-        this.tara = 0;
+        // states
+        this.STATE_INIT = 0;
+        this.STATE_INIT_PRICE = 1;
+        this.STATE_WEIGHING = 2;
+        // vars
         this.timeout = 500;
-        this.state = 0;
+        this.nextTara = false;
+        this.state = this.STATE_INIT;
     },
     scaleLabelInitialize: function() {
         var label = this.getScaleLabel();
-        label.setTpl(Ext.create('Ext.XTemplate', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}'));
+        label.setTpl(Ext.create('Ext.XTemplate', '<tpl if="tara">', '<div class="ScaleLabelTara">', '<div>Tara</div>', '<div>{[futil.formatFloat(values.tara,Config.getQtyDecimals())]}</div>', '</div>', '</tpl>', '<div class="ScaleLabelWeight">', '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}', '</div>'));
+    },
+    onTara: function() {
+        this.nextTara = true;
+        this.getTaraButton().setUi("posInputButtonBlack");
     },
     onStopScale: function() {
         this.stopScale();
     },
     onHide: function() {
-        this.state = 0;
-        this.getScaleView().setRecord(null);
+        var self = this;
+        self.state = self.STATE_INIT;
+        self.getScaleView().setRecord(null);
         Ext.Viewport.fireEvent("validateLines");
     },
     stopScale: function() {
         var self = this;
         self.getScaleView().hide();
     },
+    nextState: function() {
+        var self = this;
+        // CONTINUE UPDATE
+        setTimeout(function() {
+            self.updateState();
+        }, self.timeout);
+    },
     updateState: function() {
         var self = this;
         var record = self.getScaleView().getRecord();
         if (record) {
-            if (self.state === 1) {
-                Config.scaleInit(self.price, self.tara)['catch'](function() {
-                    // CONTINUE UPDATE
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
+            if (self.state === self.STATE_INIT_PRICE) {
+                var price = record.get('brutto_price') || 0;
+                var tara = record.get('tara') || 0;
+                Config.scaleInit(price, tara)['catch'](function() {
+                    // continue
+                    self.nextState();
                 }).then(function() {
                     // set state to weighing
-                    self.state = 2;
-                    // CONTINUE UPDATE                 
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
+                    self.state = self.STATE_WEIGHING;
+                    // continue               
+                    self.nextState();
                 });
-            } else if (self.state === 2) {
+            } else if (self.state === self.STATE_WEIGHING) {
                 // weighing
                 Config.scaleRead()['catch'](function(err) {
-                    // CONTINUE UPDATE
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
+                    // continue
+                    self.nextState();
                 }).then(function(result) {
                     // check price
-                    if (result.price.toFixed(2) != self.price.toFixed(2)) {
+                    var price = record.get('brutto_price');
+                    if (result.price.toFixed(2) != price.toFixed(2)) {
                         // on wrong price init again
                         // REINIT
-                        self.state = 1;
+                        self.state = self.STATE_INIT_PRICE;
+                        // continue
+                        self.nextState();
                     } else {
-                        // SET VALUES
-                        record.set('qty', result.weight);
-                        record.set('subtotal_incl', result.total);
+                        // check if tara option
+                        if (self.nextTara) {
+                            // handle tara
+                            if (result.weight > 0) {
+                                self.nextTara = false;
+                                record.set('tara', result.weight);
+                                self.state = self.STATE_INIT_PRICE;
+                            }
+                            // continue
+                            self.nextState();
+                        } else {
+                            // SET VALUES and FINISH
+                            if (result.weight > 0) {
+                                record.set('qty', result.weight);
+                                record.set('subtotal_incl', result.total);
+                                self.stopScale();
+                            } else {
+                                //continue if no value
+                                self.nextState();
+                            }
+                        }
                     }
-                    // CONTINUE UPDATE
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
                 });
             }
         }
@@ -71446,20 +71557,15 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         var self = this;
         var record = this.getScaleView().getRecord();
         if (record) {
-            // set price data
-            self.price = record.get('brutto_price');
-            self.tara = 0;
-            // create interval if it no exist
-            if (self.state === 0) {
-                setTimeout(function() {
-                    self.updateState();
-                }, self.timeout);
+            // init tara
+            self.getTaraButton().setUi("posInputButtonGreen");
+            self.nextTara = false;
+            // create interval if it not exist            
+            if (self.state === self.STATE_INIT) {
+                self.nextState();
             }
-            // reset state to init
-            self.state = 1;
-        } else {
-            self.price = 0;
-            self.tara = 0;
+            // enter into price state
+            self.state = self.STATE_INIT_PRICE;
         }
     }
 });

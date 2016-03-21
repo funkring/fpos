@@ -252,6 +252,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // add line
                 changedLine = self.lineStore.add(values)[0];
+                if ( changedLine ) {
+                    changedLine.dirty = true;
+                }
             }
             
             // validate lines
@@ -1056,17 +1059,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<br/>',
                     '<table width="100%">',                    
                     '<tr>',
-                        '<td colspan="2">Steuer</td>',
-                        '<td align="right">Netto {[Config.getCurrency()]}</td>',
+                        '<td width="70%">Steuer</td>',
+                        '<td align="right" width="30%">Netto {[Config.getCurrency()]}</td>',
                     '</tr>',
                     '<tr>',                
-                        '<td colspan="3"><hr/></td>',
+                        '<td colspan="2"><hr/></td>',
                     '</tr>',
                     '<tpl for="o.tax_ids">',
                     '<tr>',
-                        '<td>{name}</td>',
-                        '<td align="right">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
-                        '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_netto,Config.getDecimals())]}</td>',        
+                        '<td width="70%">{name} {[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                        '<td align="right" width="30%">{[futil.formatFloat(values.amount_netto,Config.getDecimals())]}</td>',        
                     '</tr>',
                     '</tpl>',
                     '</table>',

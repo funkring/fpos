@@ -8,10 +8,11 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
     config: {
         refs: {
             scaleView: '#scaleView',
-            scaleLabel: '#scaleLabel'
+            scaleLabel: '#scaleLabel',
+            taraButton: '#taraButton'
         },
         control: {
-            'button[action=scaleTara]': {
+            taraButton: {
                 tap: 'onTara'
             }, 
             scaleView: {
@@ -31,7 +32,7 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         this.STATE_WEIGHING = 2;
         
         // vars
-        this.timeout = 250;
+        this.timeout = 500;
         this.nextTara = false;
         this.state = this.STATE_INIT;
     },
@@ -53,6 +54,7 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
     
     onTara: function() {
         this.nextTara = true;
+        this.getTaraButton().setUi("posInputButtonBlack");
     },
     
     onStopScale: function() {
@@ -62,7 +64,6 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
     onHide: function() {
         var self = this;
         self.state = self.STATE_INIT;
-        self.nextTara = false;
         self.getScaleView().setRecord(null);
         Ext.Viewport.fireEvent("validateLines");        
     },
@@ -103,7 +104,8 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
                     self.nextState();
                 }).then(function(result) {
                     // check price
-                    if ( result.price.toFixed(2) != self.price.toFixed(2) ) {
+                    var price = record.get('brutto_price');
+                    if ( result.price.toFixed(2) != price.toFixed(2) ) {
                        // on wrong price init again
                        // REINIT
                        self.state = self.STATE_INIT_PRICE;
@@ -113,15 +115,23 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
                         // check if tara option
                         if ( self.nextTara ) {
                             // handle tara
-                            self.nextTara = false;
-                            record.set('tara', result.weight);
-                            self.state = self.STATE_INIT_PRICE;
+                            if ( result.weight > 0 ) {
+                                self.nextTara = false;
+                                record.set('tara', result.weight);
+                                self.state = self.STATE_INIT_PRICE;
+                            }
+                            // continue
                             self.nextState();
                         } else {
                             // SET VALUES and FINISH
-                            record.set('qty', result.weight);
-                            record.set('subtotal_incl',result.total);
-                            self.stopScale();
+                            if ( result.weight > 0) {
+                                record.set('qty', result.weight);
+                                record.set('subtotal_incl',result.total);                            
+                                self.stopScale();
+                            } else {
+                                //continue if no value
+                                self.nextState();
+                            }
                         }   
                     }                    
                                    
@@ -134,18 +144,16 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         var self = this;
         var record = this.getScaleView().getRecord();        
         if ( record ) {
-            // reset tara
-            //self.nextTara = false;
-            //if ( record.get('tara') ) {
-            //    record.set('tara',0.0);
-            //}
+            // init tara
+            self.getTaraButton().setUi("posInputButtonGreen");
+            self.nextTara = false;
             
-            // create interval if it not exist
+            // create interval if it not exist            
             if ( self.state === self.STATE_INIT ) {
                 self.nextState();
             }
             
-            // reset state to init
+            // enter into price state
             self.state = self.STATE_INIT_PRICE;
         }
     }
