@@ -11,8 +11,8 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
             scaleLabel: '#scaleLabel'
         },
         control: {
-            'button[action=stopScale]': {
-                tap: 'onStopScale'
+            'button[action=scaleTara]': {
+                tap: 'onTara'
             }, 
             scaleView: {
                 startScale: 'startScale',
@@ -25,27 +25,43 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
     },
     
     init: function() {
-        this.reinit = false;
-        this.price = 0.0;
-        this.tara = 0.0;        
-        this.timeout = 500;
-        this.state = 0;
+        // states
+        this.STATE_INIT = 0;
+        this.STATE_INIT_PRICE = 1;
+        this.STATE_WEIGHING = 2;
+        
+        // vars
+        this.timeout = 250;
+        this.nextTara = false;
+        this.state = this.STATE_INIT;
     },
     
     scaleLabelInitialize: function() {
         var label = this.getScaleLabel();
         label.setTpl(Ext.create('Ext.XTemplate',
-           '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}'
+           '<tpl if="tara">',
+           '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}',
+           '<br/>',
+           'Tara {[futil.formatFloat(values.tara,Config.getQtyDecimals())]}',
+           '<tpl else>',
+           '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}',
+           '</tpl>'
         ));
     },  
+    
+    onTara: function() {
+        this.nextTara = true;
+    },
     
     onStopScale: function() {
        this.stopScale();
     },
     
     onHide: function() {
-        this.state = 0;
-        this.getScaleView().setRecord(null);
+        var self = this;
+        self.state = self.STATE_INIT;
+        self.nextTara = false;
+        self.getScaleView().setRecord(null);
         Ext.Viewport.fireEvent("validateLines");        
     },
        
@@ -54,46 +70,59 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         self.getScaleView().hide();
     },
     
+    nextState: function() {
+       var self = this;
+       // CONTINUE UPDATE
+       setTimeout(function() {
+            self.updateState();
+       }, self.timeout);   
+    },
+    
     updateState: function() {
         var self = this;                     
         var record = self.getScaleView().getRecord();
         if ( record ) {
-            if ( self.state === 1) {
-                Config.scaleInit(self.price, self.tara)['catch'](function() {
-                    // CONTINUE UPDATE
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
+            if ( self.state === self.STATE_INIT_PRICE ) {
+                var price = record.get('brutto_price') || 0.0;
+                var tara = record.get('tara') || 0.0;
+                Config.scaleInit(price, tara)['catch'](function() {
+                    // continue
+                    self.nextState();
                 }).then(function() {
                     // set state to weighing
-                    self.state = 2;   
-                    // CONTINUE UPDATE                 
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
+                    self.state = self.STATE_WEIGHING;   
+                    // continue               
+                    self.nextState();
                 });
-            } else if ( self.state === 2 ) {
+            } else if ( self.state === self.STATE_WEIGHING ) {
                 // weighing
                  Config.scaleRead()['catch'](function(err) {
-                    // CONTINUE UPDATE
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);
+                    // continue
+                    self.nextState();
                 }).then(function(result) {
                     // check price
                     if ( result.price.toFixed(2) != self.price.toFixed(2) ) {
                        // on wrong price init again
                        // REINIT
-                       self.state = 1;
+                       self.state = self.STATE_INIT_PRICE;
+                       // continue
+                       self.nextState();
                     } else {
-                        // SET VALUES
-                        record.set('qty', result.weight);
-                        record.set('subtotal_incl',result.total);                      
+                        // check if tara option
+                        if ( self.nextTara ) {
+                            // handle tara
+                            self.nextTara = false;
+                            record.set('tara', result.weight);
+                            self.state = self.STATE_INIT_PRICE;
+                            self.nextState();
+                        } else {
+                            // SET VALUES and FINISH
+                            record.set('qty', result.weight);
+                            record.set('subtotal_incl',result.total);
+                            self.stopScale();
+                        }   
                     }                    
-                    // CONTINUE UPDATE
-                    setTimeout(function() {
-                        self.updateState();
-                    }, self.timeout);                    
+                                   
                 });        
             }
         }
@@ -101,25 +130,21 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
     
     startScale: function() {
         var self = this;
-        var record = this.getScaleView().getRecord();
+        var record = this.getScaleView().getRecord();        
         if ( record ) {
-            // set price data
-            self.price = record.get('brutto_price');
-            self.tara = 0.0;
+            // reset tara
+            self.nextTara = false;
+            if ( record.get('tara') ) {
+                record.set('tara',0.0);
+            }
             
-            // create interval if it no exist
-            if ( self.state === 0 ) {
-                setTimeout(function() {
-                    self.updateState();
-                }, self.timeout);
+            // create interval if it not exist
+            if ( self.state === self.STATE_INIT ) {
+                self.nextState();
             }
             
             // reset state to init
-            self.state = 1;
-            
-        } else {
-            self.price = 0.0;
-            self.tara = 0.0;
+            self.state = self.STATE_INIT_PRICE;
         }
     }
     

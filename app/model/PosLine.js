@@ -11,6 +11,7 @@ Ext.define('Fpos.model.PosLine', {
                 'tax_ids',
                 'brutto_price',
                 'qty',
+                'tara',
                 'subtotal_incl',
                 'discount',
                 'notice',
