@@ -40,12 +40,14 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         var label = this.getScaleLabel();
         label.setTpl(Ext.create('Ext.XTemplate',
            '<tpl if="tara">',
-           '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}',
-           '<br/>',
-           'Tara {[futil.formatFloat(values.tara,Config.getQtyDecimals())]}',
-           '<tpl else>',
-           '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}',
-           '</tpl>'
+           '<div class="ScaleLabelTara">',
+                '<div>Tara</div>',
+                '<div>{[futil.formatFloat(values.tara,Config.getQtyDecimals())]}</div>',
+           '</div>',
+           '</tpl>',
+           '<div class="ScaleLabelWeight">',
+                '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}',
+           '</div>'           
         ));
     },  
     
@@ -133,10 +135,10 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         var record = this.getScaleView().getRecord();        
         if ( record ) {
             // reset tara
-            self.nextTara = false;
-            if ( record.get('tara') ) {
-                record.set('tara',0.0);
-            }
+            //self.nextTara = false;
+            //if ( record.get('tara') ) {
+            //    record.set('tara',0.0);
+            //}
             
             // create interval if it not exist
             if ( self.state === self.STATE_INIT ) {
