@@ -309,7 +309,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         fdoo__ir_model: 'fpos.order.tax',
                         tax_id : tax_id,                    
                         name : taxDef.get('name'), 
-                        amount_tax : 0.0
+                        amount_tax : 0.0,
+                        amount_netto : 0.0
                     };
                     
                     if (taxlist)
@@ -346,6 +347,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 amount_tax = (tax.amount * qty);
             }   
             tax.sum.amount_tax += amount_tax;
+            tax.sum.amount_netto += total_netto;
             total_tax += amount_tax;
         });
         
@@ -996,7 +998,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '<td colspan="2">{name}</td>',                        
                         '</tr>',
                         '<tr>',
-                            '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}  {[Config.getCurrency()]}</td>',
+                            '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
                         '</tr>',
                         '<tr>',                
                             '<td colspan="2"><hr/></td>',
@@ -1014,6 +1016,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     '<td width="5%">&nbsp;</td>',
                                     '<td>',
                                         '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
+                                        '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', 
                                         '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
                                     '</td>',
                                     '</tr>',
@@ -1047,17 +1050,27 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td align="right">{[this.getJournal(values.journal_id)]}</td>',
                     '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',        
                 '</tr>',
-                '</tpl>',
-                '<tr>',                
-                    '<td colspan="2"><hr/></td>',
-                '</tr>',
-                '<tpl for="o.tax_ids">',
-                '<tr>',
-                    '<td align="right">inkl. {name}</td>',
-                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]}</td>',        
-                '</tr>',
-				'</tpl>',
-                '</table>',
+                '</tpl>',                
+                '</table>',                                
+                '<tpl if="o.tax_ids">',
+                    '<br/>',
+                    '<table width="100%">',                    
+                    '<tr>',
+                        '<td colspan="2">Steuer</td>',
+                        '<td align="right">Netto {[Config.getCurrency()]}</td>',
+                    '</tr>',
+                    '<tr>',                
+                        '<td colspan="3"><hr/></td>',
+                    '</tr>',
+                    '<tpl for="o.tax_ids">',
+                    '<tr>',
+                        '<td>{name}</td>',
+                        '<td align="right">{[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                        '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount_netto,Config.getDecimals())]}</td>',        
+                    '</tr>',
+                    '</tpl>',
+                    '</table>',
+				'</tpl>',                
                 profile.receipt_footer || '',
                 {
                     getUnit: function(uom_id) {
