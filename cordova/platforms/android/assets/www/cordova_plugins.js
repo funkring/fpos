@@ -214,7 +214,6 @@ module.exports = [
     {
         "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
         "id": "cordova-plugin-poshw.PosHw",
-        "pluginId": "cordova-plugin-poshw",
         "clobbers": [
             "PosHw"
         ]
@@ -228,8 +227,8 @@ module.exports.metadata =
     "cordova-plugin-file": "4.1.1",
     "cordova-plugin-file-transfer": "1.5.0",
     "com.borismus.webintent": "1.0.0",
-    "cordova-plugin-crosswalk-webview": "1.5.0",
+    "cordova-plugin-crosswalk-webview": "1.6.1",
     "cordova-plugin-poshw": "1.0.5"
-}
+};
 // BOTTOM OF METADATA
 });

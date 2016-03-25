@@ -1,4 +1,5 @@
-cordova.define("cordova-plugin-poshw.PosHw", function(require, exports, module) { /*global cordova:false, module:false*/
+cordova.define("cordova-plugin-poshw.PosHw", function(require, exports, module) {
+/*global cordova:false, module:false*/
 
 module.exports = {
     

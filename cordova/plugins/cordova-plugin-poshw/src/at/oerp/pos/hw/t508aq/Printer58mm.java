@@ -50,7 +50,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	private SerialPortAdapter displayPort;
 	
 	private OutputStream output;
-	//private Charset unicode;
+	private Charset unicode;
 	private Charset ascii;
 	private T508AQService service;
 	
@@ -62,7 +62,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	 */
 	public Printer58mm(T508AQService inService) throws SecurityException, IOException {
 		service = inService;
-		//unicode = Charset.forName("unicode");
+		unicode = Charset.forName("unicode");
 		ascii = Charset.forName("ascii");
 		dev =  new File("/dev/ttyS3");
 		displayPort = new SerialPortAdapter(dev, 0);
@@ -189,7 +189,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	 * TODO The unicode printing not WORK!!!
 	 * @param data
 	 * @throws IOException
-	 
+	 */ 
 	protected void writeUnicode(String data) throws IOException {
 		if ( data == null )
 			data = "";
@@ -204,7 +204,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 		}
 		
 		output.flush();		
-	}*/
+	}
 		
 	protected void print(byte[] inData) throws IOException {
 		if ( inData != null ) {
@@ -288,8 +288,8 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 
 	@Override
 	public void writeln(String inText) throws IOException {		
-		write(inText);
-		//writeUnicode(inText);
+		//write(inText);
+		writeUnicode(inText);
 		print(LF);
 	}
 	
