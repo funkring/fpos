@@ -41,7 +41,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             paymentItemList: {
                 initialize: 'paymentItemListInitialize',
-                selectionchange: 'onItemSelectionChange'   // is the same as in item list, because only mode was reset
+                selectionchange: 'onPaymentSelectionChange'
             },
             orderInputView: {
                 activeitemchange : 'orderInputActiveItemChange' 
@@ -797,6 +797,55 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.setMode('*');
     },
     
+    onPaymentSelectionChange: function() {
+        var self = this;
+        self.setMode('*');
+        var payments = this.getPaymentItemList().getSelection();
+        if ( payments.length > 0  ) {            
+            var payment = payments[0];
+            var journal = payment.get('journal');
+            
+            // get total and amounts
+            var total = self.order.get('amount_total');
+            var orderPayments = self.order.get('payment_ids');
+            var fullPaymentJournalId = null;
+            var otherPayment = 0.0;
+            Ext.each(orderPayments, function(orderPayment) {
+                if ( orderPayment.journal_id != journal._id ) {
+                    otherPayment += orderPayment.payment;
+                    // check full payment
+                    if ( orderPayment.amount == total ) {
+                        fullPaymentJournalId = orderPayment.journal_id;
+                    }
+                }
+                
+            });
+                        
+            // search full payment data
+            var fullPayment = null;
+            if ( fullPaymentJournalId ) {
+                self.paymentStore.each(function(data) {                    
+                    if ( data.get('journal')._id == fullPaymentJournalId ) {
+                        fullPayment = data; 
+                        return false;
+                    }
+                });
+            }
+            
+            // set total amount to other payment method
+            if ( fullPayment ) {
+                payment.set("payment", total);
+                fullPayment.set("payment", 0.0);
+                self.validatePayment();
+            // check if there is an rest
+            } else if ( otherPayment < total ) {
+                payment.set("payment", total-otherPayment);
+                self.validatePayment();
+            }
+                
+        }
+    },
+    
     onEditOrder: function() {
         var self = this;
         if ( self.order && !futil.isDoubleTap() ) {
@@ -1186,7 +1235,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var curRest = rest;
             
             //calc
-            if (  payment >= rest ) {
+            if ( payment >= rest && total >= 0 ) {
                 change += (payment-rest);
                 rest = 0;
             } else {
