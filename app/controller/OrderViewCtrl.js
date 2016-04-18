@@ -596,39 +596,50 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var records = self.getOrderItemList().getSelection();
             if ( records.length > 0  ) {
                 var record = records[0];
-                
-                // reset price price
-                if ( this.mode == "€" ) {
-                    var db = Config.getDB();
-                    var product_id = record.get('product_id');
-                    if ( product_id ) {
-                        db.get(product_id).then(function(doc) {
-                            record.set('brutto_price',doc.brutto_price);
-                            self.finalValidate();                            
-                        })['catch'](function(err) {
-                            ViewManager.stopLoading();
-                            throw err;
-                        });              
+                var tag = record.get("tag");
+                if ( !tag || tag == 'o' ||  tag == 'i' || tag == 'r') {
+                    // reset price price
+                    if ( this.mode == "€" ) {
+                        var db = Config.getDB();
+                        var product_id = record.get('product_id');
+                        if ( product_id ) {
+                            db.get(product_id).then(function(doc) {
+                                record.set('brutto_price',doc.brutto_price);
+                                self.finalValidate();                            
+                            })['catch'](function(err) {
+                                ViewManager.stopLoading();
+                                throw err;
+                            });              
+                        } else {
+                            record.set('brutto_price',0.0);
+                            self.finalValidate();
+                        }
                     } else {
-                        record.set('brutto_price',0.0);
+                        // reset quantity
+                        if ( this.mode == "*") {
+                            if ( record.get('qty') === 0.0 ) {
+                                if ( !tag || tag != 'r' ) {
+                                    self.lineStore.remove(record);
+                                } else {
+                                    record.set('qty',1.0);
+                                }
+                            } else {
+                                if ( tag == 'o' || tag == 'i' || tag == 'r' ) {
+                                    record.set('qty',1.0);
+                                } else {
+                                    record.set('qty',0.0);
+                                }
+                            }
+                        // reset discount
+                        } else if ( this.mode == "%") {
+                            record.set('discount',0.0);
+                        } 
+                        
                         self.finalValidate();
                     }
                 } else {
-                    // reset quantity
-                    if ( this.mode == "*") {
-                        if ( record.get('qty') === 0.0 ) {
-                            self.lineStore.remove(record);
-                        } else {
-                           record.set('qty',0.0);
-                        }
-                    // reset discount
-                    } else if ( this.mode == "%") {
-                        record.set('discount',0.0);
-                    } 
-                    
-                    self.finalValidate();
-                }
-                
+                    ViewManager.stopLoading();
+                }                
             } else {
                 ViewManager.stopLoading();
             } 
@@ -656,13 +667,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     inputAction: function(action) {
         var valid = true;   
         var commaPos, decimals, value;
-        
         if ( this.isEditable() ) {
             
             var lines = this.getOrderItemList().getSelection();
             if ( lines.length > 0  ) {            
                 var line = lines[0];
-                var tag = line.get('tag');
+                var tag = line.get('tag');                
                 if ( !tag || tag == 'r' || tag == 'o' || tag == 'i') {
                 
                     // set mode to €
@@ -1306,11 +1316,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     createCashState: function() {
         var self = this;
         var db = Config.getDB();
+        var profile = Config.getProfile();
         var user_id = Config.getUser()._id;
-        var fpos_user_id = Config.getProfile().user_id;
+        var fpos_user_id = profile.user_id;
         
-        var turnover = 0.0;
-        var cpos = 0.0;
+        var turnover = profile.last_turnover;
+        var cpos = profile.last_cpos;
         var date = futil.datetimeToStr(new Date());
         var order_id;
       
@@ -1330,7 +1341,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             var lastOrder = res.rows[0].doc;
                             turnover = lastOrder.turnover;
                             cpos = lastOrder.cpos;
-                        }    
+                        } 
                         return db.post({
                                 'fdoo__ir_model' : 'fpos.order',
                                 'fpos_user_id' : fpos_user_id,
