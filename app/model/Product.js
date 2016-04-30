@@ -26,6 +26,7 @@ Ext.define('Fpos.model.Product', {
                 'active',
                 'sale_ok',
                 'pos_nogroup',
+                'pos_minus',
                 'pos_price_pre',
                 'pos_price_dec',
                 'pos_amount_pre',

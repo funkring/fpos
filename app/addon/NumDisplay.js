@@ -3,8 +3,8 @@
 Ext.define('Ext.view.NumDisplay', {
     extend: 'Ext.Component',
     xtype: 'numdisplay',
-    cls: 'NumDisplay',
     config: {
+        cls: 'NumDisplay',
         value: null,
         clsValue: 'NumDisplay',
         info: null,        

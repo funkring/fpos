@@ -138,7 +138,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '{name}',
                     '</div>',
                     '<div class="PosOrderLineAmount">',
-                        '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]}',
+                        '{[this.formatAmount(values)]}',
                         ' ',
                         '{[this.getUnit(values.uom_id)]}',
                         ' * ',
@@ -159,7 +159,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
                         return uom && uom.get('name') || '';
-                    }             
+                    },
+                    
+                    formatAmount: function(values)  {
+                        var dec = values.a_dec;
+                        if ( dec < 0 ) {
+                            return futil.formatFloat(values.qty, 0);
+                        } else if ( dec > 0 ) {
+                            return futil.formatFloat(values.qty, dec);
+                        } else {
+                            return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
+                    }
+                    
                 }
         ));        
         orderItemList.setStore(this.lineStore);
@@ -299,7 +311,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // validate lines
             self.validateLines().then(function() {
                 self.getOrderItemList().select(changedLine);
-                self.setDefaultItemMode(changedLine);
+                //self.setDefaultItemMode(changedLine);
             });
             
             // show weight dialog
@@ -879,7 +891,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onInputModeSwitch: function(button) {
-        this.setMode(button.getText());
+        this.setMode(button.getText(), 1);
     },
     
     onInputNumber: function(button) {
@@ -1201,7 +1213,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     '<tr>',
                                     '<td width="5%">&nbsp;</td>',
                                     '<td>',
-                                        '{[futil.formatFloat(values.qty,Config.getQtyDecimals())]} {[this.getUnit(values.uom_id)]}',
+                                        '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
                                         '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', 
                                         '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
                                     '</td>',
@@ -1268,6 +1280,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     },
                     formatText: function(text) {
                         return text ? text.replace(/\n/g,'<br/>') : '';
+                    },
+                    formatAmount: function(values)  {
+                        var dec = values.a_dec;
+                        if ( dec < 0 ) {
+                            return futil.formatFloat(values.qty, 0);
+                        } else if ( dec > 0 ) {
+                            return futil.formatFloat(values.qty, dec);
+                        } else {
+                            return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
                     }
                 }                
             );
