@@ -32,12 +32,13 @@ Ext.define('Fpos.store.ProductStore', {
         var self = this;
         this.resetIndex();
         self.each(function(product) {
-             if ( product.get('active') && product.get('available_in_pos') ) {
+             if ( product.get('sale_ok') ) {
                  // all products
                  self.allProducts.push(product);
+                 /*
                  if ( self.productQueue.length < 30) {
                      self.productQueue.push(product);
-                 } 
+                 }*/
                  
                  // product by ean
                  var ean = product.get('ean13');

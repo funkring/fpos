@@ -327,8 +327,18 @@ div.ProductCategoryButtonSmall > span.x-button-label {
     display: table-cell;
 }
 
-.PosOrderLineName {
+.PosOrderLine {
+    width: 100%;
+    align: left;
     font-weight: bold;
+    display: table-cell;
+}
+
+.PosOrderLineName {
+    font-size: 1.3em;
+    width: 100%;
+    align: left;
+    display: table-cell;
 }
 
 .PosOrderLineAmount {

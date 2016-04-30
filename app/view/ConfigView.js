@@ -91,19 +91,7 @@ Ext.define('Fpos.view.ConfigView', {
                         autoCapitalize: false
                     }                
                 ]
-            },
-            {
-                xtype: 'fieldset',
-                title: 'Konfiguration',
-                items: [
-                    {
-                        xtype: 'togglefield',
-                        name: 'scale',
-                        label: 'Waage'  
-                    }
-                ]
             }
-            
         ]
     }
     

@@ -16,6 +16,11 @@ Ext.define('Fpos.model.PosLine', {
                 'discount',
                 'notice',
                 'sequence',
-                'tag']
+                'tag',
+                'flags',
+                'a_pre',
+                'a_dec',
+                'p_pre',
+                'p_dec']
    }
 });

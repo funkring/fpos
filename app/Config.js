@@ -106,7 +106,8 @@ Ext.define('Fpos.Config', {
  
     hasScale: function() {
         var hwstatus = this.getHwStatus();
-        return this.getSettings().scale && hwstatus.scale && hwstatus.scale.supported;
+        var profile = this.getProfile();
+        return hwstatus && profile && profile.iface_electronic_scale && hwstatus.scale && hwstatus.scale.supported;
     },
     
     scaleInit: function(price, tara) {
