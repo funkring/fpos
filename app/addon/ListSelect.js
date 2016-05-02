@@ -115,7 +115,7 @@ Ext.define('Ext.field.ListSelect', {
                 itemTpl: '{' + self.getDisplayField() + '}',
                 listeners: {
                     select: self.onListSelect,
-                    itemtap: self.onListTap,
+                    //itemtap: self.onListTap,
                     scope: self
                 }                  
               }],
@@ -192,6 +192,7 @@ Ext.define('Ext.field.ListSelect', {
        return navigationView;
    },
      
+   /*
    onListTap: function() {
        // prevent double tap
        if ( futil.isDoubleTap() )
@@ -201,14 +202,19 @@ Ext.define('Ext.field.ListSelect', {
        var navigationView = self.findNavigationView();
        if ( navigationView !== null ) {
            navigationView.pop();
-       } else {
+       } else { 
            self.callParent(arguments);
-       }       
-   },
+       }             
+   },*/
    
-   getValue: function() {
-       var res = this.callParent(arguments);
-       return res;
+   onListSelect: function() {
+       var self = this;
+       self.callParent(arguments);
+       
+       var navigationView = self.findNavigationView();
+       if ( navigationView !== null ) {
+           navigationView.pop();
+       }         
    },
    
    applyValue: function(value) {

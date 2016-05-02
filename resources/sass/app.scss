@@ -171,6 +171,28 @@ div.TestButton > span.x-button-label {
 }
 
 // ******************************************************************
+// Menu
+// ******************************************************************
+
+.MainMenu {
+   background-color: $fpos-input-grey !important;
+   background-image: none;
+   width: 172px;
+}
+
+.MenuButton {
+   color: #ffffff !important; 
+   width: 144px;
+   height: 56px;
+   font-size: 0.8em;     
+}
+
+div.MenuButton > span.x-button-label {
+   white-space: normal;
+}
+
+
+// ******************************************************************
 // ProductView
 // ******************************************************************
 
@@ -475,5 +497,130 @@ div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription
 
 .ProductMenu {
     padding: 0px;
+}
+
+
+// ******************************************************************
+// TopView
+// ******************************************************************
+
+.TopContainer {   
+    //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: $fpos-input-lightgrey
+}
+
+.TopButton {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: #ffffff !important; 
+   font-size: 1em;
+}
+
+div.TopButton > span.x-button-label {
+   white-space: normal;
+}
+
+.TopButtonMedium {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: #ffffff !important; 
+   font-size: 0.85em;
+}
+
+div.TopButtonMedium > span.x-button-label {
+   white-space: normal;
+}
+
+.TopButtonSmall {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: #ffffff !important; 
+   font-size: 0.72em;
+}
+
+div.TopButtonSmall > span.x-button-label {
+   white-space: normal;
+}
+
+.TopSelection {
+    background-color: $fpos-input-dark !important;
+    width: 86px;
+    padding-left: 2px;
+}
+
+.PlaceDataView {
+    margin: 2px;
+}
+
+.PlaceButton {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    white-space: normal;
+}
+
+.PlaceButtonSmall {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    white-space: normal;
+}
+
+.PlaceItemNoCat {
+    display: table;
+}
+
+.PlaceButtonNoCat {
+    margin: 2px;
+    height: 100px;
+    font-size: 0.8em;
+    white-space: normal;
+}
+
+.PlaceTextBigNoCat {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    font-size: 2em;    
+}
+
+.PlaceTextNoCat {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    font-size: 1.5em;    
+}
+
+.PlaceImageNoCat  {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    padding-right: 6px;
+}
+
+.PlaceImage {
+    position: relative;
+    text-align: center;   
+}
+
+.PlaceText {
+    text-align: center;
+}
+
+.PlaceTextOnly {
+    text-align: center;
+    font-size: 1.4em;
+}
+
+.PlaceTextOnlyBig {
+    text-align: center;
+    font-size: 2em;
 }
 

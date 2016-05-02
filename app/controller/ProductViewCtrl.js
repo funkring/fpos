@@ -10,9 +10,6 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     ],
     config: {
         refs: {
-            categoryButton1: '#categoryButton1',
-            categoryButton2: '#categoryButton2',
-            categoryButton3: '#categoryButton3',
             productSearch: '#productSearch',
             categoryDataView: '#categoryDataView',
             productView: '#productView'
@@ -292,7 +289,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         // load categories
         var categories = [];
         self.allCategoryStore.each(function(childCategory) {
-            if ( childCategory.get('parent_id') == categoryId ) {       
+            if ( childCategory.get('parent_id') == categoryId && !childCategory.get('pos_unavail') ) {       
                 childCategory.set('selected',false);
                 childCategory.set('parent',false);
                 categories.push(childCategory);

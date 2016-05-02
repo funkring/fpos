@@ -379,6 +379,11 @@ Ext.define('Ext.proxy.PouchDB', {
             field = fields[i];
             name  = field.getName();
             value = data[name];
+            
+            // set default if undefined
+            if ( defaults && value === undefined ) {
+                value = defaults[name];
+            }
 
             // check for undefined and persist
             if ( value === undefined || field.getPersist() === false ) {

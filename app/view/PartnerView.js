@@ -24,22 +24,34 @@ Ext.define('Fpos.view.PartnerView', {
                     {
                         xtype: 'textfield',
                         name: 'email',
-                        label: 'E-Mail'
+                        label: 'E-Mail',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'mobile',
-                        label: 'Mobil'
+                        label: 'Mobil',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'phone',
-                        label: 'Telefon'
+                        label: 'Telefon',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',
                         name: 'fax',
-                        label: 'Fax'
+                        label: 'Fax',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     }
                 ]   
             },
@@ -60,7 +72,10 @@ Ext.define('Fpos.view.PartnerView', {
                     {
                         xtype: 'textfield',
                         name: 'zip',
-                        label: 'PLZ'
+                        label: 'PLZ',
+                        autoComplete: false,
+                        autoCorrect: false,
+                        autoCapitalize: false
                     },
                     {
                         xtype: 'textfield',

@@ -30,11 +30,14 @@ Ext.application({
         'AccountTax',
         'ProductUnit',
         'Partner',
-        'PosPayment'
+        'PosPayment',
+        'Top',
+        'Place'
     ],
         
     stores: [
         'AllCategoryStore',
+        'AllTopStore',
         'CategoryStore',
         'ProductStore',        
         'PosOrderStore',
@@ -42,7 +45,9 @@ Ext.application({
         'AccountTaxStore',
         'ProductUnitStore',
         'PartnerStore',
-        'PosPaymentStore'
+        'PosPaymentStore',
+        'TopStore',
+        'PlaceStore'
     ],
     
     controllers: [
@@ -51,7 +56,8 @@ Ext.application({
         'ProductViewCtrl',
         'OrderViewCtrl',
         'PartnerCtrl',
-        'ScaleViewCtrl'
+        'ScaleViewCtrl',
+        'TopViewCtrl'
     ],
 
     icon: {

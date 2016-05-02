@@ -1596,8 +1596,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             this.onEditOrder();
         } else if ( keycode == 190 ) {
             this.inputAction('.');
-        } else if ( keycode ==8 ) {
-            this.onPayment();
+        } else if ( keycode == 8) {
+            // only react if nothing is selected
+            if ( e.currentTarget && e.currentTarget.activeElement && e.currentTarget.activeElement.localName == 'body' ) {
+                this.onPayment();
+            }
         }
     }
     

@@ -25,7 +25,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             mainMenuButton: '#mainMenuButton',
             saveRecordButton: '#saveRecordButton',
             deleteRecordButton: '#deleteRecordButton',
-            loginButton: '#loginButton'
+            loginButton: '#loginButton',
+            placeButton: '#placeButton',
+            saveOrderButton: '#saveOrderButton'
         },
         control: {     
             'button[action=editConfig]' : {
@@ -45,7 +47,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             'button[action=productMenu]' : {
                 tap: 'onShowProductMenu'
-            },
+            },            
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
@@ -58,7 +60,10 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             loginButton: {
                 tap: 'showLogin'
-            }
+            },
+            placeButton: {
+                tap: 'showPlace'
+            }            
         }
     },
        
@@ -66,6 +71,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");     
         this.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
+        this.topStore = Ext.StoreMgr.lookup("AllTopStore");
+        this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.eanDetect = [];
         
@@ -108,12 +115,18 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showForm: self.showForm
         });
+        
+        // place input
+        Ext.Viewport.on({
+            scope: self,
+            placeInput: self.placeInput
+        });    
       
         // add key listener
         ViewManager.pushKeyboardListener(self);
               
         // reset config
-        self.resetConfig();        
+        self.resetConfig();
     },
     
     onSyncTap: function() {        
@@ -215,6 +228,14 @@ Ext.define('Fpos.controller.MainCtrl', {
                         domain: [['available_in_pos','=',true]]
                    },
                    {
+                        model: 'fpos.top',
+                        readonly: true
+                   },
+                   {
+                        model: 'fpos.place',
+                        readonly: true
+                   },
+                   {
                         model: 'res.partner',
                         fields: ['name',
                                  'title',
@@ -277,33 +298,48 @@ Ext.define('Fpos.controller.MainCtrl', {
                 self.categoryStore.load({
                     callback: function() {
                         
-                        // load tax
-                        self.taxStore.load({
+                        // load tops
+                        self.topStore.load({
                             callback: function() {
                             
-                                // load product units
-                                self.unitStore.load({
+                                // load tax
+                                self.taxStore.load({
                                     callback: function() {
                                     
-                                        self.productStore.load({
+                                        // load product units
+                                        self.unitStore.load({
                                             callback: function() {
-                                                // build index
-                                                self.productStore.buildIndex();
                                                 
-                                                // stop loading
-                                                ViewManager.stopLoading();
-                                                // fire reload
-                                                Ext.Viewport.fireEvent("reloadData");
-                                                // ... and show login
-                                                self.showLogin();            
+                                                // load products
+                                                self.productStore.load({
+                                                    callback: function() {
+                                                        // build index
+                                                        self.productStore.buildIndex();
+                                                        
+                                                        // load places
+                                                        self.placeStore.load({
+                                                            callback: function() {
+                                                                // build index
+                                                                self.placeStore.buildIndex();
+                                                                
+                                                                // stop loading
+                                                                ViewManager.stopLoading();
+                                                                // fire reload
+                                                                Ext.Viewport.fireEvent("reloadData");
+                                                                // ... and show login
+                                                                self.showLogin();                                                                     
+                                                            }
+                                                        });                                                             
+                                                    }
+                                                    
+                                                });
+                                                                      
                                             }
-                                            
-                                        });
-                                                              
+                                        });                                        
                                     }
-                                });                                        
-                            }
-                        });   
+                                });  
+                            } 
+                        });
                     }
                 });         
             })
@@ -405,32 +441,33 @@ Ext.define('Fpos.controller.MainCtrl', {
     getBaseMenu: function() {
        if (!this.baseMenu ) {
           this.baseMenu =  Ext.create('Ext.Menu', {
-                width: Config.getLeftMenuWidth(),
                 scrollable: 'vertical',
+                cls: 'MainMenu',
+                defaults: {
+                    xtype: 'button',
+                    flex: 1,
+                    cls: 'MenuButton',
+                    ui: 'posInputButtonBlack'  
+                },
                 items: [
                     {
-                        xtype: 'button',
-                        flex: 1,
                         text: 'Einstellungen',
-                        action: 'editConfig'             
+                        action: 'editConfig',
+                        ui: 'posInputButtonOrange'    
                     },
                     {
-                        xtype: 'button',
-                        flex: 1,
                         text: 'Aktualisieren',
-                        action: 'updateApp'  
+                        action: 'updateApp',
+                        ui: 'posInputButtonGreen'  
                     },
                     {
-                        xtype: 'button',
-                        flex: 1,
                         text: 'Provisioning',
                         action: 'provisioning'  
                     },
                     {
-                        xtype: 'button',
-                        flex: 1,
                         text: 'Test',
-                        action: 'showHwTest'
+                        action: 'showHwTest',
+                        ui: 'posInputButtonRed'
                     }
                 ]    
          });
@@ -441,25 +478,27 @@ Ext.define('Fpos.controller.MainCtrl', {
     getUserMenu: function() {
        if (!this.userMenu ) {
           this.userMenu =  Ext.create('Ext.Menu', {
-                width: Config.getLeftMenuWidth(),
                 scrollable: 'vertical',
+                cls: 'MainMenu',
+                defaults: {
+                    xtype: 'button',
+                    flex: 1,
+                    cls: 'MenuButton',
+                    ui: 'posInputButtonBlack'  
+                },
                 items: [
                     {
-                        xtype: 'button',
-                        flex: 1,
-                        text: 'Synchronisieren',
-                        action: 'sync'
-                    },
-                    {
-                        xtype: 'button',
-                        flex: 1,
                         text: 'Kassensturz',
-                        action: 'createCashState'
+                        action: 'createCashState',
+                        ui: 'posInputButtonOrange'
                     },
                     {
-                        xtype: 'button',
-                        flex: 1,
-                        text: 'Drucken',
+                        text: 'Sicherung und Datenabgleich',
+                        action: 'sync',
+                        ui: 'posInputButtonGreen'  
+                    },                   
+                    {
+                        text: 'Drucken wiederholen',
                         action: 'printAgain'
                     }
                 ]    
@@ -469,35 +508,40 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     getManagerMenu: function() {
-       /*
-       if (!this.managerMenu ) {
-          this.managerMenu =  Ext.create('Ext.Menu', {
-                width: Config.getLeftMenuWidth(),
-                scrollable: 'vertical',
-                items: [
-                ]    
-         });
-       }
-       return this.managerMenu;*/
        return this.getUserMenu();
     },
     
     getAdminMenu: function() {
-        /*
-        if (!this.adminMenu ) {
-          this.adminMenu =  Ext.create('Ext.Menu', {
-                width: Config.getLeftMenuWidth(),
-                scrollable: 'vertical',
-                items: [
-                ]    
-         });
-       }
-       return this.adminMenu;*/
        return this.getUserMenu();
     }, 
     
+    placeInput: function(place) {
+        var self = this;
+        self.basePanel.setActiveItem(2);
+        // notify change        
+        self.mainActiveItemChange(self.getMainView(), self.basePanel);
+    },
+    
+    showPlace: function() {
+        var self = this;
+        self.basePanel.setActiveItem(1);
+        // notify change        
+        self.mainActiveItemChange(self.getMainView(), self.basePanel);
+    },
+    
     openPos: function() {
         var self = this;
+        var profile = Config.getProfile();
+        
+        // places
+        if ( profile.iface_place ) {
+            if ( !self.topPanel ) {
+                self.topPanel = Ext.create("Fpos.view.TopView");
+                self.basePanel.add(self.topPanel);                
+            }
+        }        
+        
+        // pos panel
         if ( !self.posPanel ) {
             if ( Config.isMobilePos() ) {
                 // smaller pos
@@ -563,7 +607,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 });
             }
             
-            // add view
+            // add panel
             self.basePanel.add(self.posPanel);
         }
         
@@ -604,6 +648,24 @@ Ext.define('Fpos.controller.MainCtrl', {
             loginButton.show();            
         } else {
             loginButton.hide();
+        }
+        
+        // show place button
+        var placeButton = this.getPlaceButton();
+        var showPlace = newCard.showPlace || newCard.config.showPlace;
+        if ( showPlace ) {
+            placeButton.show();
+        } else {
+            placeButton.hide();
+        }
+        
+        // show save order button
+        var saveOrderButton = this.getSaveOrderButton();
+        var showSaveOrder = newCard.showSaveOrder || newCard.config.showSaveOrder;
+        if ( showSaveOrder ) {
+            saveOrderButton.show();
+        } else {
+            saveOrderButton.hide();
         }
         
         // update buttons

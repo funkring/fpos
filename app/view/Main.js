@@ -23,6 +23,15 @@ Ext.define('Fpos.view.Main', {
                 },       
                 {
                     xtype: 'button',
+                    id: 'placeButton',
+                    text: 'Plätze',
+                    align: 'left',
+                    action: 'switchPlace',
+                    ui: 'back',
+                    hidden: true                    
+                },
+                {
+                    xtype: 'button',
                     iconCls: 'list',
                     id: 'mainMenuButton',
                     ui: 'plain',
@@ -31,12 +40,21 @@ Ext.define('Fpos.view.Main', {
                 },
                 {
                     xtype: 'button',
+                    id: 'saveOrderButton',
+                    iconCls: 'action',       
+                    ui: 'plain',                    
+                    align: 'right',
+                    action: 'saveOrder',
+                    hidden: true                
+                },   
+                {
+                    xtype: 'button',
                     id: 'deleteRecordButton',
                     iconCls: 'trash',
                     align: 'right',
                     action: 'deleteRecord',  
                     hidden: true
-                }, 
+                },                 
                 {
                     xtype: 'button',
                     id: 'saveRecordButton',
@@ -44,7 +62,7 @@ Ext.define('Fpos.view.Main', {
                     align: 'right',
                     action: 'saveRecord',
                     hidden: true                
-                }                                     
+                }                                                 
             ]
         }
     }
