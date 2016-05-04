@@ -22,6 +22,7 @@ Ext.define('Fpos.model.Product', {
                 'brutto_price',
                 'sequence',
                 'pos_name',
+                'pos_color',
                 'available_in_pos',
                 'active',
                 'sale_ok',

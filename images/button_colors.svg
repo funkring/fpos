@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="724.27936"
+   height="684.88342"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="button_colors.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="385.87829"
+     inkscape:cy="242.53835"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="1148"
+     inkscape:window-x="0"
+     inkscape:window-y="1080"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-6.94349e-6,0.21676883)">
+    <rect
+       style="fill:#525252;fill-opacity:1;stroke:none"
+       id="rect3044"
+       width="724.27936"
+       height="684.88342"
+       x="6.94349e-06"
+       y="-0.21676883" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#1a1a1a;stroke-opacity:1"
+       id="rect2987"
+       width="131.31982"
+       height="131.31982"
+       x="43.941624"
+       y="39.179134" />
+    <rect
+       y="39.179134"
+       x="212.3004"
+       height="131.31982"
+       width="131.31982"
+       id="rect2989"
+       style="fill:#999999;fill-opacity:1;stroke:#f9f9f9" />
+    <rect
+       style="fill:#4d4d4d;fill-opacity:1;stroke:#cccccc"
+       id="rect2991"
+       width="131.31982"
+       height="131.31982"
+       x="380.65915"
+       y="39.179134" />
+    <rect
+       y="39.179134"
+       x="549.01794"
+       height="131.31982"
+       width="131.31982"
+       id="rect2993"
+       style="fill:#000000;fill-opacity:1;stroke:#cccccc" />
+    <rect
+       y="197.4364"
+       x="43.941624"
+       height="131.31982"
+       width="131.31982"
+       id="rect3001"
+       style="fill:#e06b5e;fill-opacity:1;stroke:#ffaaaa" />
+    <rect
+       style="fill:#800000;fill-opacity:1;stroke:#ff2a2a"
+       id="rect3003"
+       width="131.31982"
+       height="131.31982"
+       x="212.3004"
+       y="197.4364" />
+    <rect
+       y="197.4364"
+       x="380.65915"
+       height="131.31982"
+       width="131.31982"
+       id="rect3005"
+       style="fill:#ffe98a;fill-opacity:1;stroke:#ffffff;stroke-opacity:1" />
+    <rect
+       style="fill:#aa8800;fill-opacity:1;stroke:#ffeeaa"
+       id="rect3007"
+       width="131.31982"
+       height="131.31982"
+       x="549.01794"
+       y="197.4364" />
+    <rect
+       style="fill:#3c9d53;fill-opacity:1;stroke:#8bd39c;stroke-opacity:1"
+       id="rect3009"
+       width="131.31982"
+       height="131.31982"
+       x="43.941624"
+       y="355.69366" />
+    <rect
+       y="355.69366"
+       x="212.3004"
+       height="131.31982"
+       width="131.31982"
+       id="rect3011"
+       style="fill:#256235;fill-opacity:1;stroke:#3c9d53;stroke-opacity:1" />
+    <rect
+       style="fill:#2a7fff;fill-opacity:1;stroke:#aaccff"
+       id="rect3013"
+       width="131.31982"
+       height="131.31982"
+       x="380.65915"
+       y="355.69366" />
+    <rect
+       y="355.69366"
+       x="549.01794"
+       height="131.31982"
+       width="131.31982"
+       id="rect3015"
+       style="fill:#5fd3bc;fill-opacity:1;stroke:#afe9dd" />
+    <rect
+       y="513.95093"
+       x="43.941624"
+       height="131.31982"
+       width="131.31982"
+       id="rect3017"
+       style="fill:#2a2aff;fill-opacity:1;stroke:#80b3ff" />
+    <rect
+       style="fill:#003380;fill-opacity:1;stroke:#80b3ff"
+       id="rect3019"
+       width="131.31982"
+       height="131.31982"
+       x="212.3004"
+       y="513.95093" />
+    <rect
+       y="513.95093"
+       x="380.65915"
+       height="131.31982"
+       width="131.31982"
+       id="rect3021"
+       style="fill:#ff55dd;fill-opacity:1;stroke:#ffaaee" />
+    <rect
+       style="fill:#d400aa;fill-opacity:1;stroke:#ff80e5"
+       id="rect3023"
+       width="131.31982"
+       height="131.31982"
+       x="549.01794"
+       y="513.95093" />
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603000000070px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#1a1a1a;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="59.475872"
+       y="114.2095"
+       id="text3890"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3892"
+         x="59.475872"
+         y="114.2095">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3894"
+       y="114.2095"
+       x="227.83464"
+       style="font-size:26.24777603000000070px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="114.2095"
+         x="227.83464"
+         id="tspan3896"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="396.19339"
+       y="114.2095"
+       id="text3898"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3900"
+         x="396.19339"
+         y="114.2095">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3902"
+       y="114.2095"
+       x="564.55219"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="114.2095"
+         x="564.55219"
+         id="tspan3904"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="59.475872"
+       y="272.46677"
+       id="text3906"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3908"
+         x="59.475872"
+         y="272.46677">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3910"
+       y="272.46677"
+       x="227.83464"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="272.46677"
+         x="227.83464"
+         id="tspan3912"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603000000070px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="396.19339"
+       y="272.46677"
+       id="text3914"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3916"
+         x="396.19339"
+         y="272.46677">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3918"
+       y="272.46677"
+       x="564.55219"
+       style="font-size:26.24777603000000070px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="272.46677"
+         x="564.55219"
+         id="tspan3920"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3922"
+       y="430.72403"
+       x="59.475872"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="430.72403"
+         x="59.475872"
+         id="tspan3924"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="227.83464"
+       y="430.72403"
+       id="text3926"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3928"
+         x="227.83464"
+         y="430.72403">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3930"
+       y="430.72403"
+       x="396.19339"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="430.72403"
+         x="396.19339"
+         id="tspan3932"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="564.55219"
+       y="430.72403"
+       id="text3934"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3936"
+         x="564.55219"
+         y="430.72403">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3938"
+       y="588.98132"
+       x="59.475872"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="588.98132"
+         x="59.475872"
+         id="tspan3940"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="227.83464"
+       y="588.98132"
+       id="text3942"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3944"
+         x="227.83464"
+         y="588.98132">Ein Text</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3946"
+       y="588.98132"
+       x="396.19339"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       xml:space="preserve"><tspan
+         y="588.98132"
+         x="396.19339"
+         id="tspan3948"
+         sodipodi:role="line">Ein Text</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:26.24777603px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Avenir LT 95 Black;-inkscape-font-specification:'Avenir LT 95 Black,'"
+       x="564.55219"
+       y="588.98132"
+       id="text3950"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3952"
+         x="564.55219"
+         y="588.98132">Ein Text</tspan></text>
+  </g>
+</svg>

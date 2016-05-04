@@ -1291,7 +1291,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="2"><hr/></td>',
                 '</tr>',
                 '<tpl for="lines">',
-                    '<tpl if="tag && tag==\'c\'">',
+                    '<tpl if="this.hasTag(values,\'c\')">',
                         '<tr>',
                             '<td colspan="2">{name}</td>',                        
                         '</tr>',
@@ -1306,7 +1306,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '<td>{name}</td>',
                             '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
                         '</tr>',
-                        '<tpl if="!tag && !(flags && flags.indexOf(\'u\') &gt; -1)">',
+                        '<tpl if="!this.hasTag(values) && !this.hasFlag(values,\'u\')">',
                             '<tr>',
                                 '<td colspan="2">',
                                     '<table width="100%">',
@@ -1389,6 +1389,24 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             return futil.formatFloat(values.qty, dec);
                         } else {
                             return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
+                    },
+                    hasTag: function(values, tag) {
+                        if ( !tag ) {
+                            return values.tag ? true : false;
+                        } else if ( !values.tag ) {
+                            return false;
+                        } else {
+                            return values.tag == tag;
+                        }
+                    },
+                    hasFlag: function(values, flag) {
+                        if ( !flag) {
+                            return values.flags ? true : false;
+                        } else if ( !values.flags ) {
+                            return false;
+                        } else {
+                            return values.flags.indexOf(flag) > -1;
                         }
                     }
                 }                

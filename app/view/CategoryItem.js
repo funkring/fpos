@@ -16,10 +16,12 @@ Ext.define("Fpos.view.CategoryItem", {
     updateRecord: function(record) {
         if ( record ) {
             var self = this;
-            var button = self.down('button');
-            var name = record.get('name') || '';
             
+            // get button
+            var button = self.down('button');
+                                    
             // config text
+            var name = record.get('name') || '';
             if ( name.length >= 7) {
                 button.setCls('ProductCategoryButtonSmall');
             } else if ( name.length > 5) {
@@ -29,15 +31,22 @@ Ext.define("Fpos.view.CategoryItem", {
             }
             
             // config ui
+            var ui = 'posInputButtonBlack';
             if ( record.get('parent') ) {
-                button.setUi('posInputButtonOrange');
+                ui = 'posInputButtonOrange';
                 button.categoryId = record.get('parent_id');
             } else if ( record.get('selected') ) {
-                button.setUi('posInputButtonGray');
+                ui = 'posInputButtonGray';
                 button.categoryId = record.getId();
             } else {
-                button.setUi('posInputButtonBlack');
+                var color = record.get('pos_color');
+                if ( color ) {
+                    ui = 'posInputButton-'+color;
+                }
                 button.categoryId = record.getId();                      
+            }
+            if ( button.getUi() !== ui ) {
+                button.setUi(ui);
             }
             
             // text

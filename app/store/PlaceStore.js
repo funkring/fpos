@@ -15,7 +15,8 @@ Ext.define('Fpos.store.PlaceStore', {
     resetIndex: function() {
         this.placeByTopId = {};
         this.placeById = {};
-        this.allPlaces = [];   
+        this.allPlaces = [];
+        this.showAll = true;   
     },
     
     getPlaceById: function(placeId) {
@@ -34,6 +35,7 @@ Ext.define('Fpos.store.PlaceStore', {
                  // add by top
                  var top_id = place.get('top_id');
                  if ( top_id ) {
+                     self.showAll = false;
                      var list = self.placeByTopId[top_id];
                      if ( !list ) {
                          list = [];
@@ -48,7 +50,7 @@ Ext.define('Fpos.store.PlaceStore', {
     searchPlacesByTop: function(topId) {
         var places = null;
         if ( !topId ) { 
-            places = [];
+            places = this.showAll ? this.allPlaces : [];
         }  else {            
             places = this.placeByTopId[topId] || [];
         }

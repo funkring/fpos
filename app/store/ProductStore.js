@@ -25,7 +25,8 @@ Ext.define('Fpos.store.ProductStore', {
         this.productByCategoryId = {};
         this.productByEan = {};
         this.allProducts = [];   
-        this.productQueue = [];     
+        this.productQueue = [];  
+        this.showAll = true;   
     },
     
     buildIndex: function() {
@@ -49,6 +50,7 @@ Ext.define('Fpos.store.ProductStore', {
                  // add category
                  var categ_id = product.get('pos_categ_id');
                  if ( categ_id ) {
+                     self.showAll = false; 
                      var list = self.productByCategoryId[categ_id];
                      if ( !list ) {
                          list = [];
@@ -77,8 +79,12 @@ Ext.define('Fpos.store.ProductStore', {
             });
             this.setData(filtered);
         } else {
-            if ( !categoryId) {
-                this.setData(this.productQueue);
+            if ( !categoryId ) {
+                if ( this.showAll ) {
+                    this.setData(products);
+                } else {
+                    this.setData(this.productQueue);
+                }
             } else {
                 this.setData(products);
             }
