@@ -39,9 +39,9 @@ Ext.define('Ext.form.ViewManager', {
         var saveable = false;
         var deleteable = false;
         
-        if ( view.saveable || view.config.saveable ) {
+        if ( this.hasViewOption(view, 'saveable') ) {
             saveable = true;
-            if (view.deleteable || view.config.deleteable ) {
+            if ( this.hasViewOption(view, 'deleteable') ) {
                 var record = view.getRecord();
                 if ( record && !record.phantom ) {
                     deleteable = true;
@@ -65,7 +65,7 @@ Ext.define('Ext.form.ViewManager', {
             }
         }
         
-        var menu = view.menu || view.config.menu;
+        var menu = this.getViewOption(view, 'menu');
         var menuSide = items.menuSide || 'right';
         if ( menu ) {
              Ext.Viewport.setMenu(menu, {
@@ -329,6 +329,26 @@ Ext.define('Ext.form.ViewManager', {
         if ( len > 0 ) {
              this.keyboardListenerStack[len-1].onKeyDown(e);
         }
+    },
+    
+    hasViewOption: function(view, opt) {
+        var res = view[opt];
+        if ( res === undefined ) {
+            res = view.config[opt];           
+        }
+        return res ? true : false;
+    },
+    
+    setViewOption: function(view, opt, val) {
+        view[opt] = val;
+    },
+    
+    getViewOption: function(view, opt) {
+        var res = view[opt];
+        if ( res === undefined ) {
+            res = view.config[opt];           
+        }
+        return res;
     }
     
 });

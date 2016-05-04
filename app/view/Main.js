@@ -41,8 +41,8 @@ Ext.define('Fpos.view.Main', {
                 {
                     xtype: 'button',
                     id: 'saveOrderButton',
-                    iconCls: 'action',       
-                    ui: 'plain',                    
+                    text: 'Bonieren',   
+                    ui: 'forward',    
                     align: 'right',
                     action: 'saveOrder',
                     hidden: true                

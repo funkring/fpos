@@ -14,7 +14,12 @@ Ext.define('Fpos.store.PlaceStore', {
     
     resetIndex: function() {
         this.placeByTopId = {};
+        this.placeById = {};
         this.allPlaces = [];   
+    },
+    
+    getPlaceById: function(placeId) {
+        return this.placeById[placeId];
     },
     
     buildIndex: function() {
@@ -24,6 +29,7 @@ Ext.define('Fpos.store.PlaceStore', {
              if ( !place.get('pos_unavail') ) {
                  // all products
                  self.allPlaces.push(place);
+                 self.placeById[place.getId()]=place;
                  
                  // add by top
                  var top_id = place.get('top_id');
@@ -33,9 +39,19 @@ Ext.define('Fpos.store.PlaceStore', {
                          list = [];
                          self.placeByTopId[top_id] = list;                     
                      }
-                     list.push(place);                 
+                     list.push(place);
                  }
             }
         });
+    },
+    
+    searchPlacesByTop: function(topId) {
+        var places = null;
+        if ( !topId ) { 
+            places = [];
+        }  else {            
+            places = this.placeByTopId[topId] || [];
+        }
+        this.setData(places);        
     }
 });

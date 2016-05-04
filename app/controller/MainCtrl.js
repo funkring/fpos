@@ -47,7 +47,10 @@ Ext.define('Fpos.controller.MainCtrl', {
             },
             'button[action=productMenu]' : {
                 tap: 'onShowProductMenu'
-            },            
+            },
+            'button[action=createCashState]' : {
+                tap: 'onCreateCashState'
+            },   
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
@@ -121,6 +124,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             placeInput: self.placeInput
         });    
+        
+        // show place
+        Ext.Viewport.on({
+            scope: self,
+            showPlace: self.showPlace
+        });  
       
         // add key listener
         ViewManager.pushKeyboardListener(self);
@@ -517,16 +526,52 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     placeInput: function(place) {
         var self = this;
-        self.basePanel.setActiveItem(2);
+        self.getPlaceButton().setText(place.get('complete_name'));
+        self.basePanel.setActiveItem(2);                
+        // set view options
+        ViewManager.setViewOption(self.basePanel, 'showLogin', false);
+        ViewManager.setViewOption(self.basePanel, 'showPlace', true);
+        ViewManager.setViewOption(self.basePanel, 'showSaveOrder', true);
+        ViewManager.setViewOption(self.basePanel, 'menu', null);
         // notify change        
         self.mainActiveItemChange(self.getMainView(), self.basePanel);
     },
     
     showPlace: function() {
         var self = this;
-        self.basePanel.setActiveItem(1);
+        self.basePanel.setActiveItem(1);     
+        // set view options
+        ViewManager.setViewOption(self.basePanel, 'showLogin', true);
+        ViewManager.setViewOption(self.basePanel, 'showPlace',false);
+        ViewManager.setViewOption(self.basePanel, 'showSaveOrder', false); 
+        ViewManager.setViewOption(self.basePanel, 'menu', self.getMenu()); 
         // notify change        
         self.mainActiveItemChange(self.getMainView(), self.basePanel);
+    },
+    
+    onCreateCashState: function() {
+        // only if place iface        
+        if ( Config.getProfile().iface_place ) {
+            var self = this;
+            self.basePanel.setActiveItem(2);                
+            // set view options
+            ViewManager.setViewOption(self.basePanel, 'showLogin', false);
+            ViewManager.setViewOption(self.basePanel, 'showPlace', false);
+            ViewManager.setViewOption(self.basePanel, 'showSaveOrder', false);
+            ViewManager.setViewOption(self.basePanel, 'menu', null);
+            // notify change        
+            self.mainActiveItemChange(self.getMainView(), self.basePanel);
+        }
+    },
+    
+    getMenu: function() {
+        var user = Config.getUser();
+        if ( user.pos_role === 'admin') {
+            return this.getAdminMenu();
+        } else if ( user.pos_role === 'manager' ) {
+            return this.getManagerMenu();
+        } 
+        return this.getUserMenu();
     },
     
     openPos: function() {
@@ -613,21 +658,12 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // set view
         self.basePanel.setActiveItem(1);
-        
-        // set menu
-        var user = Config.getUser();
-        var menu = null;
-        if ( user.pos_role === 'admin') {
-            menu = self.getAdminMenu();
-        } else if ( user.pos_role === 'manager' ) {
-            menu = self.getManagerMenu();
-        } else {
-            menu = self.getUserMenu();
-        }
-        
-        // set menu
-        self.basePanel.config.menu = menu;
-        self.basePanel.menu = menu;
+      
+        // set view options
+        ViewManager.setViewOption(self.basePanel, 'showLogin', true);
+        ViewManager.setViewOption(self.basePanel, 'showPlace', false);
+        ViewManager.setViewOption(self.basePanel, 'showSaveOrder', false);
+        ViewManager.setViewOption(self.basePanel, 'menu', self.getMenu());
                 
         // notify change        
         self.mainActiveItemChange(self.getMainView(), self.basePanel);
@@ -643,7 +679,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     mainActiveItemChange: function(view, newCard) {    
         // show login
         var loginButton = this.getLoginButton();
-        var showLogin = newCard.showLogin || newCard.config.showLogin;
+        var showLogin = ViewManager.hasViewOption(newCard, 'showLogin'); 
         if ( showLogin ) {
             loginButton.show();            
         } else {
@@ -652,7 +688,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // show place button
         var placeButton = this.getPlaceButton();
-        var showPlace = newCard.showPlace || newCard.config.showPlace;
+        var showPlace = ViewManager.hasViewOption(newCard, 'showPlace');
         if ( showPlace ) {
             placeButton.show();
         } else {
@@ -661,7 +697,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // show save order button
         var saveOrderButton = this.getSaveOrderButton();
-        var showSaveOrder = newCard.showSaveOrder || newCard.config.showSaveOrder;
+        var showSaveOrder = ViewManager.hasViewOption(newCard, 'showSaveOrder');
         if ( showSaveOrder ) {
             saveOrderButton.show();
         } else {

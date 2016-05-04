@@ -7,9 +7,11 @@ Ext.define('Fpos.model.Place', {
    config: {
        fields: ['name',                 
                 'sequence',
+                'complete_name',
                 'top_id',
                 'pos_color',
-                'pos_unavail'
+                'pos_unavail',
+                {name:'amount', persist:false}
                ],
        identifier: 'uuid',
        proxy: {

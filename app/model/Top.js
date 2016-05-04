@@ -7,6 +7,7 @@ Ext.define('Fpos.model.Top', {
    config: {
        fields: ['name',                 
                 'sequence',
+                'complete_name',
                 'parent_id',
                 'pos_color',
                 'pos_unavail'

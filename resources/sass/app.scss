@@ -624,3 +624,14 @@ div.TopButtonSmall > span.x-button-label {
     font-size: 2em;
 }
 
+.PlaceAmount {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    vertical-align: top;
+    line-height: 13px;
+    color: #ffffff !important; 
+    background-color: $fpos-input-grey !important;
+    padding: 2px 5px;
+    border-radius: 2px;
+}

@@ -20,8 +20,8 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                 tap: 'tapSelectPlace',
                 initialize: 'placeButtonInitialize'
             },
-            placeView: {
-                initialize: 'placeViewInitialize'
+            topView: {
+                initialize: 'topViewInitialize'
             }       
         }
     },
@@ -35,7 +35,7 @@ Ext.define('Fpos.controller.TopViewCtrl', {
         
     },
     
-    placeViewInitialize: function() {
+    topViewInitialize: function() {
         var self = this;
         self.loadTop(null);
         
@@ -92,7 +92,11 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                          '<div class="PlaceTextOnly">',
                             '{name}',
                           '</div>',
-                      '</tpl>');
+                      '</tpl>',
+                      '<tpl if="amount">',
+                        '<span class="PlaceAmount">{[futil.formatFloat(values.amount)]} {[Config.getCurrency()]}</span>',
+                      '</tpl>'
+                      );
             } else {     
                 //set width 
                 if ( screenWidth == 600 ) {
@@ -107,7 +111,10 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                      '<div class="PlaceTextBigNoTop">',
                        '{name}',
                      '</div>',
-                 '</div>');
+                 '</div>',
+                 '<tpl if="amount">',
+                   '<span class="PlaceAmount">{[futil.formatFloat(values.amount)]} {[Config.getCurrency()]}</span>',
+                 '</tpl>');
             }
         }
         
@@ -189,6 +196,7 @@ Ext.define('Fpos.controller.TopViewCtrl', {
         }
        
         // load places
+        self.placeStore.searchPlacesByTop(topId);
     }    
     
 });

@@ -32,7 +32,7 @@ Ext.define('Fpos.view.OrderFormView', {
                     {
                         xtype: 'togglefield',
                         name: 'send_invoice',
-                        label: 'Rechnung senden'  
+                        label: 'Rechnung'  
                     },
                     { 
                         xtype: 'textareafield',

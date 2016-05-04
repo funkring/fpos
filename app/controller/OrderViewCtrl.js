@@ -69,17 +69,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=printAgain]' : {
                 tap: 'onPrintAgain'
-            }
-            
+            },
+            'button[action=saveOrder]' :  {
+                tap: 'onSaveOrder'
+            }     
         }
     },
     
     init: function() {
         var self = this;
         
+        this.place = null;
         this.order = null;
         this.printTemplate = null;
         this.paymentEnabled = false;
+        this.initialLoad = false; 
         
         this.mode = '*';
         this.inputSign = 1; 
@@ -90,6 +94,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
         this.paymentStore = Ext.StoreMgr.lookup("PosPaymentStore");
+        this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
         
         this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
             self.display();
@@ -205,6 +210,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             productInput: self.productInput            
         });
         
+        // place input
+        Ext.Viewport.on({
+            scope: self,
+            placeInput: self.placeInput
+        });    
+        
         // validation event         
         Ext.Viewport.on({
             scope: self,
@@ -218,6 +229,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
         // reload data
         self.reloadData();
+    },
+    
+    placeInput: function(place) {
+        this.place = place;
+        this.reloadData();
     },
     
     productInput: function(product) {
@@ -334,6 +350,24 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    // save order
+    onSaveOrder: function() {
+        var self = this;
+        if ( !self.isEditable() ) return;
+         
+        var place_id = self.order.get('place_id');
+        var place = place_id ? self.placeStore.getPlaceById(place_id) : null;
+        
+        if ( place ) {
+            place.set('amount',self.order.get('amount_total'));
+            self.validateLines(true)['catch'](function(err) {
+                ViewManager.handleError(err, {name:'Fehler', message:'Bestellung konnte nicht boniert werden'});
+            }).then(function(){        
+                Ext.Viewport.fireEvent("showPlace");
+            });       
+        }
+    },
+    
     // compute line values
     validateLine: function(line, taxes, taxlist) {
        var self = this;
@@ -416,7 +450,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     // validate lines of current order
-    validateLines: function() {
+    validateLines: function(forceSave) {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         // primary check
@@ -476,15 +510,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // notify display update
             self.displayTask.delay(800);
 
-            // save            
-            if ( self.order.dirty ) {
+            // save
+            // ( only save if it is dirty, not places are active or force save was passed)            
+            if ( self.order.dirty && (!Config.getProfile().iface_place || forceSave)) {
                 self.order.save({
                     callback: function() {
                         deferred.resolve();
                     }
-                });
+                });                
             } else {
-                deferred.resolve();
+                setTimeout(function() {
+                    deferred.resolve();
+                }, 0);
             }
             
         } else {
@@ -499,13 +536,26 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     // set current order
     setOrder: function(order) {
         var self = this;
+        self.order = order;
         
-        self.order = order;    
+        // reset of display
+        // when new order (only in place mode)
+        if ( Config.getProfile().iface_place ) {
+            self.getPosDisplay().setRecord(null);
+            self.getStateDisplay().setRecord(null);        
+        }
+        
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
         self.getOrderItemList().deselectAll(true);
         
-        var lines = order.get('line_ids');
+        // get lines
+        var lines = null;
+        if ( order ) {
+            lines = order.get('line_ids');
+        }
+        
+        // update lines        
         if ( lines ) {
             self.lineStore.setData(lines);
         } else {
@@ -516,14 +566,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     // create new order
     nextOrder: function() {
         var self = this;
-        var db = Config.getDB();
         
+        var db = Config.getDB();
         var user_id = Config.getUser()._id;
         var fpos_user_id = Config.getProfile().user_id;
                 
         if ( user_id && fpos_user_id) {
             var date = futil.datetimeToStr(new Date());  
-            db.post({
+            var values = {
                 'fdoo__ir_model' : 'fpos.order',
                 'fpos_user_id' : fpos_user_id,
                 'user_id' : user_id,
@@ -533,8 +583,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 'line_ids' : [],
                 'amount_tax' : 0.0,
                 'amount_total' : 0.0
-            }).then(function(res) {                
-                self.reloadData();
+            };
+            
+            if ( self.place ) {
+                values.place_id = self.place.getId();
+            }
+            
+            db.post(values).then(function(res) {                
+                self.reloadData(true);
             });
         }
     },
@@ -596,40 +652,75 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     fullDataReload: function() {
         var self = this;
+        self.initialLoad = true;
         self.printTemplate = null;
-        self.reloadData();
+        self.place = null;
+
+        if ( Config.getProfile().iface_place ) {
+           // load open orders
+           var db = Config.getDB();           
+           DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {'include_docs':true}).then(function(res) {
+               Ext.each(res.rows, function(row) {
+                  var place = self.placeStore.getPlaceById(row.doc.place_id);
+                  if ( place ) {
+                    place.set('amount',row.doc.amount_total);
+                  } 
+               });
+               self.reloadData();
+           });
+        } else {       
+          // default reload
+          self.reloadData();
+        }
     },
         
-    reloadData: function() {
-        var self = this;
-
-        var db = Config.getDB();
-        var user = Config.getUser();
-        
-        self.setMode('*');
-        self.resetView();  
-                
-        if ( user ) {
-            var options = {
-                params : {
-                    domain : [['user_id','=',user._id],['state','=','draft']]
-                },
-                callback: function() {
-                    if ( self.orderStore.getCount() === 0 ) {
-                        // create new order
-                        self.nextOrder();
-                    } else {
-                        // set current order
-                        self.setOrder(self.orderStore.last());
-                    }
-                }
-            };
-            self.orderStore.load(options);
+    reloadData: function(noCreateOrder) {
+        if ( !this.initialLoad ) {
+            this.fullDataReload();
         } else {
-            // load nothing
-            self.orderStore.setData([]);
-            self.setOrder(null);
-        }        
+            var self = this;
+            
+            var db = Config.getDB();
+            var user = Config.getUser();
+            
+            self.setMode('*');
+            self.resetView();  
+            
+            // load if valid user and not places are activ or places are active 
+            // and a valid place exist
+            if ( user ) {
+                var params = null;
+                if ( self.place ) {
+                    params =  {
+                        domain : [['place_id','=',self.place.getId()],['state','=','draft']]
+                    };
+                } else {
+                    params =  {
+                        domain : [['user_id','=',user._id],['state','=','draft']]
+                    };
+                }
+                        
+                var options = {
+                    params : params, 
+                    callback: function() {
+                        if ( self.orderStore.getCount() === 0 ) {
+                            // create new order
+                            if ( !noCreateOrder ) {
+                                self.nextOrder();
+                            }
+                        } else {
+                            // set current order                            
+                            self.setOrder(self.orderStore.last());
+                        }
+                    }
+                };
+                self.orderStore.load(options);
+            } else {
+                // load nothing
+                self.orderStore.setData([]);
+                self.setOrder(null);
+            }  
+        }      
     },
     
     isEditable: function() {
@@ -1028,7 +1119,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var profile = Config.getProfile();
         var hasSeq = false;
         
-        self.validateLines()['catch'](function(err) {
+        self.validateLines(true)['catch'](function(err) {
             deferred.reject(err);
         }).then(function(){
             
@@ -1118,7 +1209,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }, true);
             }).then(function() {
                 self.printOrder();
-                self.reloadData();
+                if ( Config.getProfile().iface_place ) {
+                    var place_id = self.order.get('place_id');
+                    var place = place_id ? self.placeStore.getPlaceById(place_id) : null;        
+                    if ( place ) {
+                      place.set('amount',0);
+                    }
+                    Ext.Viewport.fireEvent("showPlace");
+                } else {
+                    self.reloadData();
+                }
             });
         } else {
             // if not editable
@@ -1191,7 +1291,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="2"><hr/></td>',
                 '</tr>',
                 '<tpl for="lines">',
-                    '<tpl if="tag==\'c\'">',
+                    '<tpl if="tag && tag==\'c\'">',
                         '<tr>',
                             '<td colspan="2">{name}</td>',                        
                         '</tr>',
@@ -1461,6 +1561,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     createCashState: function() {
         var self = this;
+
+        // reset place
+        self.place = null;
+        
         var db = Config.getDB();
         var profile = Config.getProfile();
         var user_id = Config.getUser()._id;
