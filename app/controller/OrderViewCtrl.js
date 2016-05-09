@@ -88,6 +88,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.mode = '*';
         this.inputSign = 1; 
         this.inputText = '';
+        this.roundFactor = Math.pow(10,Config.getDecimals());
         
         this.lineStore = Ext.StoreMgr.lookup("PosLineStore");
         this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
@@ -147,7 +148,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         ' ',
                         '{[this.getUnit(values.uom_id)]}',
                         ' * ',
-                        '{[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}',
+                        '{[futil.formatFloat(values.price,Config.getDecimals())]} {[Config.getCurrency()]}',
+                        '<tpl if="netto">',
+                          '<tpl if="qty != 0 && qty != 1">',
+                          ' = <b>{[futil.formatFloat(values.subtotal,Config.getDecimals())]} {[Config.getCurrency()]}</b>',
+                          '</tpl>',
+                          ' ',
+                          '<b>NETTO</b>',
+                        '</tpl>',
                         ' ',
                         '<tpl if="discount &gt; 0.0">',
                             '<span class="PosOrderLineDiscount">',
@@ -227,6 +235,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             posKey: self.onKeyDown
         });
         
+        Ext.Viewport.on({
+            scope: self,
+            userChange: self.onUserChange
+        });
+        
         // reload data
         self.reloadData();
     },
@@ -266,9 +279,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'product_id' : product.getId(),
                     'uom_id' : product.get('uom_id'),
                     'tax_ids' : product.get('taxes_id'),
-                    'brutto_price' : product.get('brutto_price'),
+                    'netto' : product.get('netto'),
+                    'price' : product.get('price'),
                     'qty' : toWeight ? 0.0 : 1.0,
                     'subtotal_incl' : 0.0,
+                    'subtotal' : 0.0,
                     'discount' : 0.0,
                     'sequence' : self.lineStore.getCount()
                 };
@@ -368,17 +383,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    round: function(val) {
+        return Math.round(val*this.roundFactor) / this.roundFactor;  
+    },
+    
     // compute line values
     validateLine: function(line, taxes, taxlist) {
+       var price, total, total_netto, netto;
+       
        var self = this;
        
-       var price = line.get('brutto_price') || 0.0;
-
        var discount = line.get('discount') || 0.0;
        discount = 1.0 - (discount/100.0);
        
        var qty = line.get('qty') || 0.0;
-       var total = qty * price * discount;
        var tax_ids = line.get('tax_ids');
 
        if ( !taxes ) 
@@ -387,7 +405,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
        var tax_percent = 0.0;
        var tax_fixed = 0.0;
        var total_tax = 0.0;
-              
+     
+        
        Ext.each(tax_ids, function(tax_id) {
             var tax = taxes[tax_id];
             if ( !tax ) {
@@ -422,8 +441,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
            }
         });
                
-        // subtotal without tax
-        var total_netto = (total-tax_fixed) / (1.0 + tax_percent);
+        // calc total
+        netto = line.get('netto');
+        price = line.get('price') || 0.0;
+        if ( netto ) {
+            total_netto =  qty * price * discount;
+            total = self.round((total_netto+tax_fixed) * (1.0 + tax_percent));
+        } else {     
+            total = qty * price * discount;   
+            total_netto = (total-tax_fixed) / (1.0 + tax_percent);
+        }
 
         // sum tax
         Ext.each(tax_ids, function(tax_id) {
@@ -434,14 +461,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             } else if (tax.type === 'fixed') {
                 amount_tax = (tax.amount * qty);
             }   
+            
+            // netto do rounding
+            if ( netto ) {
+                amount_tax = self.round(amount_tax);
+            }
+                
             tax.sum.amount_tax += amount_tax;
             tax.sum.amount_netto += total_netto;
             total_tax += amount_tax;
         });
         
         // set subtotal if dirty
-        if ( line.get('subtotal_incl') != total ) {
+        if ( line.get('subtotal_incl') != total ) {            
             line.set('subtotal_incl', total);
+            line.set('subtotal', total_netto);
         }
         
         // return subtotal brutto and amount tax
@@ -460,6 +494,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var tax_ids = [];
             
             // compute lines
+            var amount_netto = 0.0;
             var amount_total = 0.0;
             var amount_tax = 0.0;
             var turnover = 0.0;
@@ -723,6 +758,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }      
     },
     
+    onUserChange: function(user) {
+        if ( this.order && this.order.get('user_id') != user._id ) {
+            this.reloadData();
+        }
+    },
+    
     isEditable: function() {
         return this.order && this.order.get('state') == 'draft' && !this.paymentEnabled;
     },
@@ -745,17 +786,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         if ( product_id ) {
                             db.get(product_id).then(function(doc) {
                                 // delete or reset price
-                                if ( record.get('brutto_price') === doc.brutto_price) {
+                                if ( record.get('price') === doc.price) {
                                    self.lineStore.remove(record);
                                 } else {
-                                   record.set('brutto_price',doc.brutto_price);
+                                   record.set('price',doc.price);
                                 }
                                 self.validateLines();   
                             })['catch'](function(err) {
                                 ViewManager.handleError(err, {name:'Fehler', error: 'Produkt kann nicht zurückgesetzt werden'});
                             });              
                         } else {
-                            record.set('brutto_price',0.0);
+                            record.set('price',0.0);
                             self.validateLines();       
                         }
                     } else {
@@ -797,7 +838,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( this.mode == "%") {
             return futil.formatFloat(line.get('discount'), Config.getDecimals());
         } else if ( this.mode == "€") {
-            return futil.formatFloat(line.get('brutto_price'), Config.getDecimals());
+            return futil.formatFloat(line.get('price'), Config.getDecimals());
         } else {
             return futil.formatFloat(line.get('qty'), Config.getQtyDecimals());
         }
@@ -859,7 +900,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 if ( this.mode == "*" ) {
                                     line.set('qty',line.get('qty')*-1);
                                 } else {
-                                    line.set('brutto_price',line.get('brutto_price')*-1);
+                                    line.set('price',line.get('price')*-1);
                                 }
                                 this.validateLines();
                                 valid = false;
@@ -924,7 +965,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         // update
                         value = parseFloat(this.inputText);
                         if ( this.mode == "€" ) {
-                            line.set('brutto_price', value*this.inputSign);
+                            line.set('price', value*this.inputSign);
                         } else if ( this.mode == "%" ) {
                             line.set('discount', value);
                         } else {
@@ -1001,10 +1042,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var sign = flags && flags.indexOf('-') > -1 ? -1 : 1;
             var tag = line.get('tag');            
             if ( tag == 'r' || tag == 'o' || tag == 'i' || ( flags && (flags.indexOf('u') > -1 || flags.indexOf('p') > -1) ) ) {
-                var brutto_price = line.get('brutto_price');              
-                if ( brutto_price < 0 ) {
+                var price = line.get('price');              
+                if ( price < 0 ) {
                     sign = -1;
-                } else if ( brutto_price > 0) {
+                } else if ( price > 0) {
                     sign = 1;
                 }
                 this.setMode('€', sign);                
@@ -1314,7 +1355,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     '<td width="5%">&nbsp;</td>',
                                     '<td>',
                                         '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
-                                        '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', 
+                                        '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', 
                                         '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
                                     '</td>',
                                     '</tr>',
@@ -1621,7 +1662,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     {
                                         // TURNOVER
                                         'name' : 'Umsatzzähler',
-                                        'brutto_price' : turnover,
+                                        'price' : turnover,
                                         'qty' : 1.0,
                                         'subtotal_incl' : turnover,
                                         'discount' : 0.0,
@@ -1631,7 +1672,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     {
                                         // BALANCE
                                         'name' : 'Kassenstand SOLL',
-                                        'brutto_price' : cpos,
+                                        'price' : cpos,
                                         'qty' : 1.0,
                                         'subtotal_incl' : cpos,
                                         'discount' : 0.0,
@@ -1641,7 +1682,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     {
                                         // SHOULD
                                         'name' : 'Kassenstand IST',
-                                        'brutto_price' : cpos,
+                                        'price' : cpos,
                                         'qty' : 1.0,
                                         'subtotal_incl' : cpos,
                                         'discount' : 0.0,

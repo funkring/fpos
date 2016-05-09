@@ -20,7 +20,43 @@ Ext.define('Fpos.view.Main', {
                     align: 'left',
                     action: 'switchUser',
                     hidden: true                
-                },       
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton1',
+                    user: null,
+                    text: 'User 1',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },            
+                {
+                    xtype: 'button',
+                    id: 'userButton2',
+                    user: null,
+                    text: 'User 2',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton3',
+                    user: null,
+                    text: 'User 3',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton4',
+                    user: null,
+                    text: 'User 4',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
                 {
                     xtype: 'button',
                     id: 'placeButton',

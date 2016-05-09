@@ -103,17 +103,17 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                           '<div class="ProductText">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
                       '<tpl elseif="pos_name.length &lt;= 7">',
                          '<div class="ProductTextOnlyBig">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
                       '<tpl else>',
                          '<div class="ProductTextOnly">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
                       '</tpl>',{
                           getUnit: function(uom_id) {
                             var uom = self.unitStore.getById(uom_id);
@@ -145,7 +145,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                          '</div>',
                      '</tpl>',
                  '</div>', 
-                 '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                 '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
                  {
                       getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
