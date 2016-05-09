@@ -67,6 +67,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=createCashState]' : {
                 tap: 'onCreateCashState'
             },
+            'button[action=createCashOverview]' : {
+                tap: 'onCashOverview'  
+            },
             'button[action=printAgain]' : {
                 tap: 'onPrintAgain'
             },
@@ -131,7 +134,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     orderItemListInitialize: function(orderItemList) {
         var self = this;
         orderItemList.setItemTpl(Ext.create('Ext.XTemplate',
-                '<tpl if="tag || (flags && flags.indexOf(\'u\') &gt; -1) ">',
+                '<tpl if="!this.hasFlag(values,\'d\') && (tag || this.hasFlag(values,\'u\'))">',
                 '<div class="PosOrderLineName">',
                     '{name}',
                 '</div>',
@@ -182,6 +185,26 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             return futil.formatFloat(values.qty, dec);
                         } else {
                             return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
+                    },
+                    
+                    hasTag: function(values, tag) {
+                        if ( !tag ) {
+                            return values.tag ? true : false;
+                        } else if ( !values.tag ) {
+                            return false;
+                        } else {
+                            return values.tag == tag;
+                        }
+                    },
+                    
+                    hasFlag: function(values, flag) {
+                        if ( !flag) {
+                            return values.flags ? true : false;
+                        } else if ( !values.flags ) {
+                            return false;
+                        } else {
+                            return values.flags.indexOf(flag) > -1;
                         }
                     }
                     
@@ -572,7 +595,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     setOrder: function(order) {
         var self = this;
         self.order = order;
-        
+
         // reset of display
         // when new order (only in place mode)
         if ( Config.getProfile().iface_place ) {
@@ -603,15 +626,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         
         var db = Config.getDB();
-        var user_id = Config.getUser()._id;
-        var fpos_user_id = Config.getProfile().user_id;
+        var user = Config.getUser();
+        var profile = Config.getProfile();
                 
-        if ( user_id && fpos_user_id) {
+        if ( user && profile) {
             var date = futil.datetimeToStr(new Date());  
             var values = {
                 'fdoo__ir_model' : 'fpos.order',
-                'fpos_user_id' : fpos_user_id,
-                'user_id' : user_id,
+                'fpos_user_id' : Config.getProfile().user_id,
+                'user_id' : Config.getUser()._id,
                 'state' : 'draft',
                 'date' : date,
                 'tax_ids' : [],
@@ -1347,7 +1370,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '<td>{name}</td>',
                             '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
                         '</tr>',
-                        '<tpl if="!this.hasTag(values) && !this.hasFlag(values,\'u\')">',
+                        '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
                             '<tr>',
                                 '<td colspan="2">',
                                     '<table width="100%">',
@@ -1375,6 +1398,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '</table>',
                         '</td>',
                     '</tr>',
+                    '</tpl>',
+                    '<tpl if="this.hasFlag(values,\'b\')">',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
+                        '</tr>',
                     '</tpl>',
                 '</tpl>',
                 '<tr>',                
@@ -1716,10 +1744,196 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
     },
     
+    createCashOverview: function(user) {
+        var self = this;
+        var db = Config.getDB();
+        var profile = Config.getProfile();
+        var user_id = Config.getUser()._id;
+        var fpos_user_id = profile.user_id;
+        var date = futil.datetimeToStr(new Date());
+      
+        if ( user_id && fpos_user_id) {
+        
+            Config.queryOrders().then(function(orders) {
+                if ( orders.length === 0 )
+                    return;
+                
+                var overview = {};
+                var positions = [];
+                var taxes = {};
+                var taxNames = [];
+                var lines = [];
+                var total = 0.0;
+                var seq = 1;
+                
+                Ext.each(orders, function(order) {
+                    if ( !order.tag && (!user || order.user_id == user._id) ) {
+                        // positions
+                        Ext.each(order.line_ids, function(line) {
+                            if ( !line.tag ) {
+                                // build summary
+                                var summary = overview[line.name];
+                                total += line.subtotal_incl;
+                                if (!summary) {
+                                    summary = {
+                                        tag: 's',
+                                        name: line.name,
+                                        price: line.price,                                
+                                        qty : line.qty,
+                                        uom_id: line.uom_id,
+                                        subtotal_incl: line.subtotal_incl,
+                                        sequence : 0,
+                                        discount: 0.0
+                                    };
+                                    overview[line.name] = summary;
+                                    positions.push(line.name);
+                                } else {
+                                    summary.subtotal_incl +=  line.subtotal_incl;
+                                    summary.qty += line.qty;
+                                }
+                            }
+                        });
+                        
+                        //taxes
+                        Ext.each(order.tax_ids, function(tax) {
+                            var summary = taxes[tax.name];
+                            if (!summary) {
+                                summary = {     
+                                    tag: 's',
+                                    name: tax.name,
+                                    qty: 1.0,
+                                    price: tax.amount_tax,  
+                                    subtotal_incl : tax.amount_tax,
+                                    sequence : 0,
+                                    discount: 0.0
+                                };
+                                taxes[tax.name] = summary;
+                                taxNames.push(tax.name);
+                            } else {
+                                summary.subtotal_incl += tax.amount_tax;
+                                summary.price = summary.subtotal_incl;
+                            }
+                        });
+                    }              
+                });
+                
+                
+                // HEADER
+                
+                var header = 'Verkäufe Gesamt';
+                if ( user ) {
+                    header = 'Verkäufe ' + user.name;
+                }
+                lines.push({
+                    name : header,
+                    price : total,
+                    qty : 1.0,
+                    subtotal_incl : total,
+                    discount : 0.0,
+                    sequence : 0,
+                    tag : 's',
+                    flags: 'b'
+                });
+                
+                // PRODUCTS
+                
+                positions.sort();
+                var lastIndex = positions.length-1;
+                Ext.each(positions, function(pos, index)  {
+                    var summary = overview[pos];
+                    lines.push(summary);
+                    
+                    summary.flags = 'd';
+                    if ( index == lastIndex ) {
+                        summary.flags += 'b';
+                    }
+                    
+                    summary.sequence = seq;
+                    seq+=1;               
+                });
+                
+                // TAXES
+               
+                taxNames.sort();
+                Ext.each(taxNames, function(taxName, index) {                    
+                    var summary = taxes[taxName];
+                    lines.push(summary);
+                    summary.sequence = seq;
+                    seq+=1;  
+                } );
+                
+                
+                //CREATE
+                return db.post({
+                    'fdoo__ir_model' : 'fpos.order',
+                    'fpos_user_id' : fpos_user_id,
+                    'user_id' : user_id,
+                    'state' : 'draft',
+                    'date' : date,
+                    'tax_ids' : [],
+                    'line_ids' : lines,
+                    'amount_tax' : 0.0,
+                    'amount_total' : 0.0,
+                })['catch'](function(err) {          
+                  ViewManager.stopLoading();
+                  ViewManager.handleError(err,{
+                        name: "Verkaufsübersicht Fehler",
+                        message: "Verkaufsübersicht konnte nicht erstellt werden"
+                   });
+                }).then(function(res) {
+                    ViewManager.stopLoading();                            
+                    self.reloadData();
+                });
+                
+            })['catch'](function(err) {
+               ViewManager.stopLoading();
+               ViewManager.handleError(err,{
+                    name: "Verkaufsübersicht Fehler",
+                    message: "Verkaufsübersicht konnte nicht erstellt werden"
+               });
+            });
+        
+        }
+            
+    },
+    
     onCreateCashState: function() {
         if ( !futil.isDoubleTap() ) {
             ViewManager.hideMenus();
             this.createCashState();
+        }
+    },
+    
+    onCashOverview: function() {
+        if ( !futil.isDoubleTap() ) {
+            ViewManager.hideMenus();
+            var profile = Config.getProfile();
+            var self = this;
+            if ( profile ) {
+                if ( profile.user_ids.length <= 1) {
+                    this.createCashOverview(null);
+                } else {
+                    Ext.Msg.show({
+                        title: 'Verkaufsübersicht',
+                        message: 'Verkaufsübersicht Gesamt oder für den aktuellen Verkäufer erstellen?',
+                        buttons: [{
+                                text: 'Gesamt'
+                            
+                            },
+                            {
+                                text: 'Verkäufer'
+                            }
+                        ],
+                        fn: function(buttonId) {
+                            if ( buttonId === 'Gesamt' ) {          
+                                self.createCashOverview(null);
+                            } else {
+                                self.createCashOverview(Config.getUser());
+                            }
+                        }
+                    });                   
+                }
+            }
         }
     },
     

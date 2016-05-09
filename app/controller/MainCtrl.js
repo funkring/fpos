@@ -307,14 +307,16 @@ Ext.define('Fpos.controller.MainCtrl', {
                    },
                    {
                        model: 'fpos.order',
-                       domain: [['state','!=','done']],
-                       compact : true      
+                       // nDomain, remove if active is false
+                       ndomain: [['active','=',false]]
                    }
                ] 
             });
         }).then(function() {
             ViewManager.stopLoading(); 
-            self.resetConfig();
+            //self.resetConfig();
+            // full reset
+            window.location.reload();
         })['catch'](function(err) {
             ViewManager.stopLoading();
             ViewManager.handleError(err,{
@@ -535,7 +537,11 @@ Ext.define('Fpos.controller.MainCtrl', {
                         text: 'Sicherung und Datenabgleich',
                         action: 'sync',
                         ui: 'posInputButtonGreen'  
-                    },                   
+                    },        
+                    {
+                        text: 'Verkaufs Übersicht',
+                        action: 'createCashOverview',
+                    },             
                     {
                         text: 'Drucken wiederholen',
                         action: 'printAgain'

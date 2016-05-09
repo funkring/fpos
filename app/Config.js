@@ -287,9 +287,45 @@ Ext.define('Fpos.Config', {
             include_docs: true,
             inclusive_end: true,
             limit: 1,
-            startkey: ['fpos.order','paid',Number.MAX_VALUE],
-            endkey: ['fpos.order','paid',0]
+            startkey: ['fpos.order', 'paid', Number.MAX_VALUE],
+            endkey: ['fpos.order', 'paid', 0]
         });
+    },
+    
+    queryLastCashState: function() {
+        return DBUtil.search(this.getDB(), ['fdoo__ir_model','state','tag','seq'], {
+            descending: true,
+            include_docs: true,
+            inclusive_end: true,
+            limit: 1,
+            startkey: ['fpos.order', 'paid', 's', Number.MAX_VALUE],
+            endkey: ['fpos.order', 'paid', 's', 0]
+        });
+    },
+    
+    queryOrders: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        self.queryLastCashState()['catch'](function(err) {
+            deferred.reject(err);        
+        }).then(function(res) {
+            var startSeq = res.rows.length > 0  ? res.rows[0].doc.seq : 0;
+            DBUtil.search(self.getDB(), ['fdoo__ir_model','state','seq'], {
+                include_docs: true,
+                inclusive_end: true,
+                startkey: ['fpos.order','paid', startSeq],
+                endkey: ['fpos.order','paid', Number.MAX_VALUE]
+            })['catch'](function(err) {
+                deferred.reject(err);
+            }).then(function(res) {
+                var orders = [];
+                Ext.each(res.rows, function(row) {
+                   orders.push(row.doc); 
+                });
+                deferred.resolve(orders);   
+            });                   
+        });
+        return deferred.promise();
     },
     
     isMobilePos: function() {
