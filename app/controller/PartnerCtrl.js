@@ -17,7 +17,12 @@ Ext.define('Fpos.controller.PartnerCtrl', {
     },
     
     onNewPartner: function() {
-        var newPartner = Ext.create('Fpos.model.Partner', {});
+        var searchField = this.getMainView().getActiveItem().down('searchfield');
+        var defaults = {};
+        if ( searchField ) {
+            defaults.name = searchField.getValue();
+        }
+        var newPartner = Ext.create('Fpos.model.Partner', defaults);
         this.editPartner(newPartner);
     },
     

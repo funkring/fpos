@@ -804,23 +804,29 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.controller.ScaleViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
+  "Fpos.controller.TopViewCtrl": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
   "Fpos.model.Partner": [],
+  "Fpos.model.Place": [],
   "Fpos.model.PosLine": [],
   "Fpos.model.PosOrder": [],
   "Fpos.model.PosPayment": [],
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
+  "Fpos.model.Top": [],
   "Fpos.store.AccountTaxStore": [],
   "Fpos.store.AllCategoryStore": [],
+  "Fpos.store.AllTopStore": [],
   "Fpos.store.CategoryStore": [],
   "Fpos.store.PartnerStore": [],
+  "Fpos.store.PlaceStore": [],
   "Fpos.store.PosLineStore": [],
   "Fpos.store.PosOrderStore": [],
   "Fpos.store.PosPaymentStore": [],
   "Fpos.store.ProductStore": [],
   "Fpos.store.ProductUnitStore": [],
+  "Fpos.store.TopStore": [],
   "Fpos.view.CategoryItem": [],
   "Fpos.view.ConfigView": [],
   "Fpos.view.Main": [],
@@ -831,11 +837,14 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.OrderView": [],
   "Fpos.view.PartnerListSelect": [],
   "Fpos.view.PartnerView": [],
+  "Fpos.view.PlaceItem": [],
   "Fpos.view.ProductItem": [],
   "Fpos.view.ProductView": [],
   "Fpos.view.ProductViewSmall": [],
   "Fpos.view.ScaleView": [],
-  "Fpos.view.TestView": []
+  "Fpos.view.TestView": [],
+  "Fpos.view.TopItem": [],
+  "Fpos.view.TopView": []
 });
 
 Ext.ClassManager.addNameAliasMappings({
@@ -1811,23 +1820,29 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.controller.ProductViewCtrl": [],
   "Fpos.controller.ScaleViewCtrl": [],
   "Fpos.controller.TestCtrl": [],
+  "Fpos.controller.TopViewCtrl": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
   "Fpos.model.Partner": [],
+  "Fpos.model.Place": [],
   "Fpos.model.PosLine": [],
   "Fpos.model.PosOrder": [],
   "Fpos.model.PosPayment": [],
   "Fpos.model.Product": [],
   "Fpos.model.ProductUnit": [],
+  "Fpos.model.Top": [],
   "Fpos.store.AccountTaxStore": [],
   "Fpos.store.AllCategoryStore": [],
+  "Fpos.store.AllTopStore": [],
   "Fpos.store.CategoryStore": [],
   "Fpos.store.PartnerStore": [],
+  "Fpos.store.PlaceStore": [],
   "Fpos.store.PosLineStore": [],
   "Fpos.store.PosOrderStore": [],
   "Fpos.store.PosPaymentStore": [],
   "Fpos.store.ProductStore": [],
   "Fpos.store.ProductUnitStore": [],
+  "Fpos.store.TopStore": [],
   "Fpos.view.CategoryItem": [
     "widget.fpos_category_item"
   ],
@@ -1858,6 +1873,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.view.PartnerView": [
     "widget.fpos_partner_form"
   ],
+  "Fpos.view.PlaceItem": [
+    "widget.fpos_place_item"
+  ],
   "Fpos.view.ProductItem": [
     "widget.fpos_product_item"
   ],
@@ -1872,6 +1890,12 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.TestView": [
     "widget.fpos_test"
+  ],
+  "Fpos.view.TopItem": [
+    "widget.fpos_top_item"
+  ],
+  "Fpos.view.TopView": [
+    "widget.fpos_top"
   ]
 });
 

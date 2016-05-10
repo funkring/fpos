@@ -67,29 +67,38 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=createCashState]' : {
                 tap: 'onCreateCashState'
             },
+            'button[action=createCashOverview]' : {
+                tap: 'onCashOverview'  
+            },
             'button[action=printAgain]' : {
                 tap: 'onPrintAgain'
-            }
-            
+            },
+            'button[action=saveOrder]' :  {
+                tap: 'onSaveOrder'
+            }     
         }
     },
     
     init: function() {
         var self = this;
         
+        this.place = null;
         this.order = null;
         this.printTemplate = null;
         this.paymentEnabled = false;
+        this.initialLoad = false; 
         
         this.mode = '*';
         this.inputSign = 1; 
         this.inputText = '';
+        this.roundFactor = Math.pow(10,Config.getDecimals());
         
         this.lineStore = Ext.StoreMgr.lookup("PosLineStore");
         this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
         this.paymentStore = Ext.StoreMgr.lookup("PosPaymentStore");
+        this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
         
         this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
             self.display();
@@ -125,7 +134,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     orderItemListInitialize: function(orderItemList) {
         var self = this;
         orderItemList.setItemTpl(Ext.create('Ext.XTemplate',
-                '<tpl if="tag || (flags && flags.indexOf(\'u\') &gt; -1) ">',
+                '<tpl if="!this.hasFlag(values,\'d\') && (tag || this.hasFlag(values,\'u\'))">',
                 '<div class="PosOrderLineName">',
                     '{name}',
                 '</div>',
@@ -142,7 +151,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         ' ',
                         '{[this.getUnit(values.uom_id)]}',
                         ' * ',
-                        '{[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}',
+                        '{[futil.formatFloat(values.price,Config.getDecimals())]} {[Config.getCurrency()]}',
+                        '<tpl if="netto">',
+                          '<tpl if="qty != 0 && qty != 1">',
+                          ' = <b>{[futil.formatFloat(values.subtotal,Config.getDecimals())]} {[Config.getCurrency()]}</b>',
+                          '</tpl>',
+                          ' ',
+                          '<b>NETTO</b>',
+                        '</tpl>',
                         ' ',
                         '<tpl if="discount &gt; 0.0">',
                             '<span class="PosOrderLineDiscount">',
@@ -169,6 +185,26 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             return futil.formatFloat(values.qty, dec);
                         } else {
                             return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
+                    },
+                    
+                    hasTag: function(values, tag) {
+                        if ( !tag ) {
+                            return values.tag ? true : false;
+                        } else if ( !values.tag ) {
+                            return false;
+                        } else {
+                            return values.tag == tag;
+                        }
+                    },
+                    
+                    hasFlag: function(values, flag) {
+                        if ( !flag) {
+                            return values.flags ? true : false;
+                        } else if ( !values.flags ) {
+                            return false;
+                        } else {
+                            return values.flags.indexOf(flag) > -1;
                         }
                     }
                     
@@ -205,6 +241,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             productInput: self.productInput            
         });
         
+        // place input
+        Ext.Viewport.on({
+            scope: self,
+            placeInput: self.placeInput
+        });    
+        
         // validation event         
         Ext.Viewport.on({
             scope: self,
@@ -216,8 +258,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             posKey: self.onKeyDown
         });
         
+        Ext.Viewport.on({
+            scope: self,
+            userChange: self.onUserChange
+        });
+        
         // reload data
         self.reloadData();
+    },
+    
+    placeInput: function(place) {
+        this.place = place;
+        this.reloadData();
     },
     
     productInput: function(product) {
@@ -250,9 +302,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'product_id' : product.getId(),
                     'uom_id' : product.get('uom_id'),
                     'tax_ids' : product.get('taxes_id'),
-                    'brutto_price' : product.get('brutto_price'),
+                    'netto' : product.get('netto'),
+                    'price' : product.get('price'),
                     'qty' : toWeight ? 0.0 : 1.0,
                     'subtotal_incl' : 0.0,
+                    'subtotal' : 0.0,
                     'discount' : 0.0,
                     'sequence' : self.lineStore.getCount()
                 };
@@ -334,17 +388,38 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    // save order
+    onSaveOrder: function() {
+        var self = this;
+        if ( !self.isEditable() ) return;
+         
+        var place_id = self.order.get('place_id');
+        var place = place_id ? self.placeStore.getPlaceById(place_id) : null;
+        
+        if ( place ) {
+            place.set('amount',self.order.get('amount_total'));
+            self.validateLines(true)['catch'](function(err) {
+                ViewManager.handleError(err, {name:'Fehler', message:'Bestellung konnte nicht boniert werden'});
+            }).then(function(){        
+                Ext.Viewport.fireEvent("showPlace");
+            });       
+        }
+    },
+    
+    round: function(val) {
+        return Math.round(val*this.roundFactor) / this.roundFactor;  
+    },
+    
     // compute line values
     validateLine: function(line, taxes, taxlist) {
+       var price, total, total_netto, netto;
+       
        var self = this;
        
-       var price = line.get('brutto_price') || 0.0;
-
        var discount = line.get('discount') || 0.0;
        discount = 1.0 - (discount/100.0);
        
        var qty = line.get('qty') || 0.0;
-       var total = qty * price * discount;
        var tax_ids = line.get('tax_ids');
 
        if ( !taxes ) 
@@ -353,7 +428,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
        var tax_percent = 0.0;
        var tax_fixed = 0.0;
        var total_tax = 0.0;
-              
+     
+        
        Ext.each(tax_ids, function(tax_id) {
             var tax = taxes[tax_id];
             if ( !tax ) {
@@ -388,8 +464,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
            }
         });
                
-        // subtotal without tax
-        var total_netto = (total-tax_fixed) / (1.0 + tax_percent);
+        // calc total
+        netto = line.get('netto');
+        price = line.get('price') || 0.0;
+        if ( netto ) {
+            total_netto =  qty * price * discount;
+            total = self.round((total_netto+tax_fixed) * (1.0 + tax_percent));
+        } else {     
+            total = qty * price * discount;   
+            total_netto = (total-tax_fixed) / (1.0 + tax_percent);
+        }
 
         // sum tax
         Ext.each(tax_ids, function(tax_id) {
@@ -400,14 +484,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             } else if (tax.type === 'fixed') {
                 amount_tax = (tax.amount * qty);
             }   
+            
+            // netto do rounding
+            if ( netto ) {
+                amount_tax = self.round(amount_tax);
+            }
+                
             tax.sum.amount_tax += amount_tax;
             tax.sum.amount_netto += total_netto;
             total_tax += amount_tax;
         });
         
         // set subtotal if dirty
-        if ( line.get('subtotal_incl') != total ) {
+        if ( line.get('subtotal_incl') != total ) {            
             line.set('subtotal_incl', total);
+            line.set('subtotal', total_netto);
         }
         
         // return subtotal brutto and amount tax
@@ -416,7 +507,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     // validate lines of current order
-    validateLines: function() {
+    validateLines: function(forceSave) {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         // primary check
@@ -426,6 +517,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var tax_ids = [];
             
             // compute lines
+            var amount_netto = 0.0;
             var amount_total = 0.0;
             var amount_tax = 0.0;
             var turnover = 0.0;
@@ -476,15 +568,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // notify display update
             self.displayTask.delay(800);
 
-            // save            
-            if ( self.order.dirty ) {
+            // save
+            // ( only save if it is dirty, not places are active or force save was passed)            
+            if ( self.order.dirty && (!Config.getProfile().iface_place || forceSave)) {
                 self.order.save({
                     callback: function() {
                         deferred.resolve();
                     }
-                });
+                });                
             } else {
-                deferred.resolve();
+                setTimeout(function() {
+                    deferred.resolve();
+                }, 0);
             }
             
         } else {
@@ -499,13 +594,26 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     // set current order
     setOrder: function(order) {
         var self = this;
+        self.order = order;
+
+        // reset of display
+        // when new order (only in place mode)
+        if ( Config.getProfile().iface_place ) {
+            self.getPosDisplay().setRecord(null);
+            self.getStateDisplay().setRecord(null);        
+        }
         
-        self.order = order;    
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
         self.getOrderItemList().deselectAll(true);
         
-        var lines = order.get('line_ids');
+        // get lines
+        var lines = null;
+        if ( order ) {
+            lines = order.get('line_ids');
+        }
+        
+        // update lines        
         if ( lines ) {
             self.lineStore.setData(lines);
         } else {
@@ -516,25 +624,31 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     // create new order
     nextOrder: function() {
         var self = this;
-        var db = Config.getDB();
         
-        var user_id = Config.getUser()._id;
-        var fpos_user_id = Config.getProfile().user_id;
+        var db = Config.getDB();
+        var user = Config.getUser();
+        var profile = Config.getProfile();
                 
-        if ( user_id && fpos_user_id) {
+        if ( user && profile) {
             var date = futil.datetimeToStr(new Date());  
-            db.post({
+            var values = {
                 'fdoo__ir_model' : 'fpos.order',
-                'fpos_user_id' : fpos_user_id,
-                'user_id' : user_id,
+                'fpos_user_id' : Config.getProfile().user_id,
+                'user_id' : Config.getUser()._id,
                 'state' : 'draft',
                 'date' : date,
                 'tax_ids' : [],
                 'line_ids' : [],
                 'amount_tax' : 0.0,
                 'amount_total' : 0.0
-            }).then(function(res) {                
-                self.reloadData();
+            };
+            
+            if ( self.place ) {
+                values.place_id = self.place.getId();
+            }
+            
+            db.post(values).then(function(res) {                
+                self.reloadData(true);
             });
         }
     },
@@ -596,40 +710,81 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     fullDataReload: function() {
         var self = this;
+        self.initialLoad = true;
         self.printTemplate = null;
-        self.reloadData();
+        self.place = null;
+
+        if ( Config.getProfile().iface_place ) {
+           // load open orders
+           var db = Config.getDB();           
+           DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {'include_docs':true}).then(function(res) {
+               Ext.each(res.rows, function(row) {
+                  var place = self.placeStore.getPlaceById(row.doc.place_id);
+                  if ( place ) {
+                    place.set('amount',row.doc.amount_total);
+                  } 
+               });
+               self.reloadData();
+           });
+        } else {       
+          // default reload
+          self.reloadData();
+        }
     },
         
-    reloadData: function() {
-        var self = this;
-
-        var db = Config.getDB();
-        var user = Config.getUser();
-        
-        self.setMode('*');
-        self.resetView();  
-                
-        if ( user ) {
-            var options = {
-                params : {
-                    domain : [['user_id','=',user._id],['state','=','draft']]
-                },
-                callback: function() {
-                    if ( self.orderStore.getCount() === 0 ) {
-                        // create new order
-                        self.nextOrder();
-                    } else {
-                        // set current order
-                        self.setOrder(self.orderStore.last());
-                    }
-                }
-            };
-            self.orderStore.load(options);
+    reloadData: function(noCreateOrder) {
+        if ( !this.initialLoad ) {
+            this.fullDataReload();
         } else {
-            // load nothing
-            self.orderStore.setData([]);
-            self.setOrder(null);
-        }        
+            var self = this;
+            
+            var db = Config.getDB();
+            var user = Config.getUser();
+            
+            self.setMode('*');
+            self.resetView();  
+            
+            // load if valid user and not places are activ or places are active 
+            // and a valid place exist
+            if ( user ) {
+                var params = null;
+                if ( self.place ) {
+                    params =  {
+                        domain : [['place_id','=',self.place.getId()],['state','=','draft']]
+                    };
+                } else {
+                    params =  {
+                        domain : [['user_id','=',user._id],['state','=','draft']]
+                    };
+                }
+                        
+                var options = {
+                    params : params, 
+                    callback: function() {
+                        if ( self.orderStore.getCount() === 0 ) {
+                            // create new order
+                            if ( !noCreateOrder ) {
+                                self.nextOrder();
+                            }
+                        } else {
+                            // set current order                            
+                            self.setOrder(self.orderStore.last());
+                        }
+                    }
+                };
+                self.orderStore.load(options);
+            } else {
+                // load nothing
+                self.orderStore.setData([]);
+                self.setOrder(null);
+            }  
+        }      
+    },
+    
+    onUserChange: function(user) {
+        if ( this.order && this.order.get('user_id') != user._id ) {
+            this.reloadData();
+        }
     },
     
     isEditable: function() {
@@ -654,17 +809,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         if ( product_id ) {
                             db.get(product_id).then(function(doc) {
                                 // delete or reset price
-                                if ( record.get('brutto_price') === doc.brutto_price) {
+                                if ( record.get('price') === doc.price) {
                                    self.lineStore.remove(record);
                                 } else {
-                                   record.set('brutto_price',doc.brutto_price);
+                                   record.set('price',doc.price);
                                 }
                                 self.validateLines();   
                             })['catch'](function(err) {
                                 ViewManager.handleError(err, {name:'Fehler', error: 'Produkt kann nicht zurückgesetzt werden'});
                             });              
                         } else {
-                            record.set('brutto_price',0.0);
+                            record.set('price',0.0);
                             self.validateLines();       
                         }
                     } else {
@@ -706,7 +861,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( this.mode == "%") {
             return futil.formatFloat(line.get('discount'), Config.getDecimals());
         } else if ( this.mode == "€") {
-            return futil.formatFloat(line.get('brutto_price'), Config.getDecimals());
+            return futil.formatFloat(line.get('price'), Config.getDecimals());
         } else {
             return futil.formatFloat(line.get('qty'), Config.getQtyDecimals());
         }
@@ -768,7 +923,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 if ( this.mode == "*" ) {
                                     line.set('qty',line.get('qty')*-1);
                                 } else {
-                                    line.set('brutto_price',line.get('brutto_price')*-1);
+                                    line.set('price',line.get('price')*-1);
                                 }
                                 this.validateLines();
                                 valid = false;
@@ -833,7 +988,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         // update
                         value = parseFloat(this.inputText);
                         if ( this.mode == "€" ) {
-                            line.set('brutto_price', value*this.inputSign);
+                            line.set('price', value*this.inputSign);
                         } else if ( this.mode == "%" ) {
                             line.set('discount', value);
                         } else {
@@ -910,10 +1065,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var sign = flags && flags.indexOf('-') > -1 ? -1 : 1;
             var tag = line.get('tag');            
             if ( tag == 'r' || tag == 'o' || tag == 'i' || ( flags && (flags.indexOf('u') > -1 || flags.indexOf('p') > -1) ) ) {
-                var brutto_price = line.get('brutto_price');              
-                if ( brutto_price < 0 ) {
+                var price = line.get('price');              
+                if ( price < 0 ) {
                     sign = -1;
-                } else if ( brutto_price > 0) {
+                } else if ( price > 0) {
                     sign = 1;
                 }
                 this.setMode('€', sign);                
@@ -1028,7 +1183,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var profile = Config.getProfile();
         var hasSeq = false;
         
-        self.validateLines()['catch'](function(err) {
+        self.validateLines(true)['catch'](function(err) {
             deferred.reject(err);
         }).then(function(){
             
@@ -1118,7 +1273,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }, true);
             }).then(function() {
                 self.printOrder();
-                self.reloadData();
+                if ( Config.getProfile().iface_place ) {
+                    var place_id = self.order.get('place_id');
+                    var place = place_id ? self.placeStore.getPlaceById(place_id) : null;        
+                    if ( place ) {
+                      place.set('amount',0);
+                    }
+                    Ext.Viewport.fireEvent("showPlace");
+                } else {
+                    self.reloadData();
+                }
             });
         } else {
             // if not editable
@@ -1191,7 +1355,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="2"><hr/></td>',
                 '</tr>',
                 '<tpl for="lines">',
-                    '<tpl if="tag==\'c\'">',
+                    '<tpl if="this.hasTag(values,\'c\')">',
                         '<tr>',
                             '<td colspan="2">{name}</td>',                        
                         '</tr>',
@@ -1206,7 +1370,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '<td>{name}</td>',
                             '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
                         '</tr>',
-                        '<tpl if="!tag && !(flags && flags.indexOf(\'u\') &gt; -1)">',
+                        '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
                             '<tr>',
                                 '<td colspan="2">',
                                     '<table width="100%">',
@@ -1214,7 +1378,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     '<td width="5%">&nbsp;</td>',
                                     '<td>',
                                         '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
-                                        '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.brutto_price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', 
+                                        '<tpl if="values.qty != 1.0"> * {[futil.formatFloat(values.price,Config.getDecimals())]} {[Config.getCurrency()]}</tpl>', 
                                         '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
                                     '</td>',
                                     '</tr>',
@@ -1234,6 +1398,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '</table>',
                         '</td>',
                     '</tr>',
+                    '</tpl>',
+                    '<tpl if="this.hasFlag(values,\'b\')">',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
+                        '</tr>',
                     '</tpl>',
                 '</tpl>',
                 '<tr>',                
@@ -1289,6 +1458,24 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             return futil.formatFloat(values.qty, dec);
                         } else {
                             return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
+                    },
+                    hasTag: function(values, tag) {
+                        if ( !tag ) {
+                            return values.tag ? true : false;
+                        } else if ( !values.tag ) {
+                            return false;
+                        } else {
+                            return values.tag == tag;
+                        }
+                    },
+                    hasFlag: function(values, flag) {
+                        if ( !flag) {
+                            return values.flags ? true : false;
+                        } else if ( !values.flags ) {
+                            return false;
+                        } else {
+                            return values.flags.indexOf(flag) > -1;
                         }
                     }
                 }                
@@ -1461,6 +1648,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     createCashState: function() {
         var self = this;
+
+        // reset place
+        self.place = null;
+        
         var db = Config.getDB();
         var profile = Config.getProfile();
         var user_id = Config.getUser()._id;
@@ -1499,7 +1690,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     {
                                         // TURNOVER
                                         'name' : 'Umsatzzähler',
-                                        'brutto_price' : turnover,
+                                        'price' : turnover,
                                         'qty' : 1.0,
                                         'subtotal_incl' : turnover,
                                         'discount' : 0.0,
@@ -1509,7 +1700,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     {
                                         // BALANCE
                                         'name' : 'Kassenstand SOLL',
-                                        'brutto_price' : cpos,
+                                        'price' : cpos,
                                         'qty' : 1.0,
                                         'subtotal_incl' : cpos,
                                         'discount' : 0.0,
@@ -1519,7 +1710,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     {
                                         // SHOULD
                                         'name' : 'Kassenstand IST',
-                                        'brutto_price' : cpos,
+                                        'price' : cpos,
                                         'qty' : 1.0,
                                         'subtotal_incl' : cpos,
                                         'discount' : 0.0,
@@ -1553,10 +1744,196 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
     },
     
+    createCashOverview: function(user) {
+        var self = this;
+        var db = Config.getDB();
+        var profile = Config.getProfile();
+        var user_id = Config.getUser()._id;
+        var fpos_user_id = profile.user_id;
+        var date = futil.datetimeToStr(new Date());
+      
+        if ( user_id && fpos_user_id) {
+        
+            Config.queryOrders().then(function(orders) {
+                if ( orders.length === 0 )
+                    return;
+                
+                var overview = {};
+                var positions = [];
+                var taxes = {};
+                var taxNames = [];
+                var lines = [];
+                var total = 0.0;
+                var seq = 1;
+                
+                Ext.each(orders, function(order) {
+                    if ( !order.tag && (!user || order.user_id == user._id) ) {
+                        // positions
+                        Ext.each(order.line_ids, function(line) {
+                            if ( !line.tag ) {
+                                // build summary
+                                var summary = overview[line.name];
+                                total += line.subtotal_incl;
+                                if (!summary) {
+                                    summary = {
+                                        tag: 's',
+                                        name: line.name,
+                                        price: line.price,                                
+                                        qty : line.qty,
+                                        uom_id: line.uom_id,
+                                        subtotal_incl: line.subtotal_incl,
+                                        sequence : 0,
+                                        discount: 0.0
+                                    };
+                                    overview[line.name] = summary;
+                                    positions.push(line.name);
+                                } else {
+                                    summary.subtotal_incl +=  line.subtotal_incl;
+                                    summary.qty += line.qty;
+                                }
+                            }
+                        });
+                        
+                        //taxes
+                        Ext.each(order.tax_ids, function(tax) {
+                            var summary = taxes[tax.name];
+                            if (!summary) {
+                                summary = {     
+                                    tag: 's',
+                                    name: tax.name,
+                                    qty: 1.0,
+                                    price: tax.amount_tax,  
+                                    subtotal_incl : tax.amount_tax,
+                                    sequence : 0,
+                                    discount: 0.0
+                                };
+                                taxes[tax.name] = summary;
+                                taxNames.push(tax.name);
+                            } else {
+                                summary.subtotal_incl += tax.amount_tax;
+                                summary.price = summary.subtotal_incl;
+                            }
+                        });
+                    }              
+                });
+                
+                
+                // HEADER
+                
+                var header = 'Verkäufe Gesamt';
+                if ( user ) {
+                    header = 'Verkäufe ' + user.name;
+                }
+                lines.push({
+                    name : header,
+                    price : total,
+                    qty : 1.0,
+                    subtotal_incl : total,
+                    discount : 0.0,
+                    sequence : 0,
+                    tag : 's',
+                    flags: 'b'
+                });
+                
+                // PRODUCTS
+                
+                positions.sort();
+                var lastIndex = positions.length-1;
+                Ext.each(positions, function(pos, index)  {
+                    var summary = overview[pos];
+                    lines.push(summary);
+                    
+                    summary.flags = 'd';
+                    if ( index == lastIndex ) {
+                        summary.flags += 'b';
+                    }
+                    
+                    summary.sequence = seq;
+                    seq+=1;               
+                });
+                
+                // TAXES
+               
+                taxNames.sort();
+                Ext.each(taxNames, function(taxName, index) {                    
+                    var summary = taxes[taxName];
+                    lines.push(summary);
+                    summary.sequence = seq;
+                    seq+=1;  
+                } );
+                
+                
+                //CREATE
+                return db.post({
+                    'fdoo__ir_model' : 'fpos.order',
+                    'fpos_user_id' : fpos_user_id,
+                    'user_id' : user_id,
+                    'state' : 'draft',
+                    'date' : date,
+                    'tax_ids' : [],
+                    'line_ids' : lines,
+                    'amount_tax' : 0.0,
+                    'amount_total' : 0.0,
+                })['catch'](function(err) {          
+                  ViewManager.stopLoading();
+                  ViewManager.handleError(err,{
+                        name: "Verkaufsübersicht Fehler",
+                        message: "Verkaufsübersicht konnte nicht erstellt werden"
+                   });
+                }).then(function(res) {
+                    ViewManager.stopLoading();                            
+                    self.reloadData();
+                });
+                
+            })['catch'](function(err) {
+               ViewManager.stopLoading();
+               ViewManager.handleError(err,{
+                    name: "Verkaufsübersicht Fehler",
+                    message: "Verkaufsübersicht konnte nicht erstellt werden"
+               });
+            });
+        
+        }
+            
+    },
+    
     onCreateCashState: function() {
         if ( !futil.isDoubleTap() ) {
             ViewManager.hideMenus();
             this.createCashState();
+        }
+    },
+    
+    onCashOverview: function() {
+        if ( !futil.isDoubleTap() ) {
+            ViewManager.hideMenus();
+            var profile = Config.getProfile();
+            var self = this;
+            if ( profile ) {
+                if ( profile.user_ids.length <= 1) {
+                    this.createCashOverview(null);
+                } else {
+                    Ext.Msg.show({
+                        title: 'Verkaufsübersicht',
+                        message: 'Verkaufsübersicht Gesamt oder für den aktuellen Verkäufer erstellen?',
+                        buttons: [{
+                                text: 'Gesamt'
+                            
+                            },
+                            {
+                                text: 'Verkäufer'
+                            }
+                        ],
+                        fn: function(buttonId) {
+                            if ( buttonId === 'Gesamt' ) {          
+                                self.createCashOverview(null);
+                            } else {
+                                self.createCashOverview(Config.getUser());
+                            }
+                        }
+                    });                   
+                }
+            }
         }
     },
     
@@ -1596,8 +1973,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             this.onEditOrder();
         } else if ( keycode == 190 ) {
             this.inputAction('.');
-        } else if ( keycode ==8 ) {
-            this.onPayment();
+        } else if ( keycode == 8) {
+            // only react if nothing is selected
+            if ( e.currentTarget && e.currentTarget.activeElement && e.currentTarget.activeElement.localName == 'body' ) {
+                this.onPayment();
+            }
         }
     }
     

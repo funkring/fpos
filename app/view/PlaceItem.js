@@ -1,13 +1,13 @@
 /*global Ext:false*/
-Ext.define("Fpos.view.ProductItem", {
+Ext.define("Fpos.view.PlaceItem", {
     extend: 'Ext.dataview.component.DataItem',
     requires: ['Ext.XTemplate'],
-    xtype: 'fpos_product_item',
+    xtype: 'fpos_place_item',
     config: {       
         items: [{
-            cls: 'ProductButton',
+            cls: 'PlaceButton',
             xtype: 'button',
-            action: 'selectProduct',
+            action: 'selectPlace',
             ui: 'posInputButtonWhite'
         }]
     },
@@ -15,13 +15,14 @@ Ext.define("Fpos.view.ProductItem", {
     updateRecord: function(record) {        
         var self = this;
         var button = self.down('button');
-        if ( button ) {     
+        if ( button ) {
+            // set color
             var ui = 'posInputButtonWhite';
             var color = record.get('pos_color');
-            var cls = 'ProductButton';
+            var cls = 'PlaceButton';
             if ( color ) {
                 if ( color !== 'white' && color !== 'yellow') {
-                    cls = 'ProductButtonDark';
+                    cls = 'PlaceButtonDark';
                 }
                 ui = 'posInputButton-'+color;
             }           
@@ -33,7 +34,7 @@ Ext.define("Fpos.view.ProductItem", {
             if ( button.getCls() != cls ) {
                 button.setCls(cls);
             }
-            
+        
             button.setRecord(record);
         }
     }

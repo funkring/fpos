@@ -20,7 +20,52 @@ Ext.define('Fpos.view.Main', {
                     align: 'left',
                     action: 'switchUser',
                     hidden: true                
-                },       
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton1',
+                    user: null,
+                    text: 'User 1',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },            
+                {
+                    xtype: 'button',
+                    id: 'userButton2',
+                    user: null,
+                    text: 'User 2',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton3',
+                    user: null,
+                    text: 'User 3',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton4',
+                    user: null,
+                    text: 'User 4',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'placeButton',
+                    text: 'Plätze',
+                    align: 'left',
+                    action: 'switchPlace',
+                    ui: 'back',
+                    hidden: true                    
+                },
                 {
                     xtype: 'button',
                     iconCls: 'list',
@@ -31,12 +76,21 @@ Ext.define('Fpos.view.Main', {
                 },
                 {
                     xtype: 'button',
+                    id: 'saveOrderButton',
+                    text: 'Bonieren',   
+                    ui: 'forward',    
+                    align: 'right',
+                    action: 'saveOrder',
+                    hidden: true                
+                },   
+                {
+                    xtype: 'button',
                     id: 'deleteRecordButton',
                     iconCls: 'trash',
                     align: 'right',
                     action: 'deleteRecord',  
                     hidden: true
-                }, 
+                },                 
                 {
                     xtype: 'button',
                     id: 'saveRecordButton',
@@ -44,7 +98,7 @@ Ext.define('Fpos.view.Main', {
                     align: 'right',
                     action: 'saveRecord',
                     hidden: true                
-                }                                     
+                }                                                 
             ]
         }
     }

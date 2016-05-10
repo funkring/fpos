@@ -10,9 +10,6 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     ],
     config: {
         refs: {
-            categoryButton1: '#categoryButton1',
-            categoryButton2: '#categoryButton2',
-            categoryButton3: '#categoryButton3',
             productSearch: '#productSearch',
             categoryDataView: '#categoryDataView',
             productView: '#productView'
@@ -106,17 +103,17 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                           '<div class="ProductText">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
                       '<tpl elseif="pos_name.length &lt;= 7">',
                          '<div class="ProductTextOnlyBig">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
                       '<tpl else>',
                          '<div class="ProductTextOnly">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
                       '</tpl>',{
                           getUnit: function(uom_id) {
                             var uom = self.unitStore.getById(uom_id);
@@ -148,7 +145,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                          '</div>',
                      '</tpl>',
                  '</div>', 
-                 '<span class="ProductPrice">{[futil.formatFloat(values.brutto_price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                 '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
                  {
                       getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
@@ -292,7 +289,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         // load categories
         var categories = [];
         self.allCategoryStore.each(function(childCategory) {
-            if ( childCategory.get('parent_id') == categoryId ) {       
+            if ( childCategory.get('parent_id') == categoryId && !childCategory.get('pos_unavail') ) {       
                 childCategory.set('selected',false);
                 childCategory.set('parent',false);
                 categories.push(childCategory);

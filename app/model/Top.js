@@ -1,23 +1,22 @@
 /*global Ext:false, Config:false*/
-Ext.define('Fpos.model.Category', {
+Ext.define('Fpos.model.Top', {
    extend: 'Ext.data.Model',
    requires: [
        'Ext.proxy.PouchDB'
    ],
    config: {
        fields: ['name',                 
-                'parent_id',
                 'sequence',
+                'complete_name',
+                'parent_id',
                 'pos_color',
-                'pos_unavail',
-                {name:'selected', persist:false},
-                {name:'parent', persist:false}
+                'pos_unavail'
                ],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',
             database: 'fpos',
-            resModel: 'pos.category'
+            resModel: 'fpos.top'
        }
    }
 });

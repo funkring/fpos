@@ -18,6 +18,24 @@ $fpos-input-dark: #525252;
 $fpos-input-grey: #777777;
 $fpos-input-lightgrey: #eeeeee;
 
+$fpos-white: #ffffff;
+$fpos-silver: #999999;
+$fpos-grey: #4d4d4d;
+$fpos-black: #000000;
+$fpos-red: #e06b5e;
+$fpos-maroon: #800000;
+$fpos-yellow: #ffe98a;
+$fpos-olive: #aa8800;
+$fpos-lime: #3c9d53;
+$fpos-green: #256235;
+$fpos-aqua: #2a7fff;
+$fpos-teal: #5fd3bc;
+$fpos-blue: #2a2aff;
+$fpos-navy: #003380;
+$fpos-fuchsia: #ff55dd;
+$fpos-purple: #a80087;
+$fpos-orange: #ff7f2a;
+
 // ******************************************************************
 // Invalids
 // ******************************************************************
@@ -58,13 +76,13 @@ $fpos-input-lightgrey: #eeeeee;
 // NumberInput 
 // ******************************************************************
 
-@include sencha-button-ui('numInputButtonRed', #e06b5e,'matt');
+@include sencha-button-ui('numInputButtonRed', $fpos-red,'matt');
 @include sencha-button-ui('numInputButtonBlack', $fpos-input-dark,'matt');
-@include sencha-button-ui('numInputButtonGreen', #3c9d53,'matt');
+@include sencha-button-ui('numInputButtonGreen', $fpos-lime,'matt');
 
 .NumInputButton {
     margin: 2px;
-    color: #ffffff !important; 
+    color: $fpos-white !important; 
     font-size: 1.3em;    
 }
 
@@ -87,22 +105,39 @@ $fpos-input-lightgrey: #eeeeee;
 // PosInput 
 // ******************************************************************
 
-@include sencha-button-ui('posInputButtonRed', #e06b5e,'matt');
-@include sencha-button-ui('posInputButtonBlack', $fpos-input-dark,'matt');
-@include sencha-button-ui('posInputButtonGray', $fpos-input-grey,'matt');
-@include sencha-button-ui('posInputButtonGreen', #3c9d53,'matt');
-@include sencha-button-ui('posInputButtonOrange', #ff7f2a,'matt');
-@include sencha-button-ui('posInputButtonWhite', #ffffff,'matt');
+@include sencha-button-ui('posInputButtonRed', $fpos-red, 'matt');
+@include sencha-button-ui('posInputButtonBlack', $fpos-input-dark, 'matt');
+@include sencha-button-ui('posInputButtonGray', $fpos-input-grey, 'matt');
+@include sencha-button-ui('posInputButtonGreen', $fpos-lime, 'matt');
+@include sencha-button-ui('posInputButtonOrange', $fpos-orange, 'matt');
+@include sencha-button-ui('posInputButtonWhite', $fpos-white, 'matt');
+
+@include sencha-button-ui('posInputButton-white', $fpos-white, 'matt');
+@include sencha-button-ui('posInputButton-silver', $fpos-silver, 'matt');
+@include sencha-button-ui('posInputButton-grey', $fpos-grey, 'matt');
+@include sencha-button-ui('posInputButton-black', $fpos-black, 'matt');
+@include sencha-button-ui('posInputButton-red', $fpos-red, 'matt');
+@include sencha-button-ui('posInputButton-maroon', $fpos-maroon, 'matt');
+@include sencha-button-ui('posInputButton-yellow', $fpos-yellow, 'matt');
+@include sencha-button-ui('posInputButton-olive', $fpos-olive, 'matt');
+@include sencha-button-ui('posInputButton-lime', $fpos-lime, 'matt');
+@include sencha-button-ui('posInputButton-green', $fpos-green, 'matt');
+@include sencha-button-ui('posInputButton-aqua', $fpos-aqua, 'matt');
+@include sencha-button-ui('posInputButton-teal', $fpos-teal, 'matt');
+@include sencha-button-ui('posInputButton-blue', $fpos-blue, 'matt');
+@include sencha-button-ui('posInputButton-navy', $fpos-navy, 'matt');
+@include sencha-button-ui('posInputButton-fuchsia', $fpos-fuchsia, 'matt');
+@include sencha-button-ui('posInputButton-purple', $fpos-purple, 'matt');
 
 .PosInputButton {
     margin: 1px;
-    color: #ffffff !important; 
+    color: $fpos-white !important; 
     font-size: 1.4em;    
 }
 
 .PosInputButtonSmallFont {
     margin: 1px;
-    color: #ffffff !important; 
+    color: $fpos-white !important; 
     font-size: 1.2em;    
 }
 
@@ -113,7 +148,7 @@ $fpos-input-lightgrey: #eeeeee;
 
 .PosInputButtonOther {
     margin: 4px;
-    color: #ffffff !important; 
+    color: $fpos-white !important; 
     font-size: 1.4em;    
 }
 
@@ -148,7 +183,7 @@ $fpos-input-lightgrey: #eeeeee;
 }
 
 .TestInfo {
-    background-color: #ffffff !important;
+    background-color: $fpos-white !important;
     margin: 4px;
     font-size: 0.6em;
     white-space: normal;
@@ -160,7 +195,7 @@ $fpos-input-lightgrey: #eeeeee;
 
 .TestButton {
     margin: 2px 4px;
-    color: #ffffff !important; 
+    color: $fpos-white !important; 
     width: 72px;
     height: 56px;
     font-size: 0.8em;     
@@ -169,6 +204,28 @@ $fpos-input-lightgrey: #eeeeee;
 div.TestButton > span.x-button-label {
    white-space: normal;
 }
+
+// ******************************************************************
+// Menu
+// ******************************************************************
+
+.MainMenu {
+   background-color: $fpos-input-grey !important;
+   background-image: none;
+   width: 172px;
+}
+
+.MenuButton {
+   color: $fpos-white !important; 
+   width: 144px;
+   height: 56px;
+   font-size: 0.8em;     
+}
+
+div.MenuButton > span.x-button-label {
+   white-space: normal;
+}
+
 
 // ******************************************************************
 // ProductView
@@ -188,7 +245,7 @@ div.TestButton > span.x-button-label {
    width: 78px;
    height: 56px;
    margin: 2px;
-   color: #ffffff !important; 
+   color: $fpos-white !important; 
    font-size: 1em;
 }
 
@@ -200,7 +257,7 @@ div.ProductCategoryButton > span.x-button-label {
    width: 78px;
    height: 56px;
    margin: 2px;
-   color: #ffffff !important; 
+   color: $fpos-white !important; 
    font-size: 0.85em;
 }
 
@@ -212,7 +269,7 @@ div.ProductCategoryButtonMedium > span.x-button-label {
    width: 78px;
    height: 56px;
    margin: 2px;
-   color: #ffffff !important; 
+   color: $fpos-white !important; 
    font-size: 0.72em;
 }
 
@@ -237,6 +294,16 @@ div.ProductCategoryButtonSmall > span.x-button-label {
     height: 100px;
     font-size: 0.7em;
     white-space: normal;
+}
+
+.ProductButtonDark {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    white-space: normal;
+    color: $fpos-white !important; 
 }
 
 .ProductButtonSmall {
@@ -279,7 +346,7 @@ div.ProductCategoryButtonSmall > span.x-button-label {
     right: 2px;
     vertical-align: top;
     line-height: 13px;
-    color: #ffffff !important; 
+    color: $fpos-white !important; 
     background-color: $fpos-input-grey !important;
     padding: 2px 5px;
     border-radius: 2px;
@@ -477,3 +544,149 @@ div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription
     padding: 0px;
 }
 
+
+// ******************************************************************
+// TopView
+// ******************************************************************
+
+.TopContainer {   
+    //box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: $fpos-input-lightgrey
+}
+
+.TopButton {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: $fpos-white !important; 
+   font-size: 1em;
+}
+
+div.TopButton > span.x-button-label {
+   white-space: normal;
+}
+
+.TopButtonMedium {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: $fpos-white !important; 
+   font-size: 0.85em;
+}
+
+div.TopButtonMedium > span.x-button-label {
+   white-space: normal;
+}
+
+.TopButtonSmall {
+   width: 78px;
+   height: 56px;
+   margin: 2px;
+   color: $fpos-white !important; 
+   font-size: 0.72em;
+}
+
+div.TopButtonSmall > span.x-button-label {
+   white-space: normal;
+}
+
+.TopSelection {
+    background-color: $fpos-input-dark !important;
+    width: 86px;
+    padding-left: 2px;
+}
+
+.PlaceDataView {
+    margin: 2px;
+}
+
+.PlaceButton {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    white-space: normal;
+}
+
+.PlaceButtonDark {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    white-space: normal;
+    color: $fpos-white !important; 
+}
+
+.PlaceButtonSmall {
+    float: left;
+    margin: 2px;
+    width: 100px;
+    height: 100px;
+    font-size: 0.7em;
+    white-space: normal;
+}
+
+.PlaceItemNoCat {
+    display: table;
+}
+
+.PlaceButtonNoCat {
+    margin: 2px;
+    height: 100px;
+    font-size: 0.8em;
+    white-space: normal;
+}
+
+.PlaceTextBigNoCat {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    font-size: 2em;    
+}
+
+.PlaceTextNoCat {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    font-size: 1.5em;    
+}
+
+.PlaceImageNoCat  {
+    display: table-cell;
+    align: left;
+    vertical-align: top;
+    padding-right: 6px;
+}
+
+.PlaceImage {
+    position: relative;
+    text-align: center;   
+}
+
+.PlaceText {
+    text-align: center;
+}
+
+.PlaceTextOnly {
+    text-align: center;
+    font-size: 1.4em;
+}
+
+.PlaceTextOnlyBig {
+    text-align: center;
+    font-size: 2em;
+}
+
+.PlaceAmount {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    vertical-align: top;
+    line-height: 13px;
+    color: $fpos-white !important; 
+    background-color: $fpos-input-grey !important;
+    padding: 2px 5px;
+    border-radius: 2px;
+}

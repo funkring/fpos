@@ -5,7 +5,7 @@ Ext.define('Fpos.store.PartnerStore', {
     config: {
         model: 'Fpos.model.Partner',
         sorters: 'name',
-        grouper: function(record) {
+        grouper: function(record) { 
             return record.get('name')[0];
         }
     }

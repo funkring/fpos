@@ -86,7 +86,7 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         var record = self.getScaleView().getRecord();
         if ( record ) {
             if ( self.state === self.STATE_INIT_PRICE ) {
-                var price = record.get('brutto_price') || 0.0;
+                var price = record.get('price') || 0.0;
                 var tara = record.get('tara') || 0.0;
                 Config.scaleInit(price, tara)['catch'](function() {
                     // continue
@@ -104,7 +104,7 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
                     self.nextState();
                 }).then(function(result) {
                     // check price
-                    var price = record.get('brutto_price');
+                    var price = record.get('price');
                     if ( result.price.toFixed(2) != price.toFixed(2) ) {
                        // on wrong price init again
                        // REINIT

@@ -37,11 +37,24 @@ Ext.define('Fpos.view.OrderView', {
                 flex : 1,
                 items: [
                     {
-                        xtype: 'scrolllist',
-                        id: 'orderItemList',
-                        cls: 'Receipt',
-                        itemCls: 'PosOrderItem',
-                        allowDeselect: true
+                        layout: 'vbox',
+                        xtype: 'panel',
+                        id: 'orderItemPanel',
+                        items: [
+                            {
+                                xtype: 'scrolllist',
+                                id: 'orderItemList',
+                                cls: 'Receipt',
+                                itemCls: 'PosOrderItem',
+                                allowDeselect: true,
+                                flex: 1
+                            },
+                            {
+                                id: 'nettoSummary',
+                                cls: 'NettoSummary',
+                                xtype: 'label'
+                            }
+                        ]
                     },
                     {
                         layout: 'vbox',
