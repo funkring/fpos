@@ -1873,7 +1873,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'tax_ids' : [],
                     'line_ids' : lines,
                     'amount_tax' : 0.0,
-                    'amount_total' : 0.0,
+                    'amount_total' : 0.0
                 })['catch'](function(err) {          
                   ViewManager.stopLoading();
                   ViewManager.handleError(err,{

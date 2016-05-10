@@ -540,7 +540,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     },        
                     {
                         text: 'Verkaufs Übersicht',
-                        action: 'createCashOverview',
+                        action: 'createCashOverview'
                     },             
                     {
                         text: 'Drucken wiederholen',
