@@ -70,6 +70,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=createCashOverview]' : {
                 tap: 'onCashOverview'  
             },
+            'button[action=createCashOverviewAll]' : {
+                tap: 'onCashOverviewAll'  
+            },
             'button[action=printAgain]' : {
                 tap: 'onPrintAgain'
             },
@@ -1755,6 +1758,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     createCashOverview: function(user) {
         var self = this;
+        
+         // reset place
+        self.place = null;
+        
         var db = Config.getDB();
         var profile = Config.getProfile();
         var user_id = Config.getUser()._id;
@@ -1762,11 +1769,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var date = futil.datetimeToStr(new Date());
       
         if ( user_id && fpos_user_id) {
-        
+            ViewManager.startLoading("Verkaufsübersicht erstellen");
+            
             Config.queryOrders().then(function(orders) {
-                if ( orders.length === 0 )
-                    return;
-                
                 var overview = {};
                 var positions = [];
                 var taxes = {};
@@ -1774,7 +1779,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var lines = [];
                 var total = 0.0;
                 var seq = 1;
-                
+
                 Ext.each(orders, function(order) {
                     if ( !order.tag && (!user || order.user_id == user._id) ) {
                         // positions
@@ -1916,35 +1921,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onCashOverview: function() {
         if ( !futil.isDoubleTap() ) {
             ViewManager.hideMenus();
-            var profile = Config.getProfile();
-            var self = this;
-            if ( profile ) {
-                if ( profile.user_ids.length <= 1) {
-                    this.createCashOverview(null);
-                } else {
-                    Ext.Msg.show({
-                        title: 'Verkaufsübersicht',
-                        message: 'Verkaufsübersicht Gesamt oder für den aktuellen Verkäufer erstellen?',
-                        buttons: [{
-                                text: 'Gesamt'
-                            
-                            },
-                            {
-                                text: 'Verkäufer'
-                            }
-                        ],
-                        fn: function(buttonId) {
-                            if ( buttonId === 'Gesamt' ) {          
-                                self.createCashOverview(null);
-                            } else {
-                                self.createCashOverview(Config.getUser());
-                            }
-                        }
-                    });                   
-                }
-            }
+            this.createCashOverview(Config.getUser());
         }
     },
+    
+    onCashOverviewAll: function() {
+        if ( !futil.isDoubleTap() ) {
+            ViewManager.hideMenus();
+            this.createCashOverview(null);
+        }
+    },
+
     
     onPrintAgain: function() {
         var self = this;
