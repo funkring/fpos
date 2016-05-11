@@ -31,7 +31,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             userButton1: '#userButton1',
             userButton2: '#userButton2',
             userButton3: '#userButton3',
-            userButton4: '#userButton4'
+            userButton4: '#userButton4',
+            userButton5: '#userButton5',
+            userButton6: '#userButton6'
         },
         control: {     
             'button[action=editConfig]' : {
@@ -53,8 +55,14 @@ Ext.define('Fpos.controller.MainCtrl', {
                 tap: 'onShowProductMenu'
             },
             'button[action=createCashState]' : {
-                tap: 'onCreateCashState'
+                tap: 'onCashOperation'
             },  
+            'button[action=createCashOverview]' : {
+                tap: 'onCashOperation'
+            }, 
+            'button[action=createCashOverviewAll]' : {
+                tap: 'onCashOperation'
+            }, 
             'button[action=fastSwitchUser]' : {
                 tap: 'onFastSwitchUser'
             },
@@ -126,7 +134,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             self.getUserButton1(),
             self.getUserButton2(),
             self.getUserButton3(),
-            self.getUserButton4()
+            self.getUserButton4(),
+            self.getUserButton5(),
+            self.getUserButton6()
         ];
                   
         // show form event
@@ -539,9 +549,13 @@ Ext.define('Fpos.controller.MainCtrl', {
                         ui: 'posInputButtonGreen'  
                     },        
                     {
-                        text: 'Verkaufs Übersicht',
-                        action: 'createCashOverview'
+                        text: 'Verkäufe Gesamt',
+                        action: 'createCashOverviewAll'
                     },             
+                    {
+                        text: 'Meine Verkäufe',
+                        action: 'createCashOverview'
+                    },
                     {
                         text: 'Drucken wiederholen',
                         action: 'printAgain'
@@ -597,7 +611,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         self.mainActiveItemChange(self.getMainView(), self.basePanel);
     },
     
-    onCreateCashState: function() {
+    onCashOperation: function() {
         // only if place iface        
         if ( Config.getProfile().iface_place ) {
             var self = this;
