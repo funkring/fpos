@@ -13,7 +13,7 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         },
         control: {
             taraButton: {
-                tap: 'onTara'
+                release: 'onTara'
             }, 
             scaleView: {
                 startScale: 'startScale',

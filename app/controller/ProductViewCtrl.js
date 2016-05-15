@@ -16,10 +16,10 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         },
         control: {
             'button[action=selectCategory]' : {
-                tap: 'tapSelectCategory'
+                release: 'tapSelectCategory'
             },   
             'button[action=selectProduct]' : {
-                tap: 'tapSelectProduct',
+                release: 'tapSelectProduct',
                 initialize: 'productButtonInitialize'
             },
             productSearch: {    

@@ -37,50 +37,50 @@ Ext.define('Fpos.controller.MainCtrl', {
         },
         control: {     
             'button[action=editConfig]' : {
-                tap: 'editConfig'
+                release: 'editConfig'
             },
             'button[action=showHwTest]' : {
-                tap: 'showHwTest'
+                release: 'showHwTest'
             },
             'button[action=sync]' : {
-                tap: 'onSyncTap'
+                release: 'onSyncTap'
             },
             'button[action=updateApp]' : {
-                tap: 'onUpdateApp'
+                release: 'onUpdateApp'
             },
             'button[action=provisioning]' : {
-                tap: 'onProvisioning'
+                release: 'onProvisioning'
             },
             'button[action=productMenu]' : {
-                tap: 'onShowProductMenu'
+                release: 'onShowProductMenu'
             },
             'button[action=createCashState]' : {
-                tap: 'onCashOperation'
+                release: 'onCashOperation'
             },  
             'button[action=createCashOverview]' : {
-                tap: 'onCashOperation'
+                release: 'onCashOperation'
             }, 
             'button[action=createCashOverviewAll]' : {
-                tap: 'onCashOperation'
+                release: 'onCashOperation'
             }, 
             'button[action=fastSwitchUser]' : {
-                tap: 'onFastSwitchUser'
+                release: 'onFastSwitchUser'
             },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
             },
             mainMenuButton: {
-                tap: 'onShowMainMenu'                
+                release: 'onShowMainMenu'                
             },
             saveRecordButton: {
-                tap: 'saveRecord'
+                release: 'saveRecord'
             },
             loginButton: {
-                tap: 'showLogin'
+                release: 'showLogin'
             },
             placeButton: {
-                tap: 'showPlace'
+                release: 'showPlace'
             }            
         }
     },
@@ -165,31 +165,23 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     onSyncTap: function() {        
-        if ( !futil.isDoubleTap() ) { 
-            ViewManager.hideMenus();
-            this.sync();
-        }
+        ViewManager.hideMenus();
+        this.sync();
     },
     
     onUpdateApp: function() {
-        if ( !futil.isDoubleTap() ) {
-            ViewManager.hideMenus();
-            Config.updateApp();
-        }
+        ViewManager.hideMenus();
+        Config.updateApp();
     },
     
     onProvisioning: function() {
-        if ( !futil.isDoubleTap() ) {
-            ViewManager.hideMenus();
-            Config.provisioning();
-        }
+        ViewManager.hideMenus();
+        Config.provisioning();
     },
     
     onFastSwitchUser: function(button) {
-        if ( !futil.isDoubleTap() ) {
-            if ( button.user ) {
-                this.switchUser(button.user);
-            }
+        if ( button.user ) {
+            this.switchUser(button.user);
         }
     },
     
@@ -950,23 +942,19 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     onShowMainMenu: function() {
-        if ( !futil.isDoubleTap()) {
-           if ( Ext.Viewport.getMenus().right.isHidden() ) {
-                Ext.Viewport.showMenu("right");
-           } else {
-                Ext.Viewport.hideMenu("right");
-           }
-        }
+       if ( Ext.Viewport.getMenus().right.isHidden() ) {
+            Ext.Viewport.showMenu("right");
+       } else {
+            Ext.Viewport.hideMenu("right");
+       }
     },
     
     onShowProductMenu: function() {
-        if ( !futil.isDoubleTap()) {
-           if ( Ext.Viewport.getMenus().left.isHidden() ) {
-                Ext.Viewport.showMenu("left");
-           } else {
-                Ext.Viewport.hideMenu("left");
-           }
-        }
+       if ( Ext.Viewport.getMenus().left.isHidden() ) {
+            Ext.Viewport.showMenu("left");
+       } else {
+            Ext.Viewport.hideMenu("left");
+       }
     },
     
     onKeyDown: function(e) {

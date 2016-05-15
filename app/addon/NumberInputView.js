@@ -43,27 +43,27 @@ Ext.define('Ext.view.NumberInputView', {
         listeners: [
             {
                 fn: 'addNumber',
-                event: 'tap',
+                event: 'release',
                 delegate: 'button[action=addNumber]'
             },
             {
                 fn: 'clearInput',
-                event: 'tap',
+                event: 'release',
                 delegate: 'button[action=clearInput]'
             },
             {
                 fn: 'changeSign',
-                event: 'tap',
+                event: 'release',
                 delegate: 'button[action=changeSign]'                
             },
             {
                 fn: 'addComma',
-                event: 'tap',
+                event: 'release',
                 delegate: 'button[action=addComma]'
             },
             {
                 fn: 'numInputDone',
-                event: 'tap',
+                event: 'release',
                 delegate: 'button[action=numInputDone]'   
             },
             {
@@ -80,7 +80,7 @@ Ext.define('Ext.view.NumberInputView', {
             },
             {
                 fn: 'editDetail',
-                event: 'tap',
+                event: 'release',
                 delegate: 'numberview'
             }
                 
@@ -494,21 +494,19 @@ Ext.define('Ext.view.NumberInputView', {
     },
     
     numInputDone: function() {
-        if ( !futil.isDoubleTap() ) {
-            var value = this.getValue();
-            var minlen = this.getMinlen();
-            if ( minlen > 0 && (!value || value.length < minlen || value === this.getEmptyValue() ) ) {
-                this.numField.setError("Eingabe zu kurz! </br> Mindestens " + minlen + " Stellen");
-            } else {
-                try {        
-                    var handler = this.getHandler();
-                    if ( handler ) {
-                        handler(this, this.getValue());
-                    }
-                } finally {
-                    if ( this.getHideOnInputDone() ) {
-                        this.hide();
-                    }
+        var value = this.getValue();
+        var minlen = this.getMinlen();
+        if ( minlen > 0 && (!value || value.length < minlen || value === this.getEmptyValue() ) ) {
+            this.numField.setError("Eingabe zu kurz! </br> Mindestens " + minlen + " Stellen");
+        } else {
+            try {        
+                var handler = this.getHandler();
+                if ( handler ) {
+                    handler(this, this.getValue());
+                }
+            } finally {
+                if ( this.getHideOnInputDone() ) {
+                    this.hide();
                 }
             }
         }

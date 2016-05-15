@@ -49,10 +49,6 @@ Ext.define('Ext.field.ListSelect', {
     },
     
     showPicker: function() {
-        // prevent double tap
-        if ( futil.isDoubleTap() )
-            return;
-    
         var self = this;
         var navigationView = self.findNavigationView();
         var store = self.getStore();
@@ -78,11 +74,9 @@ Ext.define('Ext.field.ListSelect', {
                     iconCls: 'delete',
                     align: 'right',
                     listeners: {
-                        tap: function(button, e, opts) {
-                            if ( !futil.isDoubleTap() ) {
-                                self.setValue(null);
-                                navigationView.pop();
-                            }
+                        release: function(button, e, opts) {
+                            self.setValue(null);
+                            navigationView.pop();
                         }
                     }
                 }
@@ -192,21 +186,6 @@ Ext.define('Ext.field.ListSelect', {
        return navigationView;
    },
      
-   /*
-   onListTap: function() {
-       // prevent double tap
-       if ( futil.isDoubleTap() )
-         return;
-   
-       var self = this;
-       var navigationView = self.findNavigationView();
-       if ( navigationView !== null ) {
-           navigationView.pop();
-       } else { 
-           self.callParent(arguments);
-       }             
-   },*/
-   
    onListSelect: function() {
        var self = this;
        self.callParent(arguments);

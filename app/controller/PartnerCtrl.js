@@ -11,7 +11,7 @@ Ext.define('Fpos.controller.PartnerCtrl', {
         },
         control: {
             'button[action=newPartner]': {
-                tap: 'onNewPartner'
+                release: 'onNewPartner'
             }                  
         }
     },
@@ -28,9 +28,6 @@ Ext.define('Fpos.controller.PartnerCtrl', {
     
     editPartner: function(record) {
         var self = this;  
-        
-        if ( futil.isDoubleTap() )
-            return;
         
         self.getMainView().push({
             title: 'Partner',

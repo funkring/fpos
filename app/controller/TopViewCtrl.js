@@ -14,10 +14,10 @@ Ext.define('Fpos.controller.TopViewCtrl', {
         },
         control: {
             'button[action=selectTop]' : {
-                tap: 'tapSelectTop'
+                release: 'tapSelectTop'
             },   
             'button[action=selectPlace]' : {
-                tap: 'tapSelectPlace',
+                release: 'tapSelectPlace',
                 initialize: 'placeButtonInitialize'
             },
             topView: {

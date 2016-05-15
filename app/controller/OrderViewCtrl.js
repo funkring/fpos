@@ -47,37 +47,37 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 activeitemchange : 'orderInputActiveItemChange' 
             },
             'button[action=inputCancel]' : {
-                tap: 'onInputCancelTap'
+                release: 'onInputCancelTap'
             },
             'button[action=inputModeSwitch]' : {
-                tap: 'onInputModeSwitch'
+                release: 'onInputModeSwitch'
             },
             'button[action=inputNumber]' : {
-                tap: 'onInputNumber'
+                release: 'onInputNumber'
             },
             'button[action=editOrder]' : {
-                tap: 'onEditOrder'
+                release: 'onEditOrder'
             },
             'button[action=inputCash]' : {
-                tap: 'onCash'
+                release: 'onCash'
             },
             'button[action=inputPayment]' : {
-                tap: 'onPayment'
+                release: 'onPayment'
             },
             'button[action=createCashState]' : {
-                tap: 'onCreateCashState'
+                release: 'onCreateCashState'
             },
             'button[action=createCashOverview]' : {
-                tap: 'onCashOverview'  
+                release: 'onCashOverview'  
             },
             'button[action=createCashOverviewAll]' : {
-                tap: 'onCashOverviewAll'  
+                release: 'onCashOverviewAll'  
             },
             'button[action=printAgain]' : {
-                tap: 'onPrintAgain'
+                release: 'onPrintAgain'
             },
             'button[action=saveOrder]' :  {
-                tap: 'onSaveOrder'
+                release: 'onSaveOrder'
             }     
         }
     },
@@ -1152,22 +1152,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     onEditOrder: function() {
         var self = this;
-        if ( self.order && !futil.isDoubleTap() ) {
-            var lines = self.getOrderItemList().getSelection();
-            var form;
-            if ( lines.length > 0 ) {
-                form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
-                form.setRecord(lines[0]);
-            } else {
-                form =  Ext.create("Fpos.view.OrderFormView", {'title' : 'Verkauf'});
-                form.setRecord(this.order);
-            }
-            
-            if ( form ) {
-                if ( self.order.get('state') != 'draft') 
-                    form.setDisabled(true);                
-                Ext.Viewport.fireEvent("showForm", form); 
-            }
+        var lines = self.getOrderItemList().getSelection();
+        var form;
+        if ( lines.length > 0 ) {
+            form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
+            form.setRecord(lines[0]);
+        } else {
+            form =  Ext.create("Fpos.view.OrderFormView", {'title' : 'Verkauf'});
+            form.setRecord(this.order);
+        }
+        
+        if ( form ) {
+            if ( self.order.get('state') != 'draft') 
+                form.setDisabled(true);                
+            Ext.Viewport.fireEvent("showForm", form); 
         }
     },
     
@@ -1181,85 +1179,94 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             };
         }
         
-        var deferred = Ext.create('Ext.ux.Deferred');
-        var db = Config.getDB();
-        var profile = Config.getProfile();
-        var hasSeq = false;
-        
-        self.validateLines(true)['catch'](function(err) {
-            deferred.reject(err);
-        }).then(function(){
+        var deferred = Ext.create('Ext.ux.Deferred');        
+        if ( !self.order.get('name') && !self.order.get('posted') ) {
+            // set posted
+            self.order.set('posted', true);
             
-            // write order
-            var writeOrder = function(seq, turnover, cpos) {
-                // init vars
-                if ( !cpos ) cpos = 0.0;
-                if ( !turnover ) turnover = 0.0; 
-                var cashJournalId = Config.getCashJournal()._id;
-                
-                // add cash payment if no payment
-                var payment_ids = self.order.get('payment_ids');                
-                if ( !payment_ids || payment_ids.length === 0 ) {
-                    var amount_total = self.order.get('amount_total');
-                    payment_ids = [
-                        {
-                            journal_id : cashJournalId,
-                            amount : amount_total,
-                            payment : amount_total                     
-                        }
-                    ];
-                    self.order.set('payment_ids',payment_ids);
-                }
-                
-                // determine cpos     
-                var fixed_payments = [];         
-                Ext.each(payment_ids, function(payment) {
-                    if ( payment.journal_id == cashJournalId ) {
-                        cpos += payment.amount;
-                        fixed_payments.push(payment);
-                    } else if ( payment.amount !== 0 || payment.payment !== 0) {
-                        fixed_payments.push(payment);
-                    }
-                });
-                
-                // write order                
-                var date = futil.datetimeToStr(new Date());
-                self.order.set('payment_ids',fixed_payments);
-                self.order.set('date', date);
-                self.order.set('seq', seq);
-                self.order.set('name', Config.formatSeq(seq));
-                self.order.set('state','paid');
-                
-                // turnover
-                self.order.set('turnover',self.order.get('turnover')+turnover);
-                // cpos
-                self.order.set('cpos', cpos);
-                
-                // save
-                self.order.save({
-                    callback: function() {
-                        deferred.resolve();           
-                    }
-                });
-            };
+            var db = Config.getDB();
+            var profile = Config.getProfile();
+            var hasSeq = false;
             
-            // query last order
-            try {
-                Config.queryLastOrder()['catch'](function(err) {
-                    deferred.reject(err);
-                }).then(function(res) {
-                    // write order
-                    if ( res.rows.length === 0 ) {
-                        writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos);
-                    } else {
-                        var lastOrder = res.rows[0].doc;
-                        writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos);
-                    }
-                });
-            } catch (err) {
+            self.validateLines(true)['catch'](function(err) {
                 deferred.reject(err);
-            }
-        });    
+            }).then(function(){
+                
+                // write order
+                var writeOrder = function(seq, turnover, cpos) {
+                    // init vars
+                    if ( !cpos ) cpos = 0.0;
+                    if ( !turnover ) turnover = 0.0; 
+                    var cashJournalId = Config.getCashJournal()._id;
+                    
+                    // add cash payment if no payment
+                    var payment_ids = self.order.get('payment_ids');                
+                    if ( !payment_ids || payment_ids.length === 0 ) {
+                        var amount_total = self.order.get('amount_total');
+                        payment_ids = [
+                            {
+                                journal_id : cashJournalId,
+                                amount : amount_total,
+                                payment : amount_total                     
+                            }
+                        ];
+                        self.order.set('payment_ids',payment_ids);
+                    }
+                    
+                    // determine cpos     
+                    var fixed_payments = [];         
+                    Ext.each(payment_ids, function(payment) {
+                        if ( payment.journal_id == cashJournalId ) {
+                            cpos += payment.amount;
+                            fixed_payments.push(payment);
+                        } else if ( payment.amount !== 0 || payment.payment !== 0) {
+                            fixed_payments.push(payment);
+                        }
+                    });
+                    
+                    // write order                
+                    var date = futil.datetimeToStr(new Date());
+                    self.order.set('payment_ids',fixed_payments);
+                    self.order.set('date', date);
+                    self.order.set('seq', seq);
+                    self.order.set('name', Config.formatSeq(seq));
+                    self.order.set('state','paid');
+                    
+                    // turnover
+                    self.order.set('turnover',self.order.get('turnover')+turnover);
+                    // cpos
+                    self.order.set('cpos', cpos);
+                    
+                    // save
+                    self.order.save({
+                        callback: function() {
+                            deferred.resolve();           
+                        }
+                    });
+                };
+                
+                // query last order
+                try {
+                    Config.queryLastOrder()['catch'](function(err) {
+                        deferred.reject(err);
+                    }).then(function(res) {
+                        // write order
+                        if ( res.rows.length === 0 ) {
+                            writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos);
+                        } else {
+                            var lastOrder = res.rows[0].doc;
+                            writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos);
+                        }
+                    });
+                } catch (err) {
+                    deferred.reject(err);
+                }
+            });    
+        } else {
+            setTimeout(function() {
+                deferred.resolve();
+            }, 0);
+        }
         return deferred.promise();      
     },
     
@@ -1912,48 +1919,40 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onCreateCashState: function() {
-        if ( !futil.isDoubleTap() ) {
-            ViewManager.hideMenus();
-            this.createCashState();
-        }
+        ViewManager.hideMenus();
+        this.createCashState();
     },
     
     onCashOverview: function() {
-        if ( !futil.isDoubleTap() ) {
-            ViewManager.hideMenus();
-            this.createCashOverview(Config.getUser());
-        }
+        ViewManager.hideMenus();
+        this.createCashOverview(Config.getUser());
     },
     
     onCashOverviewAll: function() {
-        if ( !futil.isDoubleTap() ) {
-            ViewManager.hideMenus();
-            this.createCashOverview(null);
-        }
+        ViewManager.hideMenus();
+        this.createCashOverview(null);
     },
 
     
     onPrintAgain: function() {
         var self = this;
-        if ( !futil.isDoubleTap() ) {
-            ViewManager.hideMenus();
-            var db = Config.getDB();
-            Config.queryLastOrder().then(function(res) {
-                if ( res.rows.length > 0 ) {
-                    var order = res.rows[0].doc;
-                    if ( order.partner_id ) {
-                        db.get(order.partner_id).then(function(partner) {
-                            order.partner = partner;
-                            self.printOrder(order);
-                        })['catch'](function(err) {
-                            self.printOrder(order);
-                        });
-                    } else {
+        ViewManager.hideMenus();
+        var db = Config.getDB();
+        Config.queryLastOrder().then(function(res) {
+            if ( res.rows.length > 0 ) {
+                var order = res.rows[0].doc;
+                if ( order.partner_id ) {
+                    db.get(order.partner_id).then(function(partner) {
+                        order.partner = partner;
                         self.printOrder(order);
-                    }
+                    })['catch'](function(err) {
+                        self.printOrder(order);
+                    });
+                } else {
+                    self.printOrder(order);
                 }
-             });
-        }
+            }
+         });
     },
     
     onKeyDown: function(e) {
