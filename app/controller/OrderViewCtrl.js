@@ -88,7 +88,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.place = null;
         this.order = null;
         this.printTemplate = null;
-        this.paymentEnabled = false;
         this.initialLoad = false; 
         
         this.mode = '*';
@@ -691,12 +690,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( paymentButton ) {
                 paymentButton.setUi('posInputButtonGray');
             }
-            self.paymentEnabled = true;
         } else {
             if ( paymentButton ) { 
                 paymentButton.setUi('posInputButtonOrange');
             }
-            self.paymentEnabled = false;
         }
         self.setMode('*');
     },
@@ -790,16 +787,26 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    isDraft: function() {
+        return this.order && this.order.get('state') == 'draft' && !this.order.get('posted');
+    },
+    
+    isPayment: function() {
+        return this.getOrderInputView().getActiveItem() == this.getPaymentPanel();
+    },
+    
     isEditable: function() {
-        return this.order && this.order.get('state') == 'draft' && !this.paymentEnabled;
+        return this.isDraft() && !this.isPayment();
     },
     
     onInputCancelTap: function() {
+        if ( !this.isDraft ) return;
+    
         var self = this;
         self.inputText = '';    
         
         // default editing
-        if ( self.isEditable() ) {
+        if ( !self.isPayment() ) {
             var records = self.getOrderItemList().getSelection();
             if ( records.length > 0  ) {
                 var record = records[0];
@@ -847,9 +854,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         }                         
                         self.validateLines();
                     }
-                }                
-            } 
-        } else if ( self.paymentEnabled ) {
+                }     
+            }           
+        } else {
             // handle payment
             var payments = self.getPaymentItemList().getSelection();
             if ( payments.length > 0  ) {            
@@ -871,9 +878,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
         
     inputAction: function(action) {
+        // allow only editing if draft
+        if ( !this.isDraft() ) return;
+            
         var valid = true;   
-        var commaPos, decimals, value;
-        if ( this.isEditable() ) {
+        var commaPos, decimals, value;        
+        if ( !this.isPayment()  ) {
             
             var lines = this.getOrderItemList().getSelection();
             if ( lines.length > 0  ) {            
@@ -1002,7 +1012,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
             }
             
-        }  else if ( this.paymentEnabled ) {
+        } else {
             var payments = this.getPaymentItemList().getSelection();
             if ( payments.length > 0  ) {            
                 var payment = payments[0];
@@ -1103,6 +1113,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onPaymentSelectionChange: function() {
+        if ( !this.isDraft() || !this.isPayment() ) return;
+        
         var self = this;
         var payments = this.getPaymentItemList().getSelection();
         if ( payments.length > 0  ) {            
@@ -1151,6 +1163,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onEditOrder: function() {
+        if ( !this.isDraft() ) return;
+        
         var self = this;
         var lines = self.getOrderItemList().getSelection();
         var form;
@@ -1171,7 +1185,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     postOrder: function() {
         var self = this;
-        
         if ( !self.order ) {
             throw  {
                 name: "Buchungsfehler",
@@ -1180,7 +1193,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
         
         var deferred = Ext.create('Ext.ux.Deferred');        
-        if ( !self.order.get('name') && !self.order.get('posted') ) {
+        if ( self.isDraft() ) {
             // set posted
             self.order.set('posted', true);
             
@@ -1201,7 +1214,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     // add cash payment if no payment
                     var payment_ids = self.order.get('payment_ids');                
-                    if ( !payment_ids || payment_ids.length === 0 ) {
+                    if ( !payment_ids || payment_ids.length === 0 || !self.isPayment() ) {
                         var amount_total = self.order.get('amount_total');
                         payment_ids = [
                             {
@@ -1272,7 +1285,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     onCash: function() {
         var self = this;
-        if ( self.isEditable() || (self.paymentEnabled && self.validatePayment()) ) {
+        if ( self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
             //self.printOrder();
             // add payment
             // and print
@@ -1627,6 +1640,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onPayment: function() {
+        if ( !this.isDraft() ) return;
+        
         var self = this;
         var inputView = self.getOrderInputView();
         if ( inputView.getActiveItem() != self.getPaymentPanel() ) {
