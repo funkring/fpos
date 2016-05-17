@@ -60,6 +60,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=createCashOverview]' : {
                 release: 'onCashOperation'
             }, 
+            'button[action=createCashReport]' : {
+                release: 'onCashOperation'
+            },
             'button[action=createCashOverviewAll]' : {
                 release: 'onCashOperation'
             }, 
@@ -274,7 +277,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                         model: 'product.product',
                         view:  '_fpos_product',
                         readonly: true,
-                        domain: [['available_in_pos','=',true]]
+                        domain: [['available_in_pos','=',true]],
+                        ndomain: [['available_in_pos','=',true],['active','=',false]]
                    },
                    {
                         model: 'fpos.top',
@@ -539,19 +543,24 @@ Ext.define('Fpos.controller.MainCtrl', {
                         text: 'Sicherung und Datenabgleich',
                         action: 'sync',
                         ui: 'posInputButtonGreen'  
-                    },        
+                    },   
+                    {
+                        text: 'Druck wiederholen',
+                        action: 'printAgain'
+                    },
                     {
                         text: 'Verkäufe Gesamt',
                         action: 'createCashOverviewAll'
-                    },             
+                    },                                 
                     {
                         text: 'Meine Verkäufe',
                         action: 'createCashOverview'
                     },
                     {
-                        text: 'Drucken wiederholen',
-                        action: 'printAgain'
-                    }
+                        text: 'Produktbericht',
+                        action: 'createCashReport'
+                    }    
+                   
                 ]    
          });
        }

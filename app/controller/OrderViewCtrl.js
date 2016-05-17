@@ -67,6 +67,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=createCashState]' : {
                 release: 'onCreateCashState'
             },
+            'button[action=createCashReport]' : {
+                release: 'onCashReport',  
+            },
             'button[action=createCashOverview]' : {
                 release: 'onCashOverview'  
             },
@@ -1778,7 +1781,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
     },
     
-    createCashOverview: function(user) {
+    createCashOverview: function(user, detail) {
         var self = this;
         
          // reset place
@@ -1789,7 +1792,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var user_id = Config.getUser()._id;
         var fpos_user_id = profile.user_id;
         var date = futil.datetimeToStr(new Date());
-      
+        
+        var products = {};
+        var productStore = Ext.StoreMgr.lookup("ProductStore");
+        if ( detail ) {
+            Ext.each(productStore.allProducts, function(product) {
+                products[product.getId()] = product;
+            });
+        }
         if ( user_id && fpos_user_id) {
             ViewManager.startLoading("Verkaufsübersicht erstellen");
             
@@ -1804,9 +1814,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
 
                 Ext.each(orders, function(order) {
                     if ( !order.tag && (!user || order.user_id == user._id) ) {
-                        // positions
+                        // positions                        
                         Ext.each(order.line_ids, function(line) {
-                            if ( !line.tag ) {
+                        
+                            // get product detail                            
+                            var pos_report = false;
+                            if ( detail ) {
+                                if (line.product_id) {
+                                    var product = products[line.product_id];
+                                    if (product) {
+                                        pos_report = product.get('pos_report');
+                                    }
+                                }                                
+                            }
+                                
+                            if ( !line.tag && (!detail || pos_report) ) {
                                 // build summary
                                 var summary = overview[line.name];
                                 total += line.subtotal_incl;
@@ -1831,25 +1853,27 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         });
                         
                         //taxes
-                        Ext.each(order.tax_ids, function(tax) {
-                            var summary = taxes[tax.name];
-                            if (!summary) {
-                                summary = {     
-                                    tag: 's',
-                                    name: tax.name,
-                                    qty: 1.0,
-                                    price: tax.amount_tax,  
-                                    subtotal_incl : tax.amount_tax,
-                                    sequence : 0,
-                                    discount: 0.0
-                                };
-                                taxes[tax.name] = summary;
-                                taxNames.push(tax.name);
-                            } else {
-                                summary.subtotal_incl += tax.amount_tax;
-                                summary.price = summary.subtotal_incl;
-                            }
-                        });
+                        if ( !detail ) {
+                            Ext.each(order.tax_ids, function(tax) {
+                                var summary = taxes[tax.name];
+                                if (!summary) {
+                                    summary = {     
+                                        tag: 's',
+                                        name: tax.name,
+                                        qty: 1.0,
+                                        price: tax.amount_tax,  
+                                        subtotal_incl : tax.amount_tax,
+                                        sequence : 0,
+                                        discount: 0.0
+                                    };
+                                    taxes[tax.name] = summary;
+                                    taxNames.push(tax.name);
+                                } else {
+                                    summary.subtotal_incl += tax.amount_tax;
+                                    summary.price = summary.subtotal_incl;
+                                }
+                            });
+                        }
                     }              
                 });
                 
@@ -1859,6 +1883,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var header = 'Verkäufe Gesamt';
                 if ( user ) {
                     header = 'Verkäufe ' + user.name;
+                } else if (detail) {
+                    header =  'Produktbericht';
                 }
                 lines.push({
                     name : header,
@@ -1880,7 +1906,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     lines.push(summary);
                     
                     summary.flags = 'd';
-                    if ( index == lastIndex ) {
+                    if ( index == lastIndex && !detail ) {
                         summary.flags += 'b';
                     }
                     
@@ -1941,6 +1967,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onCashOverview: function() {
         ViewManager.hideMenus();
         this.createCashOverview(Config.getUser());
+    },
+    
+    onCashReport: function() {
+        ViewManager.hideMenus();
+        this.createCashOverview(null, true);
     },
     
     onCashOverviewAll: function() {

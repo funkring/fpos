@@ -33,7 +33,8 @@ Ext.define('Fpos.model.Product', {
                 'pos_price_dec',
                 'pos_amount_pre',
                 'pos_amount_dec',
-                'pos_price'],
+                'pos_price',
+                'pos_report'],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',
