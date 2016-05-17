@@ -68,7 +68,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 release: 'onCreateCashState'
             },
             'button[action=createCashReport]' : {
-                release: 'onCashReport',  
+                release: 'onCashReport'  
             },
             'button[action=createCashOverview]' : {
                 release: 'onCashOverview'  
