@@ -488,7 +488,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     getBaseMenu: function() {
        if (!this.baseMenu ) {
           this.baseMenu =  Ext.create('Ext.Menu', {
-                scrollable: 'vertical',
+                //scrollable: 'vertical',
                 cls: 'MainMenu',
                 defaults: {
                     xtype: 'button',
@@ -525,7 +525,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     getUserMenu: function() {
        if (!this.userMenu ) {
           this.userMenu =  Ext.create('Ext.Menu', {
-                scrollable: 'vertical',
+                //scrollable: 'vertical',
                 cls: 'MainMenu',
                 defaults: {
                     xtype: 'button',
