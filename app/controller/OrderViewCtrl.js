@@ -627,7 +627,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     // create new order
-    nextOrder: function() {
+    nextOrder: function(callback) {
         var self = this;
         
         var db = Config.getDB();
@@ -653,8 +653,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }
             
             db.post(values).then(function(res) {                
-                self.reloadData(true);
+                self.reloadData(callback, true);
             });
+        } else if ( callback ) {
+            callback();
         }
     },
     
@@ -711,7 +713,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
-    fullDataReload: function() {
+    fullDataReload: function(callback) {
         var self = this;
         self.initialLoad = true;
         self.printTemplate = null;
@@ -727,17 +729,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     place.set('amount',row.doc.amount_total);
                   } 
                });
-               self.reloadData();
+               self.reloadData(callback);
            });
         } else {       
           // default reload
-          self.reloadData();
+          self.reloadData(callback);
         }
     },
         
-    reloadData: function(noCreateOrder) {
+    reloadData: function(callback, noCreateOrder) {
         if ( !this.initialLoad ) {
-            this.fullDataReload();
+            this.fullDataReload(callback);
         } else {
             var self = this;
             
@@ -753,11 +755,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var params = null;
                 if ( self.place ) {
                     params =  {
-                        domain : [['place_id','=',self.place.getId()],['state','=','draft']]
+                        domain : [['state','=','draft'],['place_id','=',self.place.getId()]]
                     };
                 } else {
                     params =  {
-                        domain : [['user_id','=',user._id],['state','=','draft']]
+                        domain : [['state','=','draft'],['user_id','=',user._id]]
                     };
                 }
                         
@@ -767,11 +769,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         if ( self.orderStore.getCount() === 0 ) {
                             // create new order
                             if ( !noCreateOrder ) {
-                                self.nextOrder();
+                                self.nextOrder(callback);
                             }
                         } else {
                             // set current order                            
                             self.setOrder(self.orderStore.last());
+                            
+                            // callback
+                            if (callback) callback();
                         }
                     }
                 };
@@ -780,6 +785,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // load nothing
                 self.orderStore.setData([]);
                 self.setOrder(null);
+                
+                // callback
+                if ( callback ) callback();
             }  
         }      
     },
@@ -1286,7 +1294,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // ONLY CALLED ONCE
             ViewManager.startLoading("Drucken");
             
-            //self.printOrder();
             // add payment
             // and print
             self.postOrder()['catch'](function(err) {
@@ -1297,22 +1304,27 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     message: "Verkauf konnte nicht gebucht werden"
                 }, true);
             }).then(function() {
-            
-                // print
-                self.printOrder();
-                ViewManager.stopLoading();
-                
-                // do next
-                if ( Config.getProfile().iface_place ) {
+                   
+               // print
+               self.printOrder();
+               
+               // do next
+               if ( Config.getProfile().iface_place ) {
                     var place_id = self.order.get('place_id');
                     var place = place_id ? self.placeStore.getPlaceById(place_id) : null;        
                     if ( place ) {
                       place.set('amount',0);
                     }
+                    
+                    ViewManager.stopLoading();
                     Ext.Viewport.fireEvent("showPlace");
+                    
                 } else {
-                    self.reloadData();
+                    self.reloadData(function() {
+                        ViewManager.stopLoading();
+                    });
                 }
+                    
             });
         }      
     },
