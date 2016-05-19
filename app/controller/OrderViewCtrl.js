@@ -652,8 +652,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 values.place_id = self.place.getId();
             }
             
-            db.post(values).then(function(res) {                
-                self.reloadData(callback, true);
+            db.post(values).then(function(res) {
+                // set order
+                self.orderStore.getProxy().readDocument(res.id, function(err, order) {
+                    self.setOrder(order || null);
+                    callback();
+                }); 
             });
         } else if ( callback ) {
             callback();
@@ -719,6 +723,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.printTemplate = null;
         self.place = null;
 
+        // check callback
+        if ( !callback ) {        
+            ViewManager.startLoading("Lade...");
+            callback = function() {
+                 ViewManager.stopLoading();
+            };
+        }
+
         if ( Config.getProfile().iface_place ) {
            // load open orders
            var db = Config.getDB();           
@@ -737,7 +749,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
         
-    reloadData: function(callback, noCreateOrder) {
+    reloadData: function(callback) {
         if ( !this.initialLoad ) {
             this.fullDataReload(callback);
         } else {
@@ -768,9 +780,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     callback: function() {
                         if ( self.orderStore.getCount() === 0 ) {
                             // create new order
-                            if ( !noCreateOrder ) {
-                                self.nextOrder(callback);
-                            }
+                            self.nextOrder(callback);
                         } else {
                             // set current order                            
                             self.setOrder(self.orderStore.last());
@@ -1292,7 +1302,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
             // CHECK THAT 
             // ONLY CALLED ONCE
-            ViewManager.startLoading("Drucken");
+            ViewManager.startLoading("Drucken...");
             
             // add payment
             // and print
@@ -1320,9 +1330,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     Ext.Viewport.fireEvent("showPlace");
                     
                 } else {
-                    self.reloadData(function() {
+                
+                    // create next
+                    self.nextOrder(function() {
                         ViewManager.stopLoading();
                     });
+                    
                 }
                     
             });
