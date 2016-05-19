@@ -791,7 +791,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     isDraft: function() {
-        return this.order && this.order.get('state') == 'draft' && !this.order.get('posted');
+        return this.order && this.order.get('state') == 'draft';
     },
     
     isPayment: function() {
@@ -1186,119 +1186,123 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
-    postOrder: function() {
+    /**
+     * Posting the order.
+     *
+     * BE CAREFUL, the function only my be called 
+     * once for an order.
+     */
+    postOrder: function() {        
         var self = this;
-        if ( !self.order ) {
-            throw  {
-                name: "Buchungsfehler",
-                message: "Kein Verkauf ausgewählt"
-            };
-        }
+        var deferred = Ext.create('Ext.ux.Deferred');
         
-        var deferred = Ext.create('Ext.ux.Deferred');        
-        if ( self.isDraft() ) {
-            // set posted
-            self.order.set('posted', true);
+        var db = Config.getDB();
+        var profile = Config.getProfile();
+        var hasSeq = false;
+        
+        self.validateLines(true)['catch'](function(err) {
+            deferred.reject(err);
+        }).then(function(){
             
-            var db = Config.getDB();
-            var profile = Config.getProfile();
-            var hasSeq = false;
-            
-            self.validateLines(true)['catch'](function(err) {
-                deferred.reject(err);
-            }).then(function(){
+            // write order
+            var writeOrder = function(seq, turnover, cpos) {
+                // init vars
+                if ( !cpos ) cpos = 0.0;
+                if ( !turnover ) turnover = 0.0; 
+                var cashJournalId = Config.getCashJournal()._id;
                 
-                // write order
-                var writeOrder = function(seq, turnover, cpos) {
-                    // init vars
-                    if ( !cpos ) cpos = 0.0;
-                    if ( !turnover ) turnover = 0.0; 
-                    var cashJournalId = Config.getCashJournal()._id;
-                    
-                    // add cash payment if no payment
-                    var payment_ids = self.order.get('payment_ids');                
-                    if ( !payment_ids || payment_ids.length === 0 || !self.isPayment() ) {
-                        var amount_total = self.order.get('amount_total');
-                        payment_ids = [
-                            {
-                                journal_id : cashJournalId,
-                                amount : amount_total,
-                                payment : amount_total                     
-                            }
-                        ];
-                        self.order.set('payment_ids',payment_ids);
-                    }
-                    
-                    // determine cpos     
-                    var fixed_payments = [];         
-                    Ext.each(payment_ids, function(payment) {
-                        if ( payment.journal_id == cashJournalId ) {
-                            cpos += payment.amount;
-                            fixed_payments.push(payment);
-                        } else if ( payment.amount !== 0 || payment.payment !== 0) {
-                            fixed_payments.push(payment);
+                // add cash payment if no payment
+                var payment_ids = self.order.get('payment_ids');                
+                if ( !payment_ids || payment_ids.length === 0 || !self.isPayment() ) {
+                    var amount_total = self.order.get('amount_total');
+                    payment_ids = [
+                        {
+                            journal_id : cashJournalId,
+                            amount : amount_total,
+                            payment : amount_total                     
                         }
-                    });
-                    
-                    // write order                
-                    var date = futil.datetimeToStr(new Date());
-                    self.order.set('payment_ids',fixed_payments);
-                    self.order.set('date', date);
-                    self.order.set('seq', seq);
-                    self.order.set('name', Config.formatSeq(seq));
-                    self.order.set('state','paid');
-                    
-                    // turnover
-                    self.order.set('turnover',self.order.get('turnover')+turnover);
-                    // cpos
-                    self.order.set('cpos', cpos);
-                    
-                    // save
-                    self.order.save({
-                        callback: function() {
-                            deferred.resolve();           
-                        }
-                    });
-                };
-                
-                // query last order
-                try {
-                    Config.queryLastOrder()['catch'](function(err) {
-                        deferred.reject(err);
-                    }).then(function(res) {
-                        // write order
-                        if ( res.rows.length === 0 ) {
-                            writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos);
-                        } else {
-                            var lastOrder = res.rows[0].doc;
-                            writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos);
-                        }
-                    });
-                } catch (err) {
-                    deferred.reject(err);
+                    ];
+                    self.order.set('payment_ids',payment_ids);
                 }
-            });    
-        } else {
-            setTimeout(function() {
-                deferred.resolve();
-            }, 0);
-        }
+                
+                // determine cpos     
+                var fixed_payments = [];         
+                Ext.each(payment_ids, function(payment) {
+                    if ( payment.journal_id == cashJournalId ) {
+                        cpos += payment.amount;
+                        fixed_payments.push(payment);
+                    } else if ( payment.amount !== 0 || payment.payment !== 0) {
+                        fixed_payments.push(payment);
+                    }
+                });
+                
+                // write order                
+                var date = futil.datetimeToStr(new Date());
+                self.order.set('payment_ids',fixed_payments);
+                self.order.set('date', date);
+                self.order.set('seq', seq);
+                self.order.set('name', Config.formatSeq(seq));
+                self.order.set('state','paid');
+                
+                // turnover
+                self.order.set('turnover',self.order.get('turnover')+turnover);
+                // cpos
+                self.order.set('cpos', cpos);
+                
+                // save
+                self.order.save({
+                    callback: function() {
+                        deferred.resolve();           
+                    }
+                });
+            };
+            
+            // query last order
+            try {
+                Config.queryLastOrder()['catch'](function(err) {
+                    deferred.reject(err);
+                }).then(function(res) {
+                    // write order
+                    if ( res.rows.length === 0 ) {
+                        writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos);
+                    } else {
+                        var lastOrder = res.rows[0].doc;
+                        writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos);
+                    }
+                });
+            } catch (err) {
+                deferred.reject(err);
+            }
+        });    
+
         return deferred.promise();      
     },
     
     onCash: function() {
         var self = this;
+        
         if ( self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
+            // CHECK THAT 
+            // ONLY CALLED ONCE
+            ViewManager.startLoading("Drucken");
+            
             //self.printOrder();
             // add payment
             // and print
             self.postOrder()['catch'](function(err) {
+                // stop loading after error
+                ViewManager.stopLoading();
                 ViewManager.handleError(err,{
                     name: "Buchungsfehler",
                     message: "Verkauf konnte nicht gebucht werden"
                 }, true);
             }).then(function() {
+            
+                // print
                 self.printOrder();
+                ViewManager.stopLoading();
+                
+                // do next
                 if ( Config.getProfile().iface_place ) {
                     var place_id = self.order.get('place_id');
                     var place = place_id ? self.placeStore.getPlaceById(place_id) : null;        
@@ -1310,11 +1314,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     self.reloadData();
                 }
             });
-        } else {
-            // if not editable
-            // reload data
-            self.reloadData();
-        }          
+        }      
     },
     
     printOrder: function(order) {
