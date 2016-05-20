@@ -665,7 +665,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // set order
                 self.orderStore.getProxy().readDocument(res.id, function(err, order) {
                     self.setOrder(order || null);
-                    callback();
+                    if (callback) callback();
                 }); 
             });
         } else if ( callback ) {
@@ -747,6 +747,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( Config.getProfile().iface_place ) {
            // load open orders
            var db = Config.getDB();           
+           
+           // set active
            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {'include_docs':true}).then(function(res) {
                Ext.each(res.rows, function(row) {
                   var place = self.placeStore.getPlaceById(row.doc.place_id);
@@ -1749,15 +1751,29 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
       
         if ( user_id && fpos_user_id) {
             ViewManager.startLoading("Kassenstand erstellen");
-
+            var resetPlaces = [];
+            
             DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
                var bulkUpdate = [];
                Ext.each(res.rows, function(row) {
+                     // check if place are to reset
+                     if ( profile.iface_place ) {                       
+                       var place = self.placeStore.getPlaceById(row.doc.place_id);
+                       if ( place ) {
+                            resetPlaces.push(place);
+                       } 
+                     } 
+                     // mark deleted                        
                      row.doc._deleted = true;
                      bulkUpdate.push(row.doc);
                });
                return db.bulkDocs(bulkUpdate);
             }).then(function(res) {
+                // reset places
+                Ext.each(resetPlaces, function(place) {
+                    place.set('amount',0.0);
+                });
+                
                 return Config.queryLastOrder().then(function(res) {
                         if ( res.rows.length > 0 ) {
                             var lastOrder = res.rows[0].doc;

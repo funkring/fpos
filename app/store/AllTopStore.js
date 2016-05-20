@@ -6,7 +6,7 @@ Ext.define('Fpos.store.AllTopStore', {
         model: 'Fpos.model.Top',
         sorters: 'sequence',
         params: {
-            domain: [('pos_unavail','=',false)]
+            domain: [['pos_unavail','=',false]]
         }
     }
 });
