@@ -70749,6 +70749,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.order = null;
         this.printTemplate = null;
         this.initialLoad = false;
+        this.seq = 0;
+        this.cpos = 0;
+        this.turnover = 0;
         this.mode = '*';
         this.inputSign = 1;
         this.inputText = '';
@@ -71147,6 +71150,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.getPosDisplay().setRecord(null);
             self.getStateDisplay().setRecord(null);
         }
+        // reset view
+        self.setMode("*");
+        self.resetView();
+        // set record        
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
         self.getOrderItemList().deselectAll(true);
@@ -71185,7 +71192,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 values.place_id = self.place.getId();
             }
             db.post(values).then(function(res) {
-                self.reloadData(callback, true);
+                // set order
+                self.orderStore.getProxy().readDocument(res.id, function(err, order) {
+                    self.setOrder(order || null);
+                    callback();
+                });
             });
         } else if (callback) {
             callback();
@@ -71229,7 +71240,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 paymentButton.setUi('posInputButtonOrange');
             }
         }
-        self.setMode('*');
     },
     resetView: function() {
         // reset current view 
@@ -71245,6 +71255,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.initialLoad = true;
         self.printTemplate = null;
         self.place = null;
+        self.seq = 0;
+        self.cpos = 0;
+        self.turnover = 0;
+        // check callback
+        if (!callback) {
+            ViewManager.startLoading("Lade...");
+            callback = function() {
+                ViewManager.stopLoading();
+            };
+        }
         if (Config.getProfile().iface_place) {
             // load open orders
             var db = Config.getDB();
@@ -71275,15 +71295,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.reloadData(callback);
         }
     },
-    reloadData: function(callback, noCreateOrder) {
+    reloadData: function(callback) {
         if (!this.initialLoad) {
             this.fullDataReload(callback);
         } else {
             var self = this;
             var db = Config.getDB();
             var user = Config.getUser();
-            self.setMode('*');
-            self.resetView();
             // load if valid user and not places are activ or places are active 
             // and a valid place exist
             if (user) {
@@ -71324,9 +71342,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         callback: function() {
                             if (self.orderStore.getCount() === 0) {
                                 // create new order
-                                if (!noCreateOrder) {
-                                    self.nextOrder(callback);
-                                }
+                                self.nextOrder(callback);
                             } else {
                                 // set current order                            
                                 self.setOrder(self.orderStore.last());
@@ -71809,23 +71825,31 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     // save
                     self.order.save({
                         callback: function() {
+                            self.seq = self.order.get('seq');
+                            self.turnover = self.order.get('turnover');
+                            self.cpos = self.order.get('cpos');
                             deferred.resolve();
                         }
                     });
                 };
-            // query last order
             try {
-                Config.queryLastOrder()['catch'](function(err) {
-                    deferred.reject(err);
-                }).then(function(res) {
-                    // write order
-                    if (res.rows.length === 0) {
-                        writeOrder(profile.last_seq + 1, profile.last_turnover, profile.last_cpos);
-                    } else {
-                        var lastOrder = res.rows[0].doc;
-                        writeOrder(lastOrder.seq + 1, lastOrder.turnover, lastOrder.cpos);
-                    }
-                });
+                // check for cached sequence
+                if (self.seq > 0) {
+                    writeOrder(self.seq + 1, self.turnover, self.cpos);
+                } else {
+                    // query last order
+                    Config.queryLastOrder()['catch'](function(err) {
+                        deferred.reject(err);
+                    }).then(function(res) {
+                        // write order
+                        if (res.rows.length === 0) {
+                            writeOrder(profile.last_seq + 1, profile.last_turnover, profile.last_cpos);
+                        } else {
+                            var lastOrder = res.rows[0].doc;
+                            writeOrder(lastOrder.seq + 1, lastOrder.turnover, lastOrder.cpos);
+                        }
+                    });
+                }
             } catch (err) {
                 deferred.reject(err);
             }
@@ -71837,8 +71861,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if (self.isDraft() && (!self.isPayment() || self.validatePayment())) {
             // CHECK THAT 
             // ONLY CALLED ONCE
-            ViewManager.startLoading("Drucken");
-            //self.printOrder();
+            ViewManager.startLoading("Drucken...");
             // add payment
             // and print
             self.postOrder()['catch'](function(err) {
@@ -71850,7 +71873,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }, true);
             }).then(function() {
                 // print
-                //self.printOrder();
+                self.printOrder();
                 // do next
                 if (Config.getProfile().iface_place) {
                     var place_id = self.order.get('place_id');
@@ -71861,7 +71884,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     ViewManager.stopLoading();
                     Ext.Viewport.fireEvent("showPlace");
                 } else {
-                    self.reloadData(function() {
+                    // create next
+                    self.nextOrder(function() {
                         ViewManager.stopLoading();
                     });
                 }
@@ -72011,32 +72035,34 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var inputView = self.getOrderInputView();
         if (inputView.getActiveItem() != self.getPaymentPanel()) {
             // init payment
-            var amount_total = self.order.get('amount_total');
-            var profile = Config.getProfile();
-            // first payment line is cash line
-            var payment = [
-                    {
-                        journal: Config.getCashJournal(),
-                        amount: amount_total,
-                        payment: amount_total
+            self.validateLines().then(function() {
+                var amount_total = self.order.get('amount_total');
+                var profile = Config.getProfile();
+                // first payment line is cash line
+                var payment = [
+                        {
+                            journal: Config.getCashJournal(),
+                            amount: amount_total,
+                            payment: amount_total
+                        }
+                    ];
+                // process other
+                Ext.each(profile.journal_ids, function(journal) {
+                    if (journal.type !== 'cash') {
+                        payment.push({
+                            journal: journal,
+                            amount: 0,
+                            payment: 0
+                        });
                     }
-                ];
-            // process other
-            Ext.each(profile.journal_ids, function(journal) {
-                if (journal.type !== 'cash') {
-                    payment.push({
-                        journal: journal,
-                        amount: 0,
-                        payment: 0
-                    });
-                }
+                });
+                // set initial payment
+                self.paymentStore.setData(payment);
+                self.validatePayment();
+                self.getPaymentItemList().selectRange(0, 0, false);
+                // view payment
+                inputView.setActiveItem(self.getPaymentPanel());
             });
-            // set initial payment
-            self.paymentStore.setData(payment);
-            self.validatePayment();
-            self.getPaymentItemList().selectRange(0, 0, false);
-            // view payment
-            inputView.setActiveItem(self.getPaymentPanel());
         } else {
             inputView.setActiveItem(self.getOrderItemList());
         }
