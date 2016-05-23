@@ -557,7 +557,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                         action: 'createCashOverview'
                     },
                     {
-                        text: 'Produktbericht',
+                        text: 'Kassenbericht',
                         action: 'createCashReport'
                     }    
                    

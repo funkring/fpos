@@ -1786,6 +1786,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 'user_id' : user_id,
                                 'state' : 'draft',
                                 'date' : date,
+                                'ref' : 'Kassensturz',
                                 'tax_ids' : [],
                                 'line_ids' : [
                                     {
@@ -1856,6 +1857,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var user_id = Config.getUser()._id;
         var fpos_user_id = profile.user_id;
         var date = futil.datetimeToStr(new Date());
+        var turnover = profile.last_turnover;
+        var cpos = profile.last_cpos;
         
         var products = {};
         var productStore = Ext.StoreMgr.lookup("ProductStore");
@@ -1867,157 +1870,208 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( user_id && fpos_user_id) {
             ViewManager.startLoading("Verkaufsübersicht erstellen");
             
-            Config.queryOrders().then(function(orders) {
-                var overview = {};
-                var positions = [];
-                var taxes = {};
-                var taxNames = [];
-                var lines = [];
-                var total = 0.0;
-                var seq = 1;
-
-                Ext.each(orders, function(order) {
-                    if ( !order.tag && (!user || order.user_id == user._id) ) {
-                        // positions                        
-                        Ext.each(order.line_ids, function(line) {
-                        
-                            // get product detail                            
-                            var pos_report = false;
-                            if ( detail ) {
-                                if (line.product_id) {
-                                    var product = products[line.product_id];
-                                    if (product) {
-                                        pos_report = product.get('pos_report');
-                                    }
-                                }                                
-                            }
-                                
-                            if ( !line.tag && (!detail || pos_report) ) {
-                                // build summary
-                                var summary = overview[line.name];
-                                total += line.subtotal_incl;
-                                if (!summary) {
-                                    summary = {
-                                        tag: 's',
-                                        name: line.name,
-                                        price: line.price,                                
-                                        qty : line.qty,
-                                        uom_id: line.uom_id,
-                                        subtotal_incl: line.subtotal_incl,
-                                        sequence : 0,
-                                        discount: 0.0
-                                    };
-                                    overview[line.name] = summary;
-                                    positions.push(line.name);
-                                } else {
-                                    summary.subtotal_incl +=  line.subtotal_incl;
-                                    summary.qty += line.qty;
+            var createOverview = function() {
+                Config.queryOrders().then(function(orders) {
+                    var overview = {};
+                    var positions = [];
+                    var taxes = {};
+                    var taxNames = [];
+                    var lines = [];
+                    var total = 0.0;
+                    var seq = 1;
+                    
+                    Ext.each(orders, function(order) {
+                        if ( !order.tag && (!user || order.user_id == user._id) ) {
+                            // positions                        
+                            Ext.each(order.line_ids, function(line) {
+                            
+                                // get product detail                            
+                                var pos_report = false;
+                                if ( detail ) {
+                                    if (line.product_id) {
+                                        var product = products[line.product_id];
+                                        if (product) {
+                                            pos_report = product.get('pos_report');
+                                        }
+                                    }                                
                                 }
-                            }
-                        });
-                        
-                        //taxes
-                        if ( !detail ) {
-                            Ext.each(order.tax_ids, function(tax) {
-                                var summary = taxes[tax.name];
-                                if (!summary) {
-                                    summary = {     
-                                        tag: 's',
-                                        name: tax.name,
-                                        qty: 1.0,
-                                        price: tax.amount_tax,  
-                                        subtotal_incl : tax.amount_tax,
-                                        sequence : 0,
-                                        discount: 0.0
-                                    };
-                                    taxes[tax.name] = summary;
-                                    taxNames.push(tax.name);
-                                } else {
-                                    summary.subtotal_incl += tax.amount_tax;
-                                    summary.price = summary.subtotal_incl;
+                                    
+                                if ( !line.tag ) {
+                                    // build summary                                 
+                                    total += line.subtotal_incl;
+                                    if ( !detail || pos_report ) {
+                                        var summary = overview[line.name];
+                                        if (!summary) {
+                                            summary = {
+                                                tag: 's',
+                                                name: line.name,
+                                                price: line.price,                                
+                                                qty : line.qty,
+                                                uom_id: line.uom_id,
+                                                subtotal_incl: line.subtotal_incl,
+                                                sequence : 0,
+                                                discount: 0.0
+                                            };
+                                            overview[line.name] = summary;
+                                            positions.push(line.name);
+                                        } else {
+                                            summary.subtotal_incl +=  line.subtotal_incl;
+                                            summary.qty += line.qty;
+                                        }
+                                    }
                                 }
                             });
-                        }
-                    }              
-                });
-                
-                
-                // HEADER
-                
-                var header = 'Verkäufe Gesamt';
-                if ( user ) {
-                    header = 'Verkäufe ' + user.name;
-                } else if (detail) {
-                    header =  'Produktbericht';
-                }
-                lines.push({
-                    name : header,
-                    price : total,
-                    qty : 1.0,
-                    subtotal_incl : total,
-                    discount : 0.0,
-                    sequence : 0,
-                    tag : 's',
-                    flags: 'b'
-                });
-                
-                // PRODUCTS
-                
-                positions.sort();
-                var lastIndex = positions.length-1;
-                Ext.each(positions, function(pos, index)  {
-                    var summary = overview[pos];
-                    lines.push(summary);
+                            
+                            //taxes
+                            if ( !user) {
+                                Ext.each(order.tax_ids, function(tax) {
+                                    var summary = taxes[tax.name];
+                                    if (!summary) {
+                                        summary = {     
+                                            tag: 's',
+                                            name: tax.name,
+                                            qty: 1.0,
+                                            price: tax.amount_tax,  
+                                            subtotal_incl : tax.amount_tax,
+                                            sequence : 0,
+                                            discount: 0.0
+                                        };
+                                        taxes[tax.name] = summary;
+                                        taxNames.push(tax.name);
+                                    } else {
+                                        summary.subtotal_incl += tax.amount_tax;
+                                        summary.price = summary.subtotal_incl;
+                                    }
+                                });
+                            }
+                        }              
+                    });
                     
-                    summary.flags = 'd';
-                    if ( index == lastIndex && !detail ) {
-                        summary.flags += 'b';
+                    
+                    // HEADER
+                    var ref = 'Verkaufsübersicht';
+                    var header = 'Umsatz';
+                    if ( user ) {
+                        ref = 'Meine Verkäufe';
+                        header = 'Verkäufe ' + user.name;
                     }
                     
-                    summary.sequence = seq;
-                    seq+=1;               
-                });
+                    // if detail show current state
+                    if ( detail ) {
+                        ref = 'Kassenbericht';
+                        lines.push(
+                            {
+                                // TURNOVER
+                                'name' : 'Umsatzzähler',
+                                'price' : turnover,
+                                'qty' : 1.0,
+                                'subtotal_incl' : turnover,
+                                'discount' : 0.0,
+                                'sequence' : 0,
+                                'tag' : 'c'
+                            },
+                            {
+                                // BALANCE
+                                'name' : 'Kassenstand',
+                                'price' : cpos,
+                                'qty' : 1.0,
+                                'subtotal_incl' : cpos,
+                                'discount' : 0.0,
+                                'sequence' : 1,
+                                'tag' : 's'
+                            }); 
+                    }
+                    
+                    lines.push({
+                        name : header,
+                        price : total,
+                        qty : 1.0,
+                        subtotal_incl : total,
+                        discount : 0.0,
+                        sequence : 0,
+                        tag : 's'
+                    });
+                    
+                    // TAXES                   
+                    taxNames.sort();
+                    Ext.each(taxNames, function(taxName, index) {                    
+                        var summary = taxes[taxName];
+                        lines.push(summary);
+                        summary.sequence = seq;
+                        seq+=1;  
+                    } );
+
+                    // SEPERATOR
+                    if ( positions.length > 0 && lines.length > 0) {
+                        var summary = lines[lines.length-1];
+                        var flags = summary.flags || '';
+                        summary.flags = flags + 'b';
+                    }                    
+ 
+                    // PRODUCTS                    
+                    positions.sort();
+                    var lastIndex = positions.length-1;
+                    Ext.each(positions, function(pos, index)  {
+                        var summary = overview[pos];
+                        lines.push(summary);
+                        
+                        summary.flags = 'd';
+                        summary.sequence = seq;
+                        seq+=1;               
+                    });
+                    
+                    
+                    //CREATE
+                    return db.post({                    
+                        'fdoo__ir_model' : 'fpos.order',
+                        'fpos_user_id' : fpos_user_id,
+                        'user_id' : user_id,
+                        'ref' : ref,
+                        'state' : 'draft',
+                        'date' : date,
+                        'tax_ids' : [],
+                        'line_ids' : lines,
+                        'amount_tax' : 0.0,
+                        'amount_total' : 0.0
+                    })['catch'](function(err) {          
+                      ViewManager.stopLoading();
+                      ViewManager.handleError(err,{
+                            name: "Verkaufsübersicht Fehler",
+                            message: "Verkaufsübersicht konnte nicht erstellt werden"
+                       });
+                    }).then(function(res) {
+                        ViewManager.stopLoading();                            
+                        self.reloadData();
+                    });
                 
-                // TAXES
-               
-                taxNames.sort();
-                Ext.each(taxNames, function(taxName, index) {                    
-                    var summary = taxes[taxName];
-                    lines.push(summary);
-                    summary.sequence = seq;
-                    seq+=1;  
-                } );
-                
-                
-                //CREATE
-                return db.post({
-                    'fdoo__ir_model' : 'fpos.order',
-                    'fpos_user_id' : fpos_user_id,
-                    'user_id' : user_id,
-                    'state' : 'draft',
-                    'date' : date,
-                    'tax_ids' : [],
-                    'line_ids' : lines,
-                    'amount_tax' : 0.0,
-                    'amount_total' : 0.0
-                })['catch'](function(err) {          
-                  ViewManager.stopLoading();
-                  ViewManager.handleError(err,{
+                })['catch'](function(err) {
+                   ViewManager.stopLoading();
+                   ViewManager.handleError(err,{
                         name: "Verkaufsübersicht Fehler",
                         message: "Verkaufsübersicht konnte nicht erstellt werden"
                    });
-                }).then(function(res) {
-                    ViewManager.stopLoading();                            
-                    self.reloadData();
                 });
-                
-            })['catch'](function(err) {
-               ViewManager.stopLoading();
-               ViewManager.handleError(err,{
-                    name: "Verkaufsübersicht Fehler",
-                    message: "Verkaufsübersicht konnte nicht erstellt werden"
-               });
-            });
+           };
+            
+            // CHECK DETAIL OR NOT
+            if ( detail ) {
+                Config.queryLastOrder().then(function(res) {
+                    if ( res.rows.length > 0 ) {
+                        var lastOrder = res.rows[0].doc;
+                        turnover = lastOrder.turnover;
+                        cpos = lastOrder.cpos;
+                    }
+                    createOverview();
+                })['catch'](function(err) {          
+                   ViewManager.stopLoading();
+                   ViewManager.handleError(err,{
+                        name: "Verkaufsübersicht Fehler",
+                        message: "Verkaufsübersicht konnte nicht erstellt werden"
+                   });
+                });
+            } else {
+                createOverview();
+            }
         
         }
             
