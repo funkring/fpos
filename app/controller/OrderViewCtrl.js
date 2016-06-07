@@ -70,11 +70,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=createCashReport]' : {
                 release: 'onCashReport'  
             },
-            'button[action=createCashOverview]' : {
-                release: 'onCashOverview'  
+            'button[action=createCashUserReport]' : {
+                release: 'onCashUserReport'  
             },
-            'button[action=createCashOverviewAll]' : {
-                release: 'onCashOverviewAll'  
+            'button[action=createCashAllReport]' : {
+                release: 'onCashAllReport'  
             },
             'button[action=printAgain]' : {
                 release: 'onPrintAgain'
@@ -143,6 +143,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     orderItemListInitialize: function(orderItemList) {
         var self = this;
         orderItemList.setItemTpl(Ext.create('Ext.XTemplate',
+                '<li>',
+                '<tpl if="this.hasFlag(values,\'2\')">',
+                '<div class="PosOrderIndent"></div>',
+                '</tpl>',
                 '<tpl if="!this.hasFlag(values,\'d\') && (tag || this.hasFlag(values,\'u\'))">',
                 '<div class="PosOrderLineName">',
                     '{name}',
@@ -180,6 +184,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
                 '</div>', 
                 '</tpl>',
+                '</li>',
                 {                
                     getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
@@ -307,17 +312,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // build values
                 var values = {
                     //'order_id' : self.order.getId(),
-                    'name' : product.get('name'),
-                    'product_id' : product.getId(),
-                    'uom_id' : product.get('uom_id'),
-                    'tax_ids' : product.get('taxes_id'),
-                    'netto' : product.get('netto'),
-                    'price' : product.get('price'),
-                    'qty' : toWeight ? 0.0 : 1.0,
-                    'subtotal_incl' : 0.0,
-                    'subtotal' : 0.0,
-                    'discount' : 0.0,
-                    'sequence' : self.lineStore.getCount()
+                    name : product.get('name'),
+                    product_id : product.getId(),
+                    uom_id : product.get('uom_id'),
+                    tax_ids : product.get('taxes_id'),
+                    netto : product.get('netto'),
+                    price : product.get('price'),
+                    qty : toWeight ? 0.0 : 1.0,
+                    subtotal_incl : 0.0,
+                    subtotal : 0.0,
+                    discount : 0.0,
+                    sequence : self.lineStore.getCount()
                 };
                 
                 // determine flags
@@ -526,7 +531,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var tax_ids = [];
             
             // compute lines
-            var amount_netto = 0.0;
             var amount_total = 0.0;
             var amount_tax = 0.0;
             var turnover = 0.0;
@@ -558,6 +562,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 lines.push(line.getData());
             });
+            
+            // round
+            amount_total = self.round(amount_total);
+            amount_tax = self.round(amount_tax);
             
             // set values
             self.order.set('tax_ids', tax_ids);
@@ -913,7 +921,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     inputAction: function(action) {
         // allow only editing if draft
         if ( !this.isDraft() ) return;
-            
+        
         var valid = true;   
         var commaPos, decimals, value;        
         if ( !this.isPayment()  ) {
@@ -1201,7 +1209,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         var lines = self.getOrderItemList().getSelection();
         var form;
-        if ( lines.length > 0 ) {
+        if ( lines.length > 0 && !lines[0].get('tag')) {            
             form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
             form.setRecord(lines[0]);
         } else {
@@ -1275,9 +1283,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 self.order.set('state','paid');
                 
                 // turnover
-                self.order.set('turnover',self.order.get('turnover')+turnover);
+                self.order.set('turnover',self.round(self.order.get('turnover')+turnover));
                 // cpos
-                self.order.set('cpos', cpos);
+                self.order.set('cpos', self.round(cpos));
                 
                 // save
                 self.order.save({
@@ -1318,6 +1326,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onCash: function() {
+        ViewManager.hideMenus();
         var self = this;
         
         if ( self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
@@ -1427,15 +1436,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="2"><hr/></td>',
                 '</tr>',
                 '<tpl for="lines">',
+                    '<tpl if="this.hasFlag(values,\'l\')">',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
+                        '</tr>',
+                    '</tpl>',
                     '<tpl if="this.hasTag(values,\'c\')">',
                         '<tr>',
                             '<td colspan="2">{name}</td>',                        
                         '</tr>',
                         '<tr>',
                             '<td colspan="2">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
-                        '</tr>',
-                        '<tr>',                
-                            '<td colspan="2"><hr/></td>',
                         '</tr>',
                     '<tpl else>',
                         '<tr>',
@@ -1689,6 +1700,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onPayment: function() {
+        ViewManager.hideMenus();            
         if ( !this.isDraft() ) return;
         
         var self = this;
@@ -1718,14 +1730,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     }
                 });
                 
+                
+                // view payment
+                inputView.setActiveItem(self.getPaymentPanel());
+                
                 // set initial payment
                 self.paymentStore.setData(payment); 
                 self.validatePayment();
                 self.getPaymentItemList().selectRange(0,0,false);
-                
-                // view payment
-                inputView.setActiveItem(self.getPaymentPanel());
-            
             });
             
         } else {
@@ -1751,8 +1763,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
       
         if ( user_id && fpos_user_id) {
             ViewManager.startLoading("Kassenstand erstellen");
-            var resetPlaces = [];
             
+            var resetPlaces = [];            
             DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
                var bulkUpdate = [];
                Ext.each(res.rows, function(row) {
@@ -1846,12 +1858,126 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
     },
     
-    createCashOverview: function(user, detail) {
+    createSummary: function() {
+        return {
+            names: [],
+            map: {},
+            total: 0.0           
+        };
+    },
+    
+    updateLineSummary: function(summary, line, ignore) {
+        if ( !ignore ) {
+            var variants = summary.map[line.name];
+            if ( !variants ) {
+                variants = {};
+                summary.map[line.name] = variants;
+                summary.names.push(line.name);
+            }
+            
+            var key = [line.price, line.discount];
+            var entry = variants[key];
+            if (!entry) {
+                entry = {
+                    tag: 's',
+                    flags: 'd2',
+                    name: line.name,
+                    price: line.price,                                
+                    qty : line.qty,
+                    uom_id: line.uom_id,
+                    subtotal_incl: line.subtotal_incl,
+                    sequence : 0,
+                    discount: 0.0
+                };
+                variants[key] = entry;
+            } else {            
+                entry.subtotal_incl += line.subtotal_incl;
+                entry.qty += line.qty;
+            }      
+             
+        }
+        summary.total += line.subtotal_incl; 
+    },
+    
+    updateLineIOSummary: function(summary, line, ignore) {
+        if ( !ignore ) {
+            var entry = summary.map[line.name];
+            if (!entry) {
+                entry = {
+                    tag: 's',
+                    flags: '2',
+                    name: line.name,
+                    price: line.subtotal_incl,                                
+                    qty : 1.0,
+                    uom_id: line.uom_id,
+                    subtotal_incl: line.subtotal_incl,
+                    sequence : 0,
+                    discount: 0.0
+                };
+                summary.map[entry.name] = entry;
+                summary.names.push(entry.name);
+            } else {            
+                entry.subtotal_incl += line.subtotal_incl;
+                entry.price = line.subtotal_incl;
+            }       
+        }
+        summary.total += line.subtotal_incl; 
+    },
+    
+    updatePaymentSummary: function(summary, payment) {
+        var journal_name = Config.getJournal(payment.journal_id).name;
+        var entry = summary.map[journal_name];
+        if (!entry) {
+            entry = {
+                tag: 's',
+                flags: '2',
+                name: journal_name,
+                price: payment.amount,                                
+                qty : 1,
+                subtotal_incl: payment.amount,
+                sequence : 0,
+                discount: 0.0
+            };
+            
+            summary.map[entry.name] = entry;
+            summary.names.push(entry.name);
+        } else {
+            entry.subtotal_incl += payment.amount;
+            entry.price = entry.subtotal_incl;
+        }
+        summary.total += payment.amount;
+    },
+    
+    updateTaxSummary: function(summary, tax) {
+        var entry = summary.map[tax.name];
+        if (!entry) {
+            entry = {
+                tag: 's',
+                flags: '2',
+                name: tax.name,
+                price: tax.amount_tax,                                
+                qty : 1,
+                subtotal_incl: tax.amount_tax,
+                sequence : 0,
+                discount: 0.0
+            };
+            summary.map[entry.name] = entry;
+            summary.names.push(entry.name);
+        } else {
+            entry.subtotal_incl += tax.amount_tax;
+            entry.price = entry.subtotal_incl;
+        }
+        summary.total += tax.amount_tax;   
+    },
+    
+    
+    createCashReport: function(user, detail, finish) {
         var self = this;
-        
+
          // reset place
         self.place = null;
         
+        // vars
         var db = Config.getDB();
         var profile = Config.getProfile();
         var user_id = Config.getUser()._id;
@@ -1860,243 +1986,376 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var turnover = profile.last_turnover;
         var cpos = profile.last_cpos;
         
+        // check user
+        if ( !user_id || !fpos_user_id )
+            return;
+        
+        // get products
         var products = {};
         var productStore = Ext.StoreMgr.lookup("ProductStore");
-        if ( detail ) {
-            Ext.each(productStore.allProducts, function(product) {
-                products[product.getId()] = product;
-            });
+        Ext.each(productStore.allProducts, function(product) {
+            products[product.getId()] = product;
+        });
+
+        // start        
+        if ( finish ) {
+            ViewManager.startLoading("Kassenabschluss erstellen");
+        } else {
+            ViewManager.startLoading("Bericht erstellen");
         }
-        if ( user_id && fpos_user_id) {
-            ViewManager.startLoading("Verkaufsübersicht erstellen");
-            
-            var createOverview = function() {
-                Config.queryOrders().then(function(orders) {
-                    var overview = {};
-                    var positions = [];
-                    var taxes = {};
-                    var taxNames = [];
-                    var lines = [];
-                    var total = 0.0;
-                    var seq = 1;
-                    
-                    Ext.each(orders, function(order) {
-                        if ( !order.tag && (!user || order.user_id == user._id) ) {
-                            // positions                        
-                            Ext.each(order.line_ids, function(line) {
-                            
-                                // get product detail                            
-                                var pos_report = false;
-                                if ( detail ) {
-                                    if (line.product_id) {
-                                        var product = products[line.product_id];
-                                        if (product) {
-                                            pos_report = product.get('pos_report');
-                                        }
-                                    }                                
+        
+        var createOverview = function() {
+            Config.queryOrders().then(function(orders) {
+                var sumLine = self.createSummary();
+                var sumIncome = self.createSummary();
+                var sumExpense = self.createSummary();
+                var sumPayment = self.createSummary();
+                var sumTax = self.createSummary();
+                
+                var lines = [];                    
+                var seq = 1;
+                
+                Ext.each(orders, function(order) {
+                    if ( !order.tag && (finish || !user || order.user_id == user._id) ) {
+                        // positions                        
+                        Ext.each(order.line_ids, function(line) {
+                            // get product detail                            
+                            var pos_report = false;
+                            if (line.product_id) {
+                                var product = products[line.product_id];
+                                if (product) {
+                                    pos_report = product.get('pos_report');
                                 }
-                                    
-                                if ( !line.tag ) {
-                                    // build summary                                 
-                                    total += line.subtotal_incl;
-                                    if ( !detail || pos_report ) {
-                                        var summary = overview[line.name];
-                                        if (!summary) {
-                                            summary = {
-                                                tag: 's',
-                                                name: line.name,
-                                                price: line.price,                                
-                                                qty : line.qty,
-                                                uom_id: line.uom_id,
-                                                subtotal_incl: line.subtotal_incl,
-                                                sequence : 0,
-                                                discount: 0.0
-                                            };
-                                            overview[line.name] = summary;
-                                            positions.push(line.name);
-                                        } else {
-                                            summary.subtotal_incl +=  line.subtotal_incl;
-                                            summary.qty += line.qty;
-                                        }
-                                    }
-                                }
+                            }           
+                            // sumup                     
+                            var ignoreDetail = !detail && !pos_report;
+                            if ( !line.tag ) {
+                                self.updateLineSummary(sumLine, line, ignoreDetail);                             
+                            } else if ( line.tag == 'i') {
+                                self.updateLineIOSummary(sumIncome, line, ignoreDetail);
+                            } else if ( line.tag == 'o') {
+                                self.updateLineIOSummary(sumExpense, line, ignoreDetail);
+                            }
+                        });
+                        
+                        //payment and taxes
+                        if ( finish || !user ) {
+                            // calc taxes
+                            Ext.each(order.tax_ids, function(tax) {
+                                self.updateTaxSummary(sumTax, tax);
                             });
                             
-                            //taxes
-                            if ( !user) {
-                                Ext.each(order.tax_ids, function(tax) {
-                                    var summary = taxes[tax.name];
-                                    if (!summary) {
-                                        summary = {     
-                                            tag: 's',
-                                            name: tax.name,
-                                            qty: 1.0,
-                                            price: tax.amount_tax,  
-                                            subtotal_incl : tax.amount_tax,
-                                            sequence : 0,
-                                            discount: 0.0
-                                        };
-                                        taxes[tax.name] = summary;
-                                        taxNames.push(tax.name);
-                                    } else {
-                                        summary.subtotal_incl += tax.amount_tax;
-                                        summary.price = summary.subtotal_incl;
-                                    }
-                                });
-                            }
-                        }              
-                    });
-                    
-                    
-                    // HEADER
-                    var ref = 'Verkaufsübersicht';
-                    var header = 'Umsatz';
-                    if ( user ) {
-                        ref = 'Meine Verkäufe';
-                        header = 'Verkäufe ' + user.name;
-                    }
-                    
-                    // if detail show current state
-                    if ( detail ) {
-                        ref = 'Kassenbericht';
-                        lines.push(
-                            {
-                                // TURNOVER
-                                'name' : 'Umsatzzähler',
-                                'price' : turnover,
-                                'qty' : 1.0,
-                                'subtotal_incl' : turnover,
-                                'discount' : 0.0,
-                                'sequence' : 0,
-                                'tag' : 'c'
-                            },
-                            {
-                                // BALANCE
-                                'name' : 'Kassenstand',
-                                'price' : cpos,
-                                'qty' : 1.0,
-                                'subtotal_incl' : cpos,
-                                'discount' : 0.0,
-                                'sequence' : 1,
-                                'tag' : 's'
-                            }); 
-                    }
-                    
-                    lines.push({
-                        name : header,
-                        price : total,
-                        qty : 1.0,
-                        subtotal_incl : total,
-                        discount : 0.0,
-                        sequence : 0,
-                        tag : 's'
-                    });
-                    
-                    // TAXES                   
-                    taxNames.sort();
-                    Ext.each(taxNames, function(taxName, index) {                    
-                        var summary = taxes[taxName];
-                        lines.push(summary);
-                        summary.sequence = seq;
-                        seq+=1;  
-                    } );
-
-                    // SEPERATOR
-                    if ( positions.length > 0 && lines.length > 0) {
-                        var summary = lines[lines.length-1];
-                        var flags = summary.flags || '';
-                        summary.flags = flags + 'b';
-                    }                    
- 
-                    // PRODUCTS                    
-                    positions.sort();
-                    var lastIndex = positions.length-1;
-                    Ext.each(positions, function(pos, index)  {
-                        var summary = overview[pos];
-                        lines.push(summary);
-                        
-                        summary.flags = 'd';
-                        summary.sequence = seq;
-                        seq+=1;               
-                    });
-                    
-                    
-                    //CREATE
-                    return db.post({                    
-                        'fdoo__ir_model' : 'fpos.order',
-                        'fpos_user_id' : fpos_user_id,
-                        'user_id' : user_id,
-                        'ref' : ref,
-                        'state' : 'draft',
-                        'date' : date,
-                        'tax_ids' : [],
-                        'line_ids' : lines,
-                        'amount_tax' : 0.0,
-                        'amount_total' : 0.0
-                    })['catch'](function(err) {          
-                      ViewManager.stopLoading();
-                      ViewManager.handleError(err,{
-                            name: "Verkaufsübersicht Fehler",
-                            message: "Verkaufsübersicht konnte nicht erstellt werden"
-                       });
-                    }).then(function(res) {
-                        ViewManager.stopLoading();                            
-                        self.reloadData();
-                    });
+                            // calc payment
+                            Ext.each(order.payment_ids, function(payment) {
+                                self.updatePaymentSummary(sumPayment, payment);
+                            });
+                        }
+                    }              
+                });
                 
-                })['catch'](function(err) {
-                   ViewManager.stopLoading();
-                   ViewManager.handleError(err,{
-                        name: "Verkaufsübersicht Fehler",
-                        message: "Verkaufsübersicht konnte nicht erstellt werden"
-                   });
-                });
-           };
-            
-            // CHECK DETAIL OR NOT
-            if ( detail ) {
-                Config.queryLastOrder().then(function(res) {
-                    if ( res.rows.length > 0 ) {
-                        var lastOrder = res.rows[0].doc;
-                        turnover = lastOrder.turnover;
-                        cpos = lastOrder.cpos;
+                
+                // HEADER         
+                           
+                var ref = 'Kassenbericht';
+                var header = 'Verkäufe';
+                var tag = '';
+                if ( finish ) {
+                    ref = 'Kassenabschluss';
+                    tag = 's';
+                } else if ( user ) {
+                    ref = 'Meine Verkäufe';
+                    header = 'Verkäufe ' + user.name;                        
+                }
+                
+                
+                // STATE
+                
+                // if detail show current state
+                if ( finish || !user ) {
+                    lines.push(
+                        {
+                            // TURNOVER
+                            name : 'Umsatzzähler',
+                            price : turnover,
+                            qty : 1.0,
+                            subtotal_incl : turnover,
+                            discount : 0.0,
+                            sequence : seq++,
+                            tag : 'c',
+                            flags: 'b'
+                        },
+                        {
+                            // BALANCE
+                            name : 'Kassenstand',
+                            price : cpos,
+                            qty : 1.0,
+                            subtotal_incl : cpos,
+                            discount : 0.0,
+                            sequence : seq++,
+                            tag : 's'
+                        });
+                        
+                }
+                
+                // PAYMENTS                   
+                if ( sumPayment.names.length > 0 ) {
+                     lines.push({
+                        name : "Zahlungen",
+                        price : sumPayment.total,
+                        qty : 1.0,
+                        subtotal_incl : sumPayment.total,
+                        discount : 0.0,
+                        sequence : seq++,
+                        tag : 's',
+                        flags: 'l'
+                    });
+                    
+                    sumPayment.names.sort();
+                    Ext.each(sumPayment.names, function(name) {                    
+                        var entry = sumPayment.map[name];
+                        entry.sequence = seq++;
+                        lines.push(entry);
+                    } );
+                }
+
+
+                // INCOME
+                if ( sumIncome.names.length > 0) {
+                     lines.push({
+                        name : "Einzahlungen",
+                        price : sumIncome.total,
+                        qty : 1.0,
+                        subtotal_incl : sumIncome.total,
+                        discount : 0.0,
+                        sequence : seq++,
+                        tag : 's',
+                        flags: 'l'
+                    });
+                    
+                    sumIncome.names.sort();
+                    Ext.each(sumIncome.names, function(name) {                    
+                        var entry = sumIncome.map[name];
+                        entry.sequence = seq++;
+                        lines.push(entry);
+                    } );
+                }
+                
+                // EXPENSE
+                if ( sumExpense.names.length > 0) {
+                     lines.push({
+                        name : "Auszahlungen",
+                        price : sumExpense.total,
+                        qty : 1.0,
+                        subtotal_incl : sumExpense.total,
+                        discount : 0.0,
+                        sequence : seq++,
+                        tag : 's',
+                        flags: 'l'
+                    });
+                    
+                    sumExpense.names.sort();
+                    Ext.each(sumExpense.names, function(name) {                    
+                        var entry = sumExpense.map[name];
+                        entry.sequence = seq++;
+                        lines.push(entry);
+                    } );
+                }
+                 
+                // TAXES                   
+                if ( sumTax.names.length > 0 ) {
+                     lines.push({
+                        name : "Steuern",
+                        price : sumTax.total,
+                        qty : 1.0,
+                        subtotal_incl : sumTax.total,
+                        discount : 0.0,
+                        sequence : seq++,
+                        tag : 's',
+                        flags: 'l'
+                    });
+                    
+                    sumTax.names.sort();
+                    Ext.each(sumTax.names, function(name) {                    
+                        var entry = sumTax.map[name];
+                        entry.sequence = seq++;
+                        lines.push(entry);
+                    } );
+                }
+                
+                // LINES                   
+                if ( sumLine.names.length > 0 ) {
+
+                     lines.push({
+                        name : header,
+                        price : sumLine.total,
+                        qty : 1.0,
+                        subtotal_incl : sumLine.total,
+                        discount : 0.0,
+                        sequence : seq++,
+                        tag : 's',
+                        flags: 'lb'
+                    });
+                    
+                    sumLine.names.sort();
+                    Ext.each(sumLine.names, function(name) {                    
+                        var variants = sumLine.map[name];
+                        for (var prop in variants ) {
+                            if (variants.hasOwnProperty(prop) ) {
+                                var entry = variants[prop];
+                                entry.sequence = seq++;
+                                lines.push(entry);
+                            }
+                        }
+                    } );
+                }
+                
+                // FINISH
+                if ( finish && profile.fpos_income_id && profile.fpos_expense_id ) {
+                    // get income/expense products
+                    var product_income = products[profile.fpos_income_id];
+                    var product_expense = products[profile.fpos_expense_id];
+                    if ( product_income &&  product_expense ) {
+                        // check for expense
+                        if ( cpos > 0.0 ) {
+                            lines.push({
+                                name : product_expense.get('name'),
+                                product_id : product_expense.getId(),
+                                uom_id : product_expense.get('uom_id'),
+                                tax_ids : product_expense.get('taxes_id'),
+                                qty: 1.0,
+                                price : -cpos,
+                                subtotal_incl : -cpos,
+                                tag: 'o',
+                                flags: 'l',
+                                sequence: seq++
+                            });         
+                        } 
+                        // check for income
+                        else if ( cpos < 0.0 ) {
+                            lines.push({
+                                name : product_income.get('name'),
+                                product_id : product_income.getId(),
+                                uom_id : product_income.get('uom_id'),
+                                tax_ids : product_income.get('taxes_id'),
+                                qty: 1.0,
+                                price : -cpos,
+                                subtotal_incl : -cpos,
+                                tag: 'i',
+                                flags: 'l',
+                                sequence: seq++
+                            });     
+                        }
                     }
-                    createOverview();
+                }
+                                    
+                 
+                //CREATE
+                return db.post({                    
+                    'fdoo__ir_model' : 'fpos.order',
+                    'fpos_user_id' : fpos_user_id,
+                    'user_id' : user_id,
+                    'ref' : ref,
+                    'state' : 'draft',
+                    'date' : date,
+                    'tax_ids' : [],
+                    'line_ids' : lines,
+                    'tag' : tag,
+                    'amount_tax' : 0.0,
+                    'amount_total' : 0.0
                 })['catch'](function(err) {          
-                   ViewManager.stopLoading();
-                   ViewManager.handleError(err,{
-                        name: "Verkaufsübersicht Fehler",
-                        message: "Verkaufsübersicht konnte nicht erstellt werden"
+                  ViewManager.stopLoading();
+                  ViewManager.handleError(err,{
+                        name: "Kassenbericht Fehler",
+                        message: "Kassenbericht konnte nicht erstellt werden"
                    });
+                }).then(function(res) {
+                    //FINISH                                                    
+                    self.reloadData(function() {
+                        self.validateLines()['catch'](function(err) {
+                            ViewManager.handleError(err,{
+                                name: "Kassenbericht Fehler",
+                                message: "Kassenbericht konnte nicht erstellt werden"
+                           });
+                        }).then(function(){
+                            ViewManager.stopLoading();    
+                        });                        
+                    });
                 });
-            } else {
-                createOverview();
-            }
-        
-        }
             
+            })['catch'](function(err) {
+               ViewManager.stopLoading();
+               ViewManager.handleError(err,{
+                    name: "Kassenbericht Fehler",
+                    message: "Kassenbericht konnte nicht erstellt werden"
+               });
+            });
+       };
+        
+        // CREATE REPORT
+        var createReport = function() {
+             Config.queryLastOrder().then(function(res) {
+                if ( res.rows.length > 0 ) {
+                    var lastOrder = res.rows[0].doc;
+                    turnover = lastOrder.turnover;
+                    cpos = lastOrder.cpos;
+                }
+                createOverview();
+            })['catch'](function(err) {          
+               ViewManager.stopLoading();
+               ViewManager.handleError(err,{
+                    name: "Verkaufsübersicht Fehler",
+                    message: "Verkaufsübersicht konnte nicht erstellt werden"
+               });
+            });            
+        };
+        
+
+        // CHECK FINISH
+        if ( finish )  {
+            // DELETE DRAFT
+            var resetPlaces = [];            
+            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
+               var bulkUpdate = [];
+               Ext.each(res.rows, function(row) {
+                     // check if place are to reset
+                     if ( profile.iface_place ) {                       
+                       var place = self.placeStore.getPlaceById(row.doc.place_id);
+                       if ( place ) {
+                            resetPlaces.push(place);
+                       } 
+                     } 
+                     // mark deleted                        
+                     row.doc._deleted = true;
+                     bulkUpdate.push(row.doc);
+               });
+               return db.bulkDocs(bulkUpdate);
+            }).then(function(res) {
+                // reset places
+                Ext.each(resetPlaces, function(place) {
+                    place.set('amount',0.0);
+                });
+                createReport();
+            });
+        } else {
+            // NORMAL REPORT
+            createReport();
+        }
     },
     
     onCreateCashState: function() {
         ViewManager.hideMenus();
-        this.createCashState();
-    },
-    
-    onCashOverview: function() {
-        ViewManager.hideMenus();
-        this.createCashOverview(Config.getUser());
+        this.createCashReport(null, false, true);
     },
     
     onCashReport: function() {
         ViewManager.hideMenus();
-        this.createCashOverview(null, true);
+        this.createCashReport(null, false);
     },
-    
-    onCashOverviewAll: function() {
+   
+    onCashUserReport: function() {
         ViewManager.hideMenus();
-        this.createCashOverview(null);
+        this.createCashReport(Config.getUser(), true);
     },
-
     
     onPrintAgain: function() {
         var self = this;

@@ -57,15 +57,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=createCashState]' : {
                 release: 'onCashOperation'
             },  
-            'button[action=createCashOverview]' : {
-                release: 'onCashOperation'
-            }, 
             'button[action=createCashReport]' : {
                 release: 'onCashOperation'
-            },
-            'button[action=createCashOverviewAll]' : {
-                release: 'onCashOperation'
             }, 
+            'button[action=createCashUserReport]' : {
+                release: 'onCashOperation'
+            },
             'button[action=fastSwitchUser]' : {
                 release: 'onFastSwitchUser'
             },
@@ -535,7 +532,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 },
                 items: [
                     {
-                        text: 'Kassensturz',
+                        text: 'Kassenabschluss',
                         action: 'createCashState',
                         ui: 'posInputButtonOrange'
                     },
@@ -549,12 +546,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                         action: 'printAgain'
                     },
                     {
-                        text: 'Verkäufe Gesamt',
-                        action: 'createCashOverviewAll'
-                    },                                 
-                    {
                         text: 'Meine Verkäufe',
-                        action: 'createCashOverview'
+                        action: 'createCashUserReport'
                     },
                     {
                         text: 'Kassenbericht',
