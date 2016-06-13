@@ -16,6 +16,7 @@ Ext.define('Fpos.Config', {
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
+        displayDelay: 800,
         searchLimit : 100,
         leftMenuWidth: 250,
         maxRows : 10,
@@ -82,6 +83,11 @@ Ext.define('Fpos.Config', {
         return deferred.promise();
     },
     
+    hasNumpad: function() {
+        var hwstatus = this.getHwStatus();
+        return hwstatus.numpad;
+    },
+    
     hasPrinter: function() {
         var hwstatus = this.getHwStatus();
         return hwstatus.printer && hwstatus.printer.installed; 
@@ -97,6 +103,11 @@ Ext.define('Fpos.Config', {
         var hwstatus = this.getHwStatus();
         return hwstatus.display && hwstatus.display.installed;
     },
+    
+    displayFullCharset: function() {
+       var hwstatus = this.getHwStatus();
+        return hwstatus.display && hwstatus.display.fullcharset;
+    },    
     
     display: function(lines) {
         if ( this.hasDisplay() ) {
@@ -267,6 +278,12 @@ Ext.define('Fpos.Config', {
         if ( !wallpaper )
             return;
             
+        // hardware provisioning
+        if ( window.PosHw ) {
+            window.PosHw.provisioning();
+        }
+            
+        // background provisioning
         var self = this;
         var wallpaperUrl = self.getWallpaperUrl();
         wallpaperUrl += futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + ".png";

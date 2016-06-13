@@ -96,6 +96,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.seq = 0;
         this.cpos = 0;
         this.turnover = 0;
+        this.displayDelay = Config.getDisplayDelay();
         
         this.mode = '*';
         this.inputSign = 1; 
@@ -583,7 +584,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }
             
             // notify display update
-            self.displayTask.delay(800);
+            self.displayTask.delay(self.displayDelay);
 
             // save
             // ( only save if it is dirty, not places are active or force save was passed)            
@@ -1619,11 +1620,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     display: function() {
-        var amount_total = this.order ? this.order.get('amount_total') : null;
-        if ( amount_total ) {
-            Config.display(amount_total.toFixed(2));
+        if ( Config.displayFullCharset() ) {
+            var total = this.order ? this.order.get('amount_total') : 0.0;
+            Config.display(futil.formatFloat(total, Config.getDecimals()) + " " + Config.getCurrency());
         } else {
-            Config.display("0.00");
+            var amount_total = this.order ? this.order.get('amount_total') : null;
+            if ( amount_total ) {
+                Config.display(amount_total.toFixed(2));
+            } else {
+                Config.display("0.00");
+            }
         }
     },
     
