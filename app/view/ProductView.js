@@ -45,6 +45,7 @@ Ext.define('Fpos.view.ProductView', {
                             },
                             {
                                 cls: 'ProductDataView',
+                                id: 'productDataView',
                                 xtype: 'dataview',
                                 useComponents: true,
                                 scrollable: 'vertical',

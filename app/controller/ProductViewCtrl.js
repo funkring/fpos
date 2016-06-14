@@ -9,10 +9,12 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         'Ext.util.DelayedTask'
     ],
     config: {
+        defaultButtonWidth: 100,
         refs: {
             productSearch: '#productSearch',
             categoryDataView: '#categoryDataView',
-            productView: '#productView'
+            productView: '#productView',
+            productDataView: '#productDataView'
         },
         control: {
             'button[action=selectCategory]' : {
@@ -34,6 +36,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     
     init: function() {
         var self = this;
+        this.buttonWidth = self.getDefaultButtonWidth().toString()+"px";
+        this.buttonHeight = self.getDefaultButtonWidth().toString()+"px";
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
@@ -85,16 +89,37 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      */  
     productButtonInitialize: function(button) {     
         var self = this;   
-        if ( !self.productButtonTmpl ) {
-            self.productButtonWidth = null;
+        if ( !self.productButtonTmpl ) {                   
+            
+            var viewWidth = self.getProductDataView().element.getWidth()-6;
+            var viewHeight = self.getProductDataView().element.getHeight()-6;
+            var defaultWidth = self.getDefaultButtonWidth();
+            var defaultWidthAndMargin = defaultWidth+2;          
+            var gridX = Math.floor(viewWidth / defaultWidthAndMargin);
+            var gridY = Math.floor(viewHeight / defaultWidthAndMargin);
+            var preferredX = defaultWidth;
+            var preferredY = defaultWidth;
+
+            if ( gridX < 2 ) {
+                if ( gridX > 1 ) {
+                    preferredX = viewWidth;
+                }
+            } else {
+                preferredX = Math.round(viewWidth / gridX)-3;
+            }
+            if ( gridY < 2) {
+                if ( gridY > 1) {
+                    preferredY = viewHeight;
+                }
+            } else {
+                preferredY = Math.round(viewHeight / gridY)-3;
+            }
+            self.buttonWidth = preferredX.toString() + "px";
+            self.buttonHeight = preferredY.toString() + "px";
+            
             var screenWidth = futil.screenWidth();
             if ( self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
-                if ( screenWidth < 720 ) {       
-                    self.productButtonCls = 'ProductButtonSmall';
-                } else {
-                    self.productButtonCls = 'ProductButton';
-                }
-                
+                self.productButtonCls = 'ProductButton';
                 self.productButtonTmpl = Ext.create('Ext.XTemplate',
                       '<tpl if="image_small">',
                           '<div class="ProductImage">',
@@ -122,13 +147,6 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                           
                       });
             } else {     
-                //set width 
-                if ( screenWidth == 600 ) {
-                    self.productButtonWidth = "190px";
-                } else if ( screenWidth == 320 ) {
-                    self.productButtonWidth = "186px";
-                }
-                
                 self.productButtonCls = 'ProductButtonNoCat';  
                 self.productButtonTmpl = Ext.create('Ext.XTemplate',
                  '<div class="ProductItemNoCat">',
@@ -155,10 +173,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             }
         }
         
-        if ( self.productButtonWidth ) {
-            button.setWidth(self.productButtonWidth);
-        } 
-        
+        button.setWidth(self.buttonWidth);
+        button.setHeight(self.buttonHeight);
         button.setCls(self.productButtonCls);
         button.setTpl(self.productButtonTmpl);
     },

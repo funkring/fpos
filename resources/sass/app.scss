@@ -290,8 +290,6 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 .ProductButton {
     float: left;
     margin: 2px;
-    width: 100px;
-    height: 100px;
     font-size: 0.7em;
     white-space: normal;
 }
@@ -299,20 +297,9 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 .ProductButtonDark {
     float: left;
     margin: 2px;
-    width: 100px;
-    height: 100px;
     font-size: 0.7em;
     white-space: normal;
     color: $fpos-white !important; 
-}
-
-.ProductButtonSmall {
-    float: left;
-    margin: 2px;
-    width: 100px;
-    height: 100px;
-    font-size: 0.7em;
-    white-space: normal;
 }
 
 .ProductItemNoCat {
@@ -321,7 +308,6 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 
 .ProductButtonNoCat {
     margin: 2px;
-    height: 100px;
     font-size: 0.8em;
     white-space: normal;
 }

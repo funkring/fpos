@@ -22,9 +22,9 @@ Ext.define("Fpos.view.CategoryItem", {
                                     
             // config text
             var name = record.get('name') || '';
-            if ( name.length >= 7) {
+            if ( name.length > 5) {
                 button.setCls('ProductCategoryButtonSmall');
-            } else if ( name.length > 5) {
+            } else if ( name.length > 4) {
                 button.setCls('ProductCategoryButtonMedium');
             } else {
                 button.setCls('ProductCategoryButton');

@@ -14,6 +14,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Ext.Panel',
         'Fpos.view.ProductView',
         'Fpos.view.OrderView',
+        'Fpos.view.OrderInputViewMedium',
         'Fpos.view.OrderInputView',
         'Fpos.view.TestView',
         'Fpos.view.ProductViewSmall',
@@ -635,10 +636,9 @@ Ext.define('Fpos.controller.MainCtrl', {
         var i;
         var self = this;
         var profile = Config.getProfile();
-        var mobile = Config.isMobilePos();
         
         // init vars        
-        self.fastUserSwitch = profile.iface_fastuswitch && !mobile;        
+        self.fastUserSwitch = profile.iface_fastuswitch && !Config.isMobilePos();        
         for ( i=0; i<self.userButtons.length; i++ ) {
             if ( self.fastUserSwitch ) {
                 if ( i < profile.user_ids.length ) {
@@ -661,7 +661,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // pos panel
         if ( !self.posPanel ) {
-            if ( mobile ) {
+            if ( Config.hasNumpad() ) {
                 // smaller pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',
@@ -699,7 +699,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                      reveal: true
                 });
                  
-            } else {                        
+            } else {                       
+             
                 // big pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',
@@ -716,7 +717,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                     flex: 1                        
                                 },
                                 {
-                                    xtype: 'fpos_order_input'  
+                                    xtype: Config.isMobilePos() ? 'fpos_order_input_medium' : 'fpos_order_input'  
                                 }
                             
                             ]          
@@ -893,7 +894,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     title : "PIN für die Anmeldung"
                 };
                 
-            if ( Config.isMobilePos() ) {
+            if ( Config.hasNumpad() ) {
                 pinInputConfig.showButtons = false;
                 pinInputConfig.width = "300px";
             }

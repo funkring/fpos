@@ -346,7 +346,7 @@ Ext.define('Fpos.Config', {
     },
     
     isMobilePos: function() {
-        return futil.physicalScreenWidth() < 600;
+        return futil.screenWidth() < 600;
     },
     
     openCashDrawer: function() {
