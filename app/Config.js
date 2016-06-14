@@ -12,7 +12,7 @@ Ext.define('Fpos.Config', {
         'Ext.form.ViewManager'
     ],
     config : {       
-        version : '3.0.14',
+        version : '3.0.15',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -346,7 +346,7 @@ Ext.define('Fpos.Config', {
     },
     
     isMobilePos: function() {
-        return futil.screenWidth() < 600;
+        return futil.physicalScreenWidth() < 600;
     },
     
     openCashDrawer: function() {

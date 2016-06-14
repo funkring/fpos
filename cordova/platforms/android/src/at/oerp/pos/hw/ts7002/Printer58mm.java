@@ -2,7 +2,7 @@ package at.oerp.pos.hw.ts7002;
 
 import java.io.IOException;
 
-import android.pt.Cprinter;
+import android.pt.Cprinter7002;
 import at.oerp.pos.CtrlBytes;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.util.HtmlLinePrinter;
@@ -15,10 +15,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	// service
 	private TS7002PosService service;
 	// printer api
-	private Cprinter driver;
-	// is open?
-	private boolean  open;
-	
+	private Cprinter7002 driver;
 	
 	/**
 	 * constructor
@@ -27,8 +24,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	 */
 	public Printer58mm(TS7002PosService inService) throws SecurityException, IOException {
 		service = inService;		
-		driver = new Cprinter();		
-		open =  driver.openPrinter() == 0;
+		driver = new Cprinter7002();		
 	}
 	
 	@Override
@@ -39,14 +35,20 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	@Override
 	public void printHtml(String inHtml, IObjectResolver inResolver) throws IOException {
 		synchronized ( service ) {
-			inHtml = StringUtil.toAscii(inHtml);
-			HtmlLinePrinter printer = new HtmlLinePrinter(this, inResolver);
-			printer.print(inHtml);
-			writeln("");
-			writeln("");
-			writeln("");
-			writeln("");
-			writeln("");
+			if ( driver.openPrinter() == 0 ) {
+				try {
+					inHtml = StringUtil.toAscii(inHtml);
+					HtmlLinePrinter printer = new HtmlLinePrinter(this, inResolver);
+					printer.print(inHtml);
+					writeln("");
+					writeln("");
+					writeln("");
+					writeln("");
+					writeln("");
+				} finally {
+					driver.closePrinter();
+				}
+			} 
 		}
 	}
 	
@@ -61,11 +63,6 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 
 	@Override
 	public synchronized void close() {
-		if ( open ) {
-			open = false;
-			driver.closePrinter();
-		}
-			
 	}
 	
 	// LINE PRINTER

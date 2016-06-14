@@ -2,27 +2,38 @@ package at.oerp.pos;
 
 import java.io.IOException;
 
+import android.app.Application;
+import at.oerp.pos.hw.cpos800.CPOS800Service;
 import at.oerp.pos.hw.h510.H510PosService;
+import at.oerp.pos.hw.st808.ST808Service;
 import at.oerp.pos.hw.t508aq.T508AQService;
 import at.oerp.pos.hw.ts7002.TS7002PosService;
+import at.oerp.pos.hw.ts7003.TS7003PosService;
 
 public abstract class PosHwService {
-
-	private boolean open;
 	
+	final protected Application app;
+	
+	private boolean open;
 	
 	/**
 	 * create right service 
 	 * for the right hardware
 	 * @return
 	 */
-	public static PosHwService create() {
+	public static PosHwService create(Application app) {
 		if ( T508AQService.isHardware() ) {
-			return new T508AQService();
+			return new T508AQService(app);
 		} else if ( H510PosService.isHardware() ) {
-			return new H510PosService();
+			return new H510PosService(app);
 		} else if ( TS7002PosService.isHardware() ) {
-			return new TS7002PosService();
+			return new TS7002PosService(app);
+		} else if ( TS7003PosService.isHardware() ) {
+			return new TS7003PosService(app);
+		} else if ( CPOS800Service.isHardware() ) {
+			return new CPOS800Service(app);
+		} else if ( ST808Service.isHardware() ) {
+			return new ST808Service(app);
 		}
 		return null;
 	}
@@ -31,8 +42,15 @@ public abstract class PosHwService {
 	/**
 	 * protected constructor
 	 */
-	protected PosHwService() {		
-		
+	protected PosHwService(Application app) {		
+		this.app = app;
+	}
+	
+	/**
+	 * @return application context
+	 */
+	public final Application getApplication() {
+		return this.app;
 	}
 	
 	/**
@@ -70,6 +88,21 @@ public abstract class PosHwService {
 			destroyService();
 		}
 	}
+	
+	/**
+	 * @return true if numpad was available
+	 */
+	public boolean hasNumpad() {
+		return false;
+	}
+	
+	/**
+	 * provisioning
+	 */
+	public void provisioning() throws IOException {
+		
+	}
+
 	
 	/**
 	 * init service hook

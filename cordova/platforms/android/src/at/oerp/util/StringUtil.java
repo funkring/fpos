@@ -19,6 +19,8 @@ public class StringUtil {
 		NON_ASCII_REPLACEMENT.put("Ü", "Ue");
 		NON_ASCII_REPLACEMENT.put("ß", "ss");
 		NON_ASCII_REPLACEMENT.put("€", "EUR");
+		NON_ASCII_REPLACEMENT.put("é", "e");
+		NON_ASCII_REPLACEMENT.put("É", "E");
 	}
 	
 	/**

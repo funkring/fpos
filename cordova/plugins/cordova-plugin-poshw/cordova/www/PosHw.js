@@ -28,6 +28,9 @@ module.exports = {
     
     test: function(successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "test", []);
-    }
+    },
     
+    provisioning: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "provisioning", []);
+    }    
 };

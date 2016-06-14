@@ -2,6 +2,7 @@ package at.oerp.pos.hw.ts7002;
 
 import java.io.IOException;
 
+import android.app.Application;
 import android.os.Build;
 import android.util.Log;
 import at.oerp.pos.CtrlBytes;
@@ -23,6 +24,11 @@ public class TS7002PosService extends PosHwService implements CtrlBytes {
 		// Manufacturer Foxconn International Holdings Limited
 		return "X701".equals(Build.MODEL);
 	}
+
+	public TS7002PosService(Application app) {
+		super(app);
+	}
+
 	
 	@Override
 	protected void initService() {

@@ -1,6 +1,7 @@
 package at.oerp.demo.poshw;
 
 import java.io.IOException;
+import java.util.Random;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -26,6 +27,7 @@ public class MainActivity extends Activity {
 	private PosHwService posHw;
 	private int displayClick;
 	private ScaleTask scaleTask;
+	private Random random;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +35,9 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		infoTextView = (TextView) findViewById(R.id.infoView);
 		infoTextView.setText(Build.MODEL + "\n" + Build.MANUFACTURER);
+		random = new Random();
 		
-		posHw = PosHwService.create();
+		posHw = PosHwService.create(getApplication());
 		if ( posHw != null ) {
 			posHw.open();
 		} else {
@@ -47,6 +50,9 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				try {
 					String test =
+							   "<br>Zeile1" +
+							   "<br>Zeiel2" +
+							   "<br>Zeiel3" +
 							   "<br>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
 							   "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
 			                   "<br>um zu testen ob der Druck" +
@@ -88,11 +94,18 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				displayClick++;
 				PosHwDisplay disp = posHw.getCustomerDisplay();
-				try {
-					disp.setDisplay(Integer.toString(displayClick));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}				
+				if ( disp != null ) {
+					double displayVal = Math.round((random.nextDouble()*1000)*100)/100.0;
+					try {
+						if ( disp.fullCharset() ) {
+							disp.setDisplay(String.format("%1$,.2f €", displayVal));
+						} else {
+							disp.setDisplay(Double.toString(displayVal));
+						}
+					}  catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 		});
 		
@@ -102,6 +115,19 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				try {
 					posHw.openCashDrawer();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}				
+			}
+		});
+		
+		
+		Button provisionButton = (Button) findViewById(R.id.provisioningButton);
+		provisionButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				try {
+					posHw.provisioning();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}				
@@ -166,7 +192,7 @@ public class MainActivity extends Activity {
 							} 
 							publishProgress(result);
 						}
-						Thread.sleep(40);
+						Thread.sleep(250);
 					}
 				}
 			} catch (Exception e) {

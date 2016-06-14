@@ -4,6 +4,7 @@ import java.io.File;
 
 import com.ctrl.gpio.Ioctl;
 
+import android.app.Application;
 import android.os.Build;
 import android.util.Log;
 import at.oerp.pos.CtrlBytes;
@@ -61,6 +62,10 @@ public class T508AQService extends PosHwService implements CtrlBytes {
 		return printer;
 	}
 
+	public T508AQService(Application app) {
+		super(app);
+	}
+	
 	@Override
 	protected void initService() {
 		

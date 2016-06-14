@@ -12,7 +12,11 @@ libs = [
     "libs"
 ]
 
-process = [(source,"src"), (libs,"libs")]
+drawable = [
+    "res/drawable"
+]
+
+process = [(source,"src"), (libs,"libs"), (drawable,"res/drawable")]
 
 for srclist, dest in process:
     for src in srclist:

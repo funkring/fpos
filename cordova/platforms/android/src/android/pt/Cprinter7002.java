@@ -2,7 +2,7 @@ package android.pt;
 
 import android.util.Log;
 
-public class Cprinter {
+public class Cprinter7002 {
 	
 	
 	public  native  int openPrinter();    

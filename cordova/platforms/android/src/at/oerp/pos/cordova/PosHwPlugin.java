@@ -38,7 +38,7 @@ public class PosHwPlugin extends CordovaPlugin {
 				
 				// init service
 				if ( service == null ) {
-					service = PosHwService.create();	
+					service = PosHwService.create(cordova.getActivity().getApplication());	
 					if ( service != null ) {
 						service.open();
 					}
@@ -71,8 +71,13 @@ public class PosHwPlugin extends CordovaPlugin {
 								displayStatus.put("installed", true);
 								displayStatus.put("lines", display.getLines());
 								displayStatus.put("chars", display.getCharsPerLine());
+								displayStatus.put("fullcharset", display.fullCharset());
 								status.put("display", displayStatus);
 							}
+							// check numpad
+							status.put("numpad", service.hasNumpad());
+
+							// notify status
 							callbackContext.success(status);
 							return true;
 						}
@@ -158,6 +163,16 @@ public class PosHwPlugin extends CordovaPlugin {
 						@Override
 						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
 							callbackContext.success("Test OK!");
+							return true;
+						}
+					});
+					
+					api.put("provisioning", new PosHwPluginCmd() {
+						
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							service.provisioning();
+							callbackContext.success();
 							return true;
 						}
 					});

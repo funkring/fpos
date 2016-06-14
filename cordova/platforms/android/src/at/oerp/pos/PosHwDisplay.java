@@ -27,4 +27,8 @@ public abstract class PosHwDisplay {
 		}
 		return "";
 	}	
+	
+	public boolean fullCharset() {
+		return false;
+	}
 }

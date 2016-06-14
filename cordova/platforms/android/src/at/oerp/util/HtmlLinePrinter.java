@@ -249,7 +249,7 @@ public class HtmlLinePrinter  {
 	 * Root Element
 	 * @author funkring
 	 */
-	class  Element implements ContentHandler {
+	class Element implements ContentHandler {
 
 		StringBuilder 				textBuilder = new StringBuilder();
 		Element 	  				parent = null;
@@ -299,7 +299,14 @@ public class HtmlLinePrinter  {
 		
 		public void flushText() {
 			if ( textBuilder.length() > 0 ) {
-				childs.add(new TextElement(textBuilder.toString(), style, align));
+				Element lastElement = !childs.isEmpty() ? childs.getFirst() : null;
+				if ( lastElement instanceof TextElement ) {
+					TextElement lastTextElement = (TextElement) lastElement;
+					textBuilder.insert(0, lastTextElement.text);
+					lastTextElement.text = textBuilder.toString();
+				} else {
+					childs.add(new TextElement(textBuilder.toString(), style, align));					
+				}
 				textBuilder.setLength(0);
 			}
 		}

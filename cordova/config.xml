@@ -24,7 +24,7 @@
         <allow-intent href="itms-apps:*" />
     </platform>
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
-    <preference name="xwalkVersion" value="17+" />
+    <preference name="xwalkVersion" value="18+" />
     <preference name="xwalkCommandLine" value="--disable-pull-to-refresh-effect" />
     <preference name="xwalkMode" value="embedded" />
     <preference name="xwalkMultipleApk" value="true" />

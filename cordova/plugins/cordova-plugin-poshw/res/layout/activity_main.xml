@@ -39,5 +39,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Öffnen" />
+    
+      <Button
+        android:id="@+id/provisioningButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Provisioning" />
 
 </LinearLayout>

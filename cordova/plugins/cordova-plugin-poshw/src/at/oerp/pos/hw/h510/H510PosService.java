@@ -2,6 +2,7 @@ package at.oerp.pos.hw.h510;
 
 import java.io.IOException;
 
+import android.app.Application;
 import android.os.Build;
 import android.util.Log;
 import at.oerp.pos.CtrlBytes;
@@ -22,6 +23,11 @@ public class H510PosService extends PosHwService implements CtrlBytes {
 	
 	public static boolean isHardware() {
 		return "WIZARHAND_Q1".equals(Build.MODEL);
+	}
+	
+
+	public H510PosService(Application app) {
+		super(app);
 	}
 	
 	@Override
@@ -70,6 +76,11 @@ public class H510PosService extends PosHwService implements CtrlBytes {
 	@Override
 	public boolean openCashDrawer() throws IOException {
 		return false;
+	}
+	
+	@Override
+	public boolean hasNumpad() {
+		return true;
 	}
 
 }
