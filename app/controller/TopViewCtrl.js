@@ -8,9 +8,11 @@ Ext.define('Fpos.controller.TopViewCtrl', {
         'Fpos.view.TopView'
     ],
     config: {
+        defaultButtonWidth: 100,
         refs: {
             topDataView: '#topDataView',
-            topView: '#topView'
+            topView: '#topView',
+            placeDataView: '#placeDataView'
         },
         control: {
             'button[action=selectTop]' : {
@@ -28,6 +30,8 @@ Ext.define('Fpos.controller.TopViewCtrl', {
     
     init: function() {
         var self = this;
+        this.buttonWidth = self.getDefaultButtonWidth().toString()+"px";
+        this.buttonHeight = self.getDefaultButtonWidth().toString()+"px";
         this.topStore = Ext.StoreMgr.lookup("TopStore");        
         this.allTopStore = Ext.StoreMgr.lookup("AllTopStore");
         this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
@@ -74,15 +78,34 @@ Ext.define('Fpos.controller.TopViewCtrl', {
     placeButtonInitialize: function(button) {     
         var self = this;   
         if ( !self.placeButtonTmpl ) {
-            self.placeButtonWidth = null;
+            var viewWidth = self.getPlaceDataView().element.getWidth()-6;
+            var viewHeight = self.getPlaceDataView().element.getHeight()-6;
+            var defaultWidth = self.getDefaultButtonWidth();
+            var defaultWidthAndMargin = defaultWidth+2;          
+            var gridX = Math.floor(viewWidth / defaultWidthAndMargin);
+            var gridY = Math.floor(viewHeight / defaultWidthAndMargin);
+            var preferredX = defaultWidth;
+            var preferredY = defaultWidth;
+            if ( gridX < 2 ) {
+                if ( gridX > 1 ) {
+                    preferredX = viewWidth;
+                }
+            } else {
+                preferredX = Math.round(viewWidth / gridX)-3;
+            }
+            if ( gridY < 2) {
+                if ( gridY > 1) {
+                    preferredY = viewHeight;
+                }
+            } else {
+                preferredY = Math.round(viewHeight / gridY)-3;
+            }
+            self.buttonWidth = preferredX.toString() + "px";
+            self.buttonHeight = preferredY.toString() + "px";
+            
             var screenWidth = futil.screenWidth();
             if ( self.allTopStore.getCount() > 0 || screenWidth >= 1024) {
-                if ( screenWidth < 720 ) {       
-                    self.placeButtonCls = 'PlaceButtonSmall';
-                } else {
-                    self.placeButtonCls = 'PlaceButton';
-                }
-                
+                self.placeButtonCls = 'PlaceButton';
                 self.placeButtonTmpl = Ext.create('Ext.XTemplate',
                       '<tpl if="name.length &lt;= 7">',
                          '<div class="PlaceTextOnlyBig">',
@@ -98,13 +121,6 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                       '</tpl>'
                       );
             } else {     
-                //set width 
-                if ( screenWidth == 600 ) {
-                    self.placeButtonWidth = "190px";
-                } else if ( screenWidth == 320 ) {
-                    self.placeButtonWidth = "186px";
-                }
-                
                 self.placeButtonCls = 'PlaceButtonNoTop';  
                 self.placeButtonTmpl = Ext.create('Ext.XTemplate',
                  '<div class="PlaceItemNoTop">',
@@ -118,10 +134,8 @@ Ext.define('Fpos.controller.TopViewCtrl', {
             }
         }
         
-        if ( self.placeButtonWidth ) {
-            button.setWidth(self.placeButtonWidth);
-        } 
-        
+        button.setWidth(self.buttonWidth);
+        button.setHeight(self.buttonHeight);
         button.setCls(self.placeButtonCls);
         button.setTpl(self.placeButtonTmpl);
     },

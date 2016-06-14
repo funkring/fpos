@@ -15,6 +15,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Fpos.view.ProductView',
         'Fpos.view.OrderView',
         'Fpos.view.OrderInputViewMedium',
+        'Fpos.view.OrderInputViewPhone',
         'Fpos.view.OrderInputView',
         'Fpos.view.TestView',
         'Fpos.view.ProductViewSmall',
@@ -661,7 +662,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // pos panel
         if ( !self.posPanel ) {
-            if ( Config.hasNumpad() ) {
+            if ( Config.hasNumpad() || Config.isPhonePos() ) {
                 // smaller pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',
@@ -675,7 +676,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                     flex: 1                        
                                 },
                                 {
-                                    xtype: 'fpos_order_input_small'  
+                                    xtype: Config.isPhonePos() ? 'fpos_order_input_phone' : 'fpos_order_input_small'  
                                 }                            
                             ]          
                         }              
@@ -700,7 +701,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 });
                  
             } else {                       
-             
+            
                 // big pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',

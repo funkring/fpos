@@ -845,6 +845,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.OrderFormView": [],
   "Fpos.view.OrderInputView": [],
   "Fpos.view.OrderInputViewMedium": [],
+  "Fpos.view.OrderInputViewPhone": [],
   "Fpos.view.OrderInputViewSmall": [],
   "Fpos.view.OrderLineFormView": [],
   "Fpos.view.OrderView": [],
@@ -1885,6 +1886,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.OrderInputViewMedium": [
     "widget.fpos_order_input_medium"
+  ],
+  "Fpos.view.OrderInputViewPhone": [
+    "widget.fpos_order_input_phone"
   ],
   "Fpos.view.OrderInputViewSmall": [
     "widget.fpos_order_input_small"

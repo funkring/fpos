@@ -349,6 +349,10 @@ Ext.define('Fpos.Config', {
         return futil.screenWidth() < 600;
     },
     
+    isPhonePos: function() {
+        return futil.screenWidth() < 528;
+    },
+    
     openCashDrawer: function() {
         if ( window.PosHw ) {
             return window.PosHw.openCashDrawer();

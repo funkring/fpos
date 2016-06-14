@@ -29,6 +29,7 @@ Ext.define('Fpos.view.TopView', {
                     {
                         cls: 'PlaceDataView',
                         xtype: 'dataview',
+                        id: 'placeDataView',
                         useComponents: true,
                         scrollable: 'vertical',
                         defaultType: 'fpos_place_item',
