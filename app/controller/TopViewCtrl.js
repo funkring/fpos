@@ -23,7 +23,8 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                 initialize: 'placeButtonInitialize'
             },
             topView: {
-                initialize: 'topViewInitialize'
+                initialize: 'topViewInitialize',
+                show: 'onTopViewShow'
             }       
         }
     },
@@ -36,22 +37,28 @@ Ext.define('Fpos.controller.TopViewCtrl', {
         this.allTopStore = Ext.StoreMgr.lookup("AllTopStore");
         this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
         this.topId = null;
+        this.shown = false;
         
     },
     
     topViewInitialize: function() {
         var self = this;
-        self.loadTop(null);
-        
+
         // global event after sync
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
-                //this.cache = {};
+                self.shown = false;
                 self.placeButtonTmpl = null;
-                self.loadTop(null);
             }
         });     
+    },
+    
+    onTopViewShow: function() {
+        if ( !this.shown ) {
+            this.shown = true;
+            this.loadTop(null);
+        }
     },
     
     tapSelectTop: function(button) {

@@ -676,7 +676,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                     flex: 1                        
                                 },
                                 {
-                                    xtype: Config.isPhonePos() ? 'fpos_order_input_phone' : 'fpos_order_input_small'  
+                                    xtype: Config.hasNumpad() ? 'fpos_order_input_small' : 'fpos_order_input_phone'   
                                 }                            
                             ]          
                         }              
