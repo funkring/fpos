@@ -74,5 +74,9 @@ public class CPOS800Service extends PosHwService{
 	public boolean openCashDrawer() throws IOException {
 		return false;
 	}
-
+	
+	@Override
+	public boolean hasNumpad() {
+		return true;
+	}
 }
