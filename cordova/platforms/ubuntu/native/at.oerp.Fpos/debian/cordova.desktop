@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Fpos
+Exec=/opt/at.oerp.Fpos/cordova-ubuntu
+Terminal=false
+Type=Application
+X-Ubuntu-Touch=true
+Icon=/opt/at.oerp.Fpos/www/logo.png

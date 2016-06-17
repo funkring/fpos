@@ -1,0 +1,17 @@
+Source: at.oerp.Fpos
+Section: devel
+Priority: optional
+Maintainer: oerp.at <info@oerp.at>
+Build-Depends: ubuntu-sdk,
+         qtfeedback5-dev,
+         qtmultimedia5-dev,
+         qtpim5-dev,
+         libqt5sensors5-dev,
+         qtsystems5-dev,
+         qtlocation5-dev,
+         libicu-dev
+
+Package: at.oerp.Fpos
+Architecture: any
+Description: Fpos is a free Point of Sale app with Odoo Sync
+Depends: ubuntu-sdk-libs
