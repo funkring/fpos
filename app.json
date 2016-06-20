@@ -73,7 +73,7 @@
             "update" : "delta"
         },
         {
-            "path": "lib/pouchdb-5.3.2.min.js",
+            "path": "lib/pouchdb-5.4.4.min.js",
             "includeInBundle" : false,
             "bundle" : true,
             "update" : "delta"

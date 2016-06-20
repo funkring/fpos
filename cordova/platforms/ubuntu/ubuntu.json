@@ -22,10 +22,10 @@
         "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-whitelist": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
@@ -250,7 +250,7 @@
         "cordova-plugin-crosswalk-webview": "1.7.2",
         "cordova-plugin-file": "4.1.1",
         "cordova-plugin-file-transfer": "1.5.0",
-        "cordova-plugin-poshw": "1.0.5",
-        "cordova-plugin-whitelist": "1.2.0"
+        "cordova-plugin-whitelist": "1.2.0",
+        "cordova-plugin-poshw": "1.0.5"
     }
 }

@@ -51,9 +51,11 @@ public class MainActivity extends Activity {
 				try {
 					String test =
 							   "<br>Zeile1" +
-							   "<br>Zeiel2" +
-							   "<br>Zeiel3" +
+							   "<br>Zeile2" +
+							   "<br>Zeile3" +
 							   "<br>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
+							   "<br>----------------------------------------------------" +
+							   "<br>xyz12345abcdefghijklmnopxyz12345abcdefghijklmnopxyz1" +
 							   "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
 			                   "<br>um zu testen ob der Druck" +
 			                   "<br>funktioniert"+
