@@ -369,23 +369,41 @@ Ext.define('Fpos.controller.MainCtrl', {
                                                 // load products
                                                 self.productStore.load({
                                                     callback: function() {
-                                                        // build index
-                                                        self.productStore.buildIndex();
-                                                        
-                                                        // load places
-                                                        self.placeStore.load({
-                                                            callback: function() {
-                                                                // build index
-                                                                self.placeStore.buildIndex();
-                                                                
-                                                                // stop loading
-                                                                ViewManager.stopLoading();
-                                                                // fire reload
-                                                                Ext.Viewport.fireEvent("reloadData");
-                                                                // ... and show login
-                                                                self.showLogin();                                                                     
-                                                            }
-                                                        });                                                             
+                                                        try {
+                                                            // build index
+                                                            self.productStore.buildIndex();
+                                                            
+                                                            // load places
+                                                            self.placeStore.load({
+                                                                callback: function() {
+                                                                    try {
+                                                                    
+                                                                        // build index
+                                                                        self.placeStore.buildIndex();
+                                                                        
+                                                                        // stop loading
+                                                                        ViewManager.stopLoading();
+                                                                        // fire reload
+                                                                        Ext.Viewport.fireEvent("reloadData");
+                                                                        // ... and show login
+                                                                        self.showLogin();   
+                                                                                                                                          
+                                                                    } catch (err) {
+                                                                        ViewManager.stopLoading();
+                                                                        ViewManager.handleError(err,{
+                                                                                name: "Ausnahmefehler beim Laden", 
+                                                                                message: "Daten konnte nicht geladen werden"
+                                                                        });
+                                                                    }
+                                                                }
+                                                            });     
+                                                        } catch (err) {
+                                                            ViewManager.stopLoading();
+                                                            ViewManager.handleError(err,{
+                                                                    name: "Ausnahmefehler beim Laden", 
+                                                                    message: "Produkte konnten nicht geladen werden"
+                                                            });
+                                                        }                                                        
                                                     }
                                                     
                                                 });

@@ -91,7 +91,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         this.place = null;
         this.order = null;
         this.printTemplate = null;
-        this.initialLoad = false; 
+        this.initialLoad = false;
+        this.postActive = false; 
         
         this.seq = 0;
         this.cpos = 0;
@@ -265,7 +266,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // validation event         
         Ext.Viewport.on({
             scope: self,
-            validateLines: self.validateLines            
+            validateLines: self.onValidateLines            
         });
         
         Ext.Viewport.on({
@@ -526,7 +527,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         // primary check
-        if ( self.order && self.order.get('state') === 'draft') {
+        if ( (!self.postActive || forceSave) && self.order && self.order.get('state') === 'draft') {
                        
             var tax_group = {};
             var tax_ids = [];
@@ -839,6 +840,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     isEditable: function() {
         return this.isDraft() && !this.isPayment();
+    },
+    
+    onValidateLines: function() {
+        if ( this.isEditable() ) {
+            this.validateLines();
+        }  
     },
     
     onInputCancelTap: function() {
@@ -1319,7 +1326,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     });
                 }
             } catch (err) {
-                deferred.reject(err);
+                deferred.reject(err);                 
             }
         });    
 
@@ -1330,14 +1337,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         ViewManager.hideMenus();
         var self = this;
         
-        if ( self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
+        if ( !self.postActive && self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
             // CHECK THAT 
             // ONLY CALLED ONCE
             ViewManager.startLoading("Drucken...");
             
+            // post active
+            self.postActive = true;
+            
             // add payment
             // and print
             self.postOrder()['catch'](function(err) {
+                // post finished
+                self.postActive = false;
+                
                 // stop loading after error
                 ViewManager.stopLoading();
                 ViewManager.handleError(err,{
@@ -1345,8 +1358,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     message: "Verkauf konnte nicht gebucht werden"
                 }, true);
             }).then(function() {
-                   
-               // print
+               // post finished
+               self.postActive = false;
+                                  
+               // print               
                self.printOrder();
                
                // do next
