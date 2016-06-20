@@ -336,20 +336,26 @@ Ext.define('Fpos.controller.MainCtrl', {
         var self = this;
         var db = Config.getDB();
         
-        ViewManager.startLoading('Lade Konfiguration');
+        ViewManager.startLoading('Optimiere Datenbank');
               
         // load config
         try {
-            return db.get('_local/config').then(function(config) {                    
+            return db.compact().then(function(res) {
+                ViewManager.startLoading('Lade Konfiguration');
+                // load config                
+                return db.get('_local/config');
+            }).then(function(config) {
+                ViewManager.startLoading('Lade Profil');
+                // set config
                 Config.setSettings(config);
                 // load profile
-                return db.get('_local/profile');           
-            })
-            .then(function(profile) {
-                Config.setProfile(profile);  
-                
-                // reload
-                
+                return db.get('_local/profile');
+            }).then(function(profile) {
+                ViewManager.startLoading('Lade Daten');
+                // set profile                
+                Config.setProfile(profile);
+                  
+                // reload                
                 // load category
                 self.categoryStore.load({
                     callback: function() {
@@ -369,6 +375,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                                 // load products
                                                 self.productStore.load({
                                                     callback: function() {
+                                                        ViewManager.startLoading('Erstelle Index');
                                                         try {
                                                             // build index
                                                             self.productStore.buildIndex();
