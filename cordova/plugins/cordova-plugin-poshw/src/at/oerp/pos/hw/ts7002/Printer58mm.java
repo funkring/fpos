@@ -2,7 +2,7 @@ package at.oerp.pos.hw.ts7002;
 
 import java.io.IOException;
 
-import android.pt.Cprinter7002;
+import android.pt.Cprinter;
 import at.oerp.pos.CtrlBytes;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.util.HtmlLinePrinter;
@@ -15,7 +15,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	// service
 	private TS7002PosService service;
 	// printer api
-	private Cprinter7002 driver;
+	private Cprinter driver;
 	
 	/**
 	 * constructor
@@ -24,7 +24,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 	 */
 	public Printer58mm(TS7002PosService inService) throws SecurityException, IOException {
 		service = inService;		
-		driver = new Cprinter7002();		
+		driver = new Cprinter();		
 	}
 	
 	@Override

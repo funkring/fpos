@@ -96,12 +96,11 @@
 		<source-file src="src/com/cloudpos/apidemo/jniinterface/SerialPortInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
 		<source-file src="src/com/authentication/utils/LooperBuffer.java" target-dir="src/com/authentication/utils/" />
 		<source-file src="src/com/authentication/utils/DataUtils.java" target-dir="src/com/authentication/utils/" />
-		<source-file src="src/android/pt/Cprinter7002.java" target-dir="src/android/pt/" />
+		<source-file src="src/android/pt/Cprinter.java" target-dir="src/android/pt/" />
 		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio/" />
 		
 		<source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs/" />
 		<source-file src="libs/allutils.jar" target-dir="libs/" />
-		<source-file src="libs/printer7003.jar" target-dir="libs/" />
 		<source-file src="libs/minilcd7003.jar" target-dir="libs/" />
 		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs/" />
 		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs/" />
