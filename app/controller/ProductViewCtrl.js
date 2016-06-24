@@ -29,7 +29,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                 clearicontap: 'searchItemClearIconTap'                
             },
             productView: {
-                initialize: 'productViewInitialize'
+                initialize: 'productViewInitialize',
+                show: 'onProductViewShow'
             }       
         }
     },
@@ -42,6 +43,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.shown = false;
         //this.cache = {};
         
         //search task
@@ -53,17 +55,23 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     
     productViewInitialize: function() {
         var self = this;
-        self.loadCategory(null);
         
         // global event after sync
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
-                //this.cache = {};
+                this.shown = false;
                 self.productButtonTmpl = null;
-                self.loadCategory(null);
             }
         });     
+    },
+    
+    onProductViewShow: function() {
+        if ( !this.shown ) {
+            //this.cache = {};
+            this.shown = true;
+            this.loadCategory(null);
+        }
     },
     
     tapSelectCategory: function(button) {
@@ -89,8 +97,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      */  
     productButtonInitialize: function(button) {     
         var self = this;   
-        if ( !self.productButtonTmpl ) {                   
-            
+        if ( !self.productButtonTmpl ) {     
             var viewWidth = self.getProductDataView().element.getWidth()-6;
             var viewHeight = self.getProductDataView().element.getHeight()-6;
             var defaultWidth = self.getDefaultButtonWidth();
@@ -101,14 +108,14 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             var preferredY = defaultWidth;
 
             if ( gridX < 2 ) {
-                if ( gridX > 1 ) {
+                if ( viewWidth > preferredX ) {
                     preferredX = viewWidth;
                 }
             } else {
                 preferredX = Math.round(viewWidth / gridX)-3;
             }
             if ( gridY < 2) {
-                if ( gridY > 1) {
+                if ( viewHeight > preferredY ) {
                     preferredY = viewHeight;
                 }
             } else {

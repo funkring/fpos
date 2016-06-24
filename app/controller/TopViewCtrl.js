@@ -94,14 +94,14 @@ Ext.define('Fpos.controller.TopViewCtrl', {
             var preferredX = defaultWidth;
             var preferredY = defaultWidth;
             if ( gridX < 2 ) {
-                if ( gridX > 1 ) {
+                if ( viewWidth > preferredX ) {
                     preferredX = viewWidth;
                 }
             } else {
                 preferredX = Math.round(viewWidth / gridX)-3;
             }
             if ( gridY < 2) {
-                if ( gridY > 1) {
+                if ( viewHeight > preferredY ) {
                     preferredY = viewHeight;
                 }
             } else {

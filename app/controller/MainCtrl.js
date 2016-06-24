@@ -336,11 +336,15 @@ Ext.define('Fpos.controller.MainCtrl', {
         var self = this;
         var db = Config.getDB();
         
-        ViewManager.startLoading('Optimiere Datenbank');
-              
         // load config
         try {
-            return db.compact().then(function(res) {
+            // cleanup views
+            ViewManager.startLoading('Optimiere Views');
+            return db.viewCleanup().then(function(res) {
+                // optimize db
+                ViewManager.startLoading('Optimiere Datenbank');
+                return db.compact();
+            }).then(function(res) {
                 ViewManager.startLoading('Lade Konfiguration');
                 // load config                
                 return db.get('_local/config');
