@@ -2405,7 +2405,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
          });
     },
     
-    onKeyCode: function(keycode) {
+    onKeycode: function(keycode) {
         if ( keycode >= 48 && keycode <= 57 ) {            
             var c = String.fromCharCode(keycode);
             this.inputAction(c);

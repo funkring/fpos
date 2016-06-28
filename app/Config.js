@@ -12,7 +12,7 @@ Ext.define('Fpos.Config', {
         'Ext.form.ViewManager'
     ],
     config : {       
-        version : '3.0.17',
+        version : '3.0.18',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,

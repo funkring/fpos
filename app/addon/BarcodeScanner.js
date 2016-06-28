@@ -23,8 +23,6 @@ Ext.define('Ext.util.BarcodeScanner', {
     
     detectBarcode: function(e) {
         var keycode = e.keyCode;
-        var isBarcode = false;
-        
         if ( keycode ) {
             // check keys
             if ( keycode >= 48 && keycode <= 57  ) {
@@ -43,8 +41,7 @@ Ext.define('Ext.util.BarcodeScanner', {
             if ( keycode ) {
                 this.cancelBarcode(keycode);
             }
-        }             
-              
+        }     
     },
     
     cancelBarcode: function(keycode) {
