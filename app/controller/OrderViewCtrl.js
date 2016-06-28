@@ -2409,17 +2409,25 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( keycode >= 48 && keycode <= 57 ) {            
             var c = String.fromCharCode(keycode);
             this.inputAction(c);
-        } else if ( keycode == 13 ) {
-            this.onCash();
-        } else if ( keycode == 27 ) {
-            this.onInputCancelTap();
-        } else if ( keycode === 0 ) {
-            this.onEditOrder();
-        } else if ( keycode == 190 ) {
-            this.inputAction('.');
-        } else if ( keycode == 8) {
-            this.onPayment();
-        }
+        } else {
+            switch ( keycode ) {
+                case 13:
+                    this.onCash();
+                    break;
+                case 27:
+                    this.onInputCancelTap();
+                    break;
+                case 190:
+                    this.inputAction('.');
+                    break;
+                case 8:
+                    this.onPayment();
+                    break;
+                case 229:
+                    // SCAN
+                    break;
+            }
+        } 
     },
     
     onBarcode: function(barcode) {
@@ -2431,15 +2439,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     onKeyDown: function(e) {
         var keycode = e.keyCode ? e.keyCode : e.which;
-        if ( keycode == 8 ) {
+        if ( keycode === 0 ) {
+            if ( e.code == 'MailSend') {
+                this.onEditOrder();
+            }
+        } else if ( keycode == 8 ) {
             // only react if nothing is selected
             if ( e.currentTarget && e.currentTarget.activeElement && e.currentTarget.activeElement.localName == 'body' ) {
                 this.barcodeScanner.detectBarcode(e);
             }
         } else {
             this.barcodeScanner.detectBarcode(e);
-        }
-       
+        }       
     }
     
 });
