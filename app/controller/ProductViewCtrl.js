@@ -29,9 +29,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                 clearicontap: 'searchItemClearIconTap'                
             },
             productView: {
-                initialize: 'productViewInitialize',
-                show: 'onProductViewShow'
-            }       
+                initialize: 'productViewInitialize'
+            }
         }
     },
     
@@ -43,7 +42,6 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
-        this.shown = false;
         //this.cache = {};
         
         //search task
@@ -55,23 +53,16 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     
     productViewInitialize: function() {
         var self = this;
+        self.loadCategory(null);
         
         // global event after sync
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
-                this.shown = false;
                 self.productButtonTmpl = null;
+                self.loadCategory(null);
             }
         });     
-    },
-    
-    onProductViewShow: function() {
-        if ( !this.shown ) {
-            //this.cache = {};
-            this.shown = true;
-            this.loadCategory(null);
-        }
     },
     
     tapSelectCategory: function(button) {
@@ -356,7 +347,9 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         }
        
         // load products
-        self.loadProducts(categoryId);     
+        if( !hidden ) {
+            self.loadProducts(categoryId);
+        }     
     }    
     
 });
