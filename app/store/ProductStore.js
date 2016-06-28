@@ -62,6 +62,10 @@ Ext.define('Fpos.store.ProductStore', {
         });
     },
     
+    searchProductByEan: function(ean) {
+        return this.productByEan[ean];
+    },    
+    
     searchProductsByCategory: function(categoryId, textSearch) {
         var products;
         if ( !categoryId ) { 

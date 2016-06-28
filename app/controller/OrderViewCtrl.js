@@ -8,7 +8,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         'Fpos.view.OrderView',
         'Fpos.view.OrderLineFormView',
         'Fpos.view.OrderFormView',
-        'Fpos.view.ScaleView'
+        'Fpos.view.ScaleView',
+        'Ext.util.BarcodeScanner'
     ],
     config: {
         refs: {
@@ -88,31 +89,37 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     init: function() {
         var self = this;
         
-        this.place = null;
-        this.order = null;
-        this.printTemplate = null;
-        this.initialLoad = false;
-        this.postActive = false; 
+        self.place = null;
+        self.order = null;
+        self.printTemplate = null;
+        self.initialLoad = false;
+        self.postActive = false; 
         
-        this.seq = 0;
-        this.cpos = 0;
-        this.turnover = 0;
-        this.displayDelay = Config.getDisplayDelay();
+        self.seq = 0;
+        self.cpos = 0;
+        self.turnover = 0;
+        self.displayDelay = Config.getDisplayDelay();
         
-        this.mode = '*';
-        this.inputSign = 1; 
-        this.inputText = '';
-        this.roundFactor = Math.pow(10,Config.getDecimals());
+        self.mode = '*';
+        self.inputSign = 1; 
+        self.inputText = '';
+        self.roundFactor = Math.pow(10,Config.getDecimals());
         
-        this.lineStore = Ext.StoreMgr.lookup("PosLineStore");
-        this.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
-        this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
-        this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
-        this.paymentStore = Ext.StoreMgr.lookup("PosPaymentStore");
-        this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
+        self.lineStore = Ext.StoreMgr.lookup("PosLineStore");
+        self.orderStore = Ext.StoreMgr.lookup("PosOrderStore");
+        self.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
+        self.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        self.paymentStore = Ext.StoreMgr.lookup("PosPaymentStore");
+        self.placeStore = Ext.StoreMgr.lookup("PlaceStore");
+        self.productStore = Ext.StoreMgr.lookup("ProductStore");
         
-        this.displayTask = Ext.create('Ext.util.DelayedTask', function() {
+        self.displayTask = Ext.create('Ext.util.DelayedTask', function() {
             self.display();
+        });
+        
+        self.barcodeScanner = Ext.create('Ext.util.BarcodeScanner', {
+            'keyListener' : function(keycode) { self.onKeycode(keycode); },
+            'barcodeListener' : function(barcode) { self.onBarcode(barcode); }
         });
     },    
     
@@ -2013,8 +2020,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
         // get products
         var products = {};
-        var productStore = Ext.StoreMgr.lookup("ProductStore");
-        Ext.each(productStore.allProducts, function(product) {
+        Ext.each(self.productStore.allProducts, function(product) {
             products[product.getId()] = product;
         });
 
@@ -2399,8 +2405,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
          });
     },
     
-    onKeyDown: function(e) {
-        var keycode = e.keyCode ? e.keyCode : e.which;
+    onKeyCode: function(keycode) {
         if ( keycode >= 48 && keycode <= 57 ) {            
             var c = String.fromCharCode(keycode);
             this.inputAction(c);
@@ -2413,11 +2418,28 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         } else if ( keycode == 190 ) {
             this.inputAction('.');
         } else if ( keycode == 8) {
+            this.onPayment();
+        }
+    },
+    
+    onBarcode: function(barcode) {
+        var product = this.productStore.searchProductByEan(barcode);
+        if ( product ) {
+            this.productInput(product);
+        }
+    },
+    
+    onKeyDown: function(e) {
+        var keycode = e.keyCode ? e.keyCode : e.which;
+        if ( keycode == 8 ) {
             // only react if nothing is selected
             if ( e.currentTarget && e.currentTarget.activeElement && e.currentTarget.activeElement.localName == 'body' ) {
-                this.onPayment();
+                this.barcodeScanner.detectBarcode(e);
             }
+        } else {
+            this.barcodeScanner.detectBarcode(e);
         }
+       
     }
     
 });
