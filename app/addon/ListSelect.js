@@ -55,7 +55,17 @@ Ext.define('Ext.field.ListSelect', {
         
         if ( navigationView !== null && store !== null) {
         
-           var toolbarItems = [{
+            if ( self.getReadOnly() ) {
+                return;
+            }
+            
+            if ( futil.isDoubleTap() ) {
+                return;
+            }
+            
+            self.isFocused = true;
+            
+            var toolbarItems = [{
                     xtype: 'searchfield',
                     placeholder: 'Suche',
                     flex: 1,
@@ -80,45 +90,45 @@ Ext.define('Ext.field.ListSelect', {
                         }
                     }
                 }
-           ];
+            ];
 
-           // add additional items
-           var additionalToolbarItems=self.getPickerToolbarItems();
-           if ( additionalToolbarItems ) {
-                toolbarItems = toolbarItems.concat(additionalToolbarItems);
-           }
-        
-           navigationView.push({
-              title: self.getTitle(),
-              newRecord: null,
-              xtype : 'container',
-              listeners: {
-                  scope: self, 
-                  show: self.firstSearch
-              },
-              items: [{
-                docked: 'top',
-                xtype: 'toolbar',                
-                items: toolbarItems
-              },
-              {
-                xtype: 'list',
-                height: '100%',
-                flex: 1, 
-                store: store,
-                itemTpl: '{' + self.getDisplayField() + '}',
-                listeners: {
-                    select: self.onListSelect,
-                    //itemtap: self.onListTap,
-                    scope: self
-                }                  
-              }],
-              
-              fieldSelectRecord: function(record) {
-                  self.setValue(record);                  
-              }
+            // add additional items
+            var additionalToolbarItems=self.getPickerToolbarItems();
+            if ( additionalToolbarItems ) {
+                 toolbarItems = toolbarItems.concat(additionalToolbarItems);
+            }
+            
+            navigationView.push({
+               title: self.getTitle(),
+               newRecord: null,
+               xtype : 'container',
+               listeners: {
+                   scope: self, 
+                   show: self.firstSearch
+               },
+               items: [{
+                 docked: 'top',
+                 xtype: 'toolbar',                
+                 items: toolbarItems
+               },
+               {
+                 xtype: 'list',
+                 height: '100%',
+                 flex: 1, 
+                 store: store,
+                 itemTpl: '{' + self.getDisplayField() + '}',
+                 listeners: {
+                     select: self.onListSelect,
+                     //itemtap: self.onListTap,
+                     scope: self
+                 }                  
+               }],
                
-           });           
+               fieldSelectRecord: function(record) {
+                   self.setValue(record);                  
+               }
+                
+            });           
         } else {
             return self.callParent(arguments);
         }
