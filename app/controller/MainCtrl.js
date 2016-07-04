@@ -35,7 +35,10 @@ Ext.define('Fpos.controller.MainCtrl', {
             userButton3: '#userButton3',
             userButton4: '#userButton4',
             userButton5: '#userButton5',
-            userButton6: '#userButton6'
+            userButton6: '#userButton6',
+            userButton7: '#userButton7',
+            userButton8: '#userButton8',
+            userButton9: '#userButton9'
         },
         control: {     
             'button[action=editConfig]' : {
@@ -138,7 +141,10 @@ Ext.define('Fpos.controller.MainCtrl', {
             self.getUserButton3(),
             self.getUserButton4(),
             self.getUserButton5(),
-            self.getUserButton6()
+            self.getUserButton6(),
+            self.getUserButton7(),
+            self.getUserButton8(),
+            self.getUserButton9()
         ];
                   
         // show form event

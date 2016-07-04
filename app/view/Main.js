@@ -77,6 +77,33 @@ Ext.define('Fpos.view.Main', {
                 },
                 {
                     xtype: 'button',
+                    id: 'userButton7',
+                    user: null,
+                    text: 'User 7',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton8',
+                    user: null,
+                    text: 'User 8',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
+                    id: 'userButton9',
+                    user: null,
+                    text: 'User 9',                                  
+                    align: 'left',
+                    action: 'fastSwitchUser',
+                    hidden: true                
+                },
+                {
+                    xtype: 'button',
                     id: 'placeButton',
                     text: 'Plätze',
                     align: 'left',

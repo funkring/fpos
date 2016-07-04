@@ -1677,7 +1677,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '</div>',
                 '<div class="PaymentChangeItem">',
                 '<div class="PaymentName">',
-                    'Wechelgeld',
+                    'Wechselgeld',
                 '</div>',
                 '<div class="PaymentValue">',
                     '{[futil.formatFloat(values.change)]}',

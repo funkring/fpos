@@ -1,15 +1,3 @@
-// The following two lines import the default Sencha Touch theme. If you are building
-// a new theme, remove them and the add your own CSS on top of the base CSS (which
-// is already included in your app.json file).
-@import 'sencha-touch/default';
-@import 'sencha-touch/default/all';
-
-// Custom code goes here..
-
-// Examples of using the icon mixin:
-// @include icon('user');
-
-
 // ******************************************************************
 // CONST
 // ******************************************************************
@@ -35,6 +23,25 @@ $fpos-navy: #003380;
 $fpos-fuchsia: #ff55dd;
 $fpos-purple: #a80087;
 $fpos-orange: #ff7f2a;
+
+$form-field-label-bg-color : #dcdce6;
+
+
+// The following two lines import the default Sencha Touch theme. If you are building
+// a new theme, remove them and the add your own CSS on top of the base CSS (which
+// is already included in your app.json file).
+@import 'sencha-touch/default';
+@import 'sencha-touch/default/all';
+
+// Custom code goes here..
+// Examples of using the icon mixin:
+// @include icon('user');
+
+
+
+// ##################################################################
+// STYLE
+
 
 // ******************************************************************
 // Invalids
