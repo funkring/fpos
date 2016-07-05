@@ -1895,39 +1895,48 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     updateLineSummary: function(summary, line, ignore) {
+        var subtotal_incl = line.subtotal_incl ? line.subtotal_incl : 0.0;
         if ( !ignore ) {
-            var variants = summary.map[line.name];
+        
+            var name = line.name ? line.name : '';
+            var qty = line.qty ? line.qty : 0.0;
+            var discount = line.discount ? line.discount : 0.0;
+            var price = line.price ? line.price : 0.0;
+            
+            var variants = summary.map[name];
             if ( !variants ) {
                 variants = {};
-                summary.map[line.name] = variants;
-                summary.names.push(line.name);
+                summary.map[name] = variants;
+                summary.names.push(name);
             }
             
-            var key = [line.price, line.discount];
+            var key = [price, discount];
             var entry = variants[key];
+         
             if (!entry) {
                 entry = {
                     tag: 's',
                     flags: 'd2',
-                    name: line.name,
-                    price: line.price,                                
-                    qty : line.qty,
+                    name: name,
+                    price: price,                                
+                    qty : qty,
                     uom_id: line.uom_id,
-                    subtotal_incl: line.subtotal_incl,
+                    subtotal_incl: subtotal_incl,
                     sequence : 0,
                     discount: 0.0
                 };
                 variants[key] = entry;
             } else {            
-                entry.subtotal_incl += line.subtotal_incl;
-                entry.qty += line.qty;
+                entry.subtotal_incl += subtotal_incl;
+                entry.qty += qty;
             }      
              
         }
-        summary.total += line.subtotal_incl; 
+        summary.total += subtotal_incl; 
     },
     
     updateLineIOSummary: function(summary, line, ignore) {
+        var amount = line.subtotal_incl ? line.subtotal_incl : 0.0;
         if ( !ignore ) {
             var entry = summary.map[line.name];
             if (!entry) {
@@ -1935,34 +1944,35 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     tag: 's',
                     flags: '2',
                     name: line.name,
-                    price: line.subtotal_incl,                                
+                    price: amount,                                
                     qty : 1.0,
                     uom_id: line.uom_id,
-                    subtotal_incl: line.subtotal_incl,
+                    subtotal_incl: amount,
                     sequence : 0,
                     discount: 0.0
                 };
                 summary.map[entry.name] = entry;
                 summary.names.push(entry.name);
             } else {            
-                entry.subtotal_incl += line.subtotal_incl;
-                entry.price = line.subtotal_incl;
+                entry.subtotal_incl += amount;
+                entry.price = entry.subtotal_incl;
             }       
         }
-        summary.total += line.subtotal_incl; 
+        summary.total += amount; 
     },
     
     updatePaymentSummary: function(summary, payment) {
         var journal_name = Config.getJournal(payment.journal_id).name;
         var entry = summary.map[journal_name];
+        var amount = payment.amount ? payment.amount : 0.0;
         if (!entry) {
             entry = {
                 tag: 's',
                 flags: '2',
                 name: journal_name,
-                price: payment.amount,                                
+                price: amount,                                
                 qty : 1,
-                subtotal_incl: payment.amount,
+                subtotal_incl: amount,
                 sequence : 0,
                 discount: 0.0
             };
@@ -1970,32 +1980,33 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             summary.map[entry.name] = entry;
             summary.names.push(entry.name);
         } else {
-            entry.subtotal_incl += payment.amount;
+            entry.subtotal_incl += amount;
             entry.price = entry.subtotal_incl;
         }
-        summary.total += payment.amount;
+        summary.total += amount;
     },
     
     updateTaxSummary: function(summary, tax) {
         var entry = summary.map[tax.name];
+        var amount = tax.amount_tax ? tax.amount_tax : 0.0;
         if (!entry) {
             entry = {
                 tag: 's',
                 flags: '2',
                 name: tax.name,
-                price: tax.amount_tax,                                
+                price: amount,                                
                 qty : 1,
-                subtotal_incl: tax.amount_tax,
+                subtotal_incl: amount,
                 sequence : 0,
                 discount: 0.0
             };
             summary.map[entry.name] = entry;
             summary.names.push(entry.name);
         } else {
-            entry.subtotal_incl += tax.amount_tax;
+            entry.subtotal_incl += amount;
             entry.price = entry.subtotal_incl;
         }
-        summary.total += tax.amount_tax;   
+        summary.total += amount;   
     },
     
     
