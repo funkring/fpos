@@ -1895,13 +1895,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     updateLineSummary: function(summary, line, ignore) {
-        var subtotal_incl = line.subtotal_incl ? line.subtotal_incl : 0.0;
+        var subtotal_incl = line.subtotal_incl || 0.0;
         if ( !ignore ) {
         
-            var name = line.name ? line.name : '';
-            var qty = line.qty ? line.qty : 0.0;
-            var discount = line.discount ? line.discount : 0.0;
-            var price = line.price ? line.price : 0.0;
+            var name = line.name || '';
+            var qty = line.qty || 0.0;
+            var discount = line.discount || 0.0;
+            var price = line.price || 0.0;
             
             var variants = summary.map[name];
             if ( !variants ) {
@@ -1936,14 +1936,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     updateLineIOSummary: function(summary, line, ignore) {
-        var amount = line.subtotal_incl ? line.subtotal_incl : 0.0;
+        var amount = line.subtotal_incl || 0.0;
+        var name = line.name || '';
         if ( !ignore ) {
-            var entry = summary.map[line.name];
+            var entry = summary.map[name];
             if (!entry) {
                 entry = {
                     tag: 's',
                     flags: '2',
-                    name: line.name,
+                    name: name,
                     price: amount,                                
                     qty : 1.0,
                     uom_id: line.uom_id,
@@ -1964,14 +1965,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     updatePaymentSummary: function(summary, payment) {
         var journal_name = Config.getJournal(payment.journal_id).name;
         var entry = summary.map[journal_name];
-        var amount = payment.amount ? payment.amount : 0.0;
+        var amount = payment.amount || 0.0;
         if (!entry) {
             entry = {
                 tag: 's',
                 flags: '2',
                 name: journal_name,
                 price: amount,                                
-                qty : 1,
+                qty : 1.0,
                 subtotal_incl: amount,
                 sequence : 0,
                 discount: 0.0
@@ -1987,15 +1988,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     updateTaxSummary: function(summary, tax) {
-        var entry = summary.map[tax.name];
-        var amount = tax.amount_tax ? tax.amount_tax : 0.0;
+        var name = tax.name || '';
+        var entry = summary.map[name];
+        var amount = tax.amount_tax || 0.0;
         if (!entry) {
             entry = {
                 tag: 's',
                 flags: '2',
-                name: tax.name,
+                name: name,
                 price: amount,                                
-                qty : 1,
+                qty : 1.0,
                 subtotal_incl: amount,
                 sequence : 0,
                 discount: 0.0

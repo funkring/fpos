@@ -12,7 +12,7 @@ Ext.define('Fpos.Config', {
         'Ext.form.ViewManager'
     ],
     config : {       
-        version : '3.0.21',
+        version : '3.0.22',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -299,25 +299,27 @@ Ext.define('Fpos.Config', {
     },
     
     queryLastOrder: function() {
-        return DBUtil.search(this.getDB(), ['fdoo__ir_model','state','seq'], {
+        // draft doc has sequence 0, therefore start from 1
+        return DBUtil.search(this.getDB(), ['fdoo__ir_model', 'seq'], {
             descending: true,
             include_docs: true,
             inclusive_end: true,
             limit: 1,
-            startkey: ['fpos.order', 'paid', Number.MAX_VALUE],
-            endkey: ['fpos.order', 'paid', 0]
+            startkey: ['fpos.order', Number.MAX_VALUE],
+            endkey: ['fpos.order', 1]
         });
     },
     
     queryLastCashState: function() {
-        return DBUtil.search(this.getDB(), ['fdoo__ir_model','state','tag','seq'], {
+        // draft doc has sequence 0, therefore start from 1
+        return DBUtil.search(this.getDB(), ['fdoo__ir_model', 'tag', 'seq'], {
             descending: true,
             include_docs: true,
             inclusive_end: true,
             limit: 1,
-            startkey: ['fpos.order', 'paid', 's', Number.MAX_VALUE],
-            endkey: ['fpos.order', 'paid', 's', 0]
-        });
+            startkey: ['fpos.order', 's', Number.MAX_VALUE],
+            endkey: ['fpos.order', 's', 1]
+        });        
     },
     
     queryOrders: function() {
@@ -326,12 +328,13 @@ Ext.define('Fpos.Config', {
         self.queryLastCashState()['catch'](function(err) {
             deferred.reject(err);        
         }).then(function(res) {
-            var startSeq = res.rows.length > 0  ? res.rows[0].doc.seq : 0;
-            DBUtil.search(self.getDB(), ['fdoo__ir_model','state','seq'], {
+            // draft doc has sequence 0, therefore start from 1
+            var startSeq = res.rows.length > 0 ? res.rows[0].doc.seq : 1;
+            DBUtil.search(self.getDB(), ['fdoo__ir_model', 'seq'], {
                 include_docs: true,
                 inclusive_end: true,
-                startkey: ['fpos.order','paid', startSeq],
-                endkey: ['fpos.order','paid', Number.MAX_VALUE]
+                startkey: ['fpos.order', startSeq],
+                endkey: ['fpos.order', Number.MAX_VALUE]
             })['catch'](function(err) {
                 deferred.reject(err);
             }).then(function(res) {
