@@ -1,5 +1,5 @@
 // Platform: ubuntu
-// ded62dda172755defaf75378ed007dc05730ec22
+// 533e1bfdbc57d54106ca39a02b21a1909f84fda7
 /*
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,7 @@
  under the License.
 */
 ;(function() {
-var PLATFORM_VERSION_BUILD_LABEL = '4.3.2';
+var PLATFORM_VERSION_BUILD_LABEL = '4.4.0-dev';
 // file: src/scripts/require.js
 
 /*jshint -W079 */
@@ -817,7 +817,7 @@ module.exports = channel;
 
 });
 
-// file: /home/dbarth/devel/wily/cordova/cordova-ubuntu/cordova-js-src/exec.js
+// file: /home/dbarth/devel/xenial/cordova/cordova-ubuntu/cordova-js-src/exec.js
 define("cordova/exec", function(require, exports, module) {
 
 var cordova = require('cordova'),
@@ -1368,7 +1368,7 @@ exports.reset();
 
 });
 
-// file: /home/dbarth/devel/wily/cordova/cordova-ubuntu/cordova-js-src/platform.js
+// file: /home/dbarth/devel/xenial/cordova/cordova-ubuntu/cordova-js-src/platform.js
 define("cordova/platform", function(require, exports, module) {
 
 module.exports = {

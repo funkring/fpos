@@ -17,7 +17,7 @@
  *
 */
 import QtQuick 2.2
-import CordovaUbuntu 4.3
+import CordovaUbuntu 4.4
 
 Item {
     id: root

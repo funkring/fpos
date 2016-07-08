@@ -18,7 +18,7 @@
 */
 import QtQuick 2.2
 import QtQuick.Window 2.1
-import CordovaUbuntu 4.3
+import CordovaUbuntu 4.4
 import Ubuntu.Components 1.1
 
 Window {
