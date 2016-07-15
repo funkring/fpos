@@ -7,7 +7,8 @@ Ext.define('Fpos.view.OrderView', {
     requires: [
       'Ext.view.ScrollList',
       'Ext.Label',
-      'Ext.Toolbar' 
+      'Ext.Toolbar',
+      'Ext.TapLabel'
     ],
     config: {        
         layout: 'vbox',
@@ -16,14 +17,14 @@ Ext.define('Fpos.view.OrderView', {
                 xtype: 'toolbar',
                 ui: 'posStatusBar',                
                 cls: 'PosStatusBar',
-                items: [
+                items: [                   
                     {
-                       xtype: 'label',
+                       xtype: 'taplabel',
                        id: 'posDisplayState',
                        cls: 'PosDisplayState'                      
                     },
                     {
-                       xtype: 'label',
+                       xtype: 'taplabel',
                        id: 'posDisplayLabel',                       
                        cls: 'PosDisplayLabel',
                        flex: 1

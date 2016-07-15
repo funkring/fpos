@@ -413,14 +413,6 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 .PosOrderLineDiscount {
 }
 
-div.PosOrderItem > div.x-innerhtml > div.PosOrderLineDescription > div.PosOrderLineAmount {
-    color: gray;
-}
-
-div.PosOrderItem.x-item-selected > div.x-innerhtml > div.PosOrderLineDescription > div.PosOrderLineAmount {
-    color: white;
-}
-
 .PosOrderLinePrice {
     display: table-cell;
     font-size: 1.3em;

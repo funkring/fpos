@@ -21,9 +21,10 @@ Ext.Loader.addClassPathMappings({
   "Ext.Element-static": "touch/src/dom/Element.static.js",
   "Ext.Element-style": "touch/src/dom/Element.style.js",
   "Ext.Element-traversal": "touch/src/dom/Element.traversal.js",
+  "Ext.TapLabel": "app/addon/TapLabel.js",
   "Ext.client": "app/addon",
-  "Ext.cmd": "../../../bin/Sencha/Cmd/6.0.2.14/plugins/src",
   "Ext.core.DomQuery": "touch/src/dom/Query.js",
+  "Ext.data.ModelUtil": "app/addon/ModelUtil.js",
   "Ext.data.reader.PouchDB": "app/addon/PouchDB.js",
   "Ext.device.Purchases.Product": "touch/src/device/purchases/Sencha.js",
   "Ext.device.filesystem.DirectoryEntry": "touch/src/device/filesystem/Sencha.js",
@@ -93,6 +94,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.Sheet": [],
   "Ext.Sortable": [],
   "Ext.Spacer": [],
+  "Ext.TapLabel": [],
   "Ext.TaskQueue": [],
   "Ext.Template": [],
   "Ext.Title": [],
@@ -204,6 +206,9 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.data.ModelManager": [
     "Ext.ModelMgr",
     "Ext.ModelManager"
+  ],
+  "Ext.data.ModelUtil": [
+    "ModelUtil"
   ],
   "Ext.data.NodeInterface": [
     "Ext.data.Node"
@@ -661,6 +666,17 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.wrapper.BoxDock": [],
   "Ext.layout.wrapper.Dock": [],
   "Ext.layout.wrapper.Inner": [],
+  "Ext.log.Base": [],
+  "Ext.log.Logger": [],
+  "Ext.log.filter.Filter": [],
+  "Ext.log.filter.Priority": [],
+  "Ext.log.formatter.Default": [],
+  "Ext.log.formatter.Formatter": [],
+  "Ext.log.formatter.Identity": [],
+  "Ext.log.writer.Console": [],
+  "Ext.log.writer.DocumentTitle": [],
+  "Ext.log.writer.Remote": [],
+  "Ext.log.writer.Writer": [],
   "Ext.mixin.Bindable": [],
   "Ext.mixin.Filterable": [],
   "Ext.mixin.Mixin": [],
@@ -921,6 +937,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.Spacer": [
     "widget.spacer"
   ],
+  "Ext.TapLabel": [
+    "widget.taplabel"
+  ],
   "Ext.TaskQueue": [],
   "Ext.Template": [],
   "Ext.Title": [
@@ -1125,6 +1144,7 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Ext.data.Model": [],
   "Ext.data.ModelManager": [],
+  "Ext.data.ModelUtil": [],
   "Ext.data.NodeInterface": [],
   "Ext.data.NodeStore": [
     "store.node"
@@ -1664,6 +1684,17 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.layout.wrapper.BoxDock": [],
   "Ext.layout.wrapper.Dock": [],
   "Ext.layout.wrapper.Inner": [],
+  "Ext.log.Base": [],
+  "Ext.log.Logger": [],
+  "Ext.log.filter.Filter": [],
+  "Ext.log.filter.Priority": [],
+  "Ext.log.formatter.Default": [],
+  "Ext.log.formatter.Formatter": [],
+  "Ext.log.formatter.Identity": [],
+  "Ext.log.writer.Console": [],
+  "Ext.log.writer.DocumentTitle": [],
+  "Ext.log.writer.Remote": [],
+  "Ext.log.writer.Writer": [],
   "Ext.mixin.Bindable": [],
   "Ext.mixin.Filterable": [],
   "Ext.mixin.Mixin": [],

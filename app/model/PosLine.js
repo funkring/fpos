@@ -23,6 +23,9 @@ Ext.define('Fpos.model.PosLine', {
                 'a_pre',
                 'a_dec',
                 'p_pre',
-                'p_dec']
+                'p_dec',
+                {name:'qty_prev', persist:false},
+                {name:'qty_diff', persist:false},
+                {name:'qty_op', persist:false}]
    }
 });
