@@ -19,7 +19,7 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                 release: 'tapSelectTop'
             },   
             'button[action=selectPlace]' : {
-                release: 'tapSelectPlace',
+                tap: 'tapSelectPlace',
                 initialize: 'placeButtonInitialize'
             },
             topView: {
@@ -38,6 +38,10 @@ Ext.define('Fpos.controller.TopViewCtrl', {
         this.placeStore = Ext.StoreMgr.lookup("PlaceStore");
         this.topId = null;
         this.shown = false;
+        
+        if ( Config.isMobilePos() ) {
+            this.setDefaultButtonWidth(66);
+        }
         
     },
     
@@ -153,7 +157,7 @@ Ext.define('Fpos.controller.TopViewCtrl', {
     tapSelectPlace: function(button) {
         var place = button.getRecord();
         if ( place ) {
-            Ext.Viewport.fireEvent("placeInput", place);            
+            Ext.Viewport.fireEvent("placeInput", place);
         }
     },
     

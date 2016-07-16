@@ -646,6 +646,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     showPlace: function() {
         var self = this;
+        ViewManager.hideMenus();
         self.basePanel.setActiveItem(1);     
         // set view options
         ViewManager.setViewOption(self.basePanel, 'showLogin', !self.fastUserSwitch);

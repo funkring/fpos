@@ -47,7 +47,12 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         //search task
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
             self.loadProducts(self.categoryId, self.searchValue);
-        });        
+        });   
+        
+        this.smallButton = Config.isMobilePos();
+        if ( this.smallButton ) {
+            this.setDefaultButtonWidth(73);
+        }     
         
     },
     
@@ -116,16 +121,20 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             self.buttonHeight = preferredY.toString() + "px";
             
             var screenWidth = futil.screenWidth();
+            var imageText = '';
+             
             if ( self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
                 self.productButtonCls = 'ProductButton';
+               
+                if ( !self.smallButton ) {
+                    imageText = '<div class="ProductText">{pos_name}</div>';
+                }                
                 self.productButtonTmpl = Ext.create('Ext.XTemplate',
                       '<tpl if="image_small">',
                           '<div class="ProductImage">',
                             '<img src="data:image/jpeg;base64,{image_small}"/>',                                        
                           '</div>',
-                          '<div class="ProductText">',
-                            '{pos_name}',
-                          '</div>',
+                          imageText,
                           '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
                       '<tpl elseif="pos_name.length &lt;= 7">',
                          '<div class="ProductTextOnlyBig">',
@@ -142,19 +151,19 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                             var uom = self.unitStore.getById(uom_id);
                             return uom && uom.get('name') || '';
                           }
-                          
                       });
             } else {     
                 self.productButtonCls = 'ProductButtonNoCat';  
+                if ( !self.smallButton ) {
+                    imageText = '<div class="ProductTextNoCat">{pos_name}</div>';
+                }  
                 self.productButtonTmpl = Ext.create('Ext.XTemplate',
                  '<div class="ProductItemNoCat">',
                      '<tpl if="image_small">',
                          '<div class="ProductImageNoCat">',
                             '<img src="data:image/jpeg;base64,{image_small}"/>',                                        
                          '</div>',
-                         '<div class="ProductTextNoCat">',
-                           '{pos_name}',
-                         '</div>',
+                         imageText,
                      '<tpl else>',
                          '<div class="ProductTextBigNoCat">',
                            '{pos_name}',
