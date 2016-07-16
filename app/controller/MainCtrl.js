@@ -398,13 +398,28 @@ Ext.define('Fpos.controller.MainCtrl', {
                                                                         // build index
                                                                         self.placeStore.buildIndex();
                                                                         
-                                                                        // stop loading
-                                                                        ViewManager.stopLoading();
-                                                                        // fire reload
-                                                                        Ext.Viewport.fireEvent("reloadData");
-                                                                        // ... and show login
-                                                                        self.showLogin();   
-                                                                                                                                          
+                                                                        // define finish of load
+                                                                        var finishLoad = function() {
+                                                                            // fire reload
+                                                                            Ext.Viewport.fireEvent("reloadData");
+                                                                            // ... and show login
+                                                                            self.showLogin();   
+                                                                        };
+                                                                        
+                                                                        // try setup sync
+                                                                        Config.setupSync()['catch'](function(err) {
+                                                                            ViewManager.stopLoading();
+                                                                            ViewManager.handleError(err,{
+                                                                                    name: "Ausnahmefehler beim Laden", 
+                                                                                    message: "Es konnte keine Verbindung zum Verteiler hergestellt werden"
+                                                                            });
+                                                                            finishLoad();
+                                                                        }).then(function() {
+                                                                            // stop loading
+                                                                            ViewManager.stopLoading();
+                                                                            finishLoad();
+                                                                        });
+
                                                                     } catch (err) {
                                                                         ViewManager.stopLoading();
                                                                         ViewManager.handleError(err,{

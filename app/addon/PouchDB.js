@@ -669,7 +669,7 @@ Ext.define('Ext.proxy.PouchDB', {
     },
     
     // destroy
-    destroy: function(operation, callback, scope) {
+    destroy: function(operation, callback, scope) {    
         var self = this;     
         var db = DBUtil.getDB(self.getDatabase());
 
@@ -678,8 +678,10 @@ Ext.define('Ext.proxy.PouchDB', {
         var records = operation.getRecords();                   
         var operationCount = records.length+1;
         
-        Ext.each(operation.getRecords(), function(record) {           
-           db.remove(record.raw, function(err,response) {
+        Ext.each(operation.getRecords(), function(record) {  
+           var raw = record.raw;
+           raw._deleted = true;         
+           db.put(raw, function(err,response) {
                 self.setException(operation, err);
                 
                 //check if finished

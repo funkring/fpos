@@ -1,4 +1,4 @@
-/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper:false, cordova:false */
+/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper:false, cordova:false, PouchDB:false */
 
 Ext.define('Fpos.Config', {
     singleton : true,
@@ -32,6 +32,8 @@ Ext.define('Fpos.Config', {
         hwStatus: { err: null },
         hwStatusId: null,
         cashJournal: null,
+        sync: false,
+        syncHandlers: null,
         journalById: {}
     },
     
@@ -80,6 +82,129 @@ Ext.define('Fpos.Config', {
                 deferred.resolve();
             },0);
         }
+        return deferred.promise();
+    },
+    
+    addSync: function(syncHandlers, dest) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        
+        // check dest        
+        if ( !dest ) {
+            setTimeout(function() {
+                deferred.reject();
+            },0);
+            return deferred.promise();
+        }
+        
+        // init databses
+        var destDB = new PouchDB(dest);
+        var db = self.getDB();
+        
+        // init filter
+        var filterVersion = 'fpos_v3_1';
+        var filterId = '_design/' + filterVersion;  
+        var filterName =  filterVersion + "/dist";
+        var filter = {
+            _id: filterId,
+            filters: {
+                dist: function(doc) {
+                    return (doc.fdoo__ir_model == 'fpos.order' && doc.state == 'draft' && doc.place_id);
+                }.toString()
+            }                
+        };
+        
+        // start sync
+        var createSync = function() {
+            var sync = PouchDB.sync(self.getDatabaseName(), destDB, {
+                live: true,
+                retry: true, 
+                filter: filterName
+            }); 
+            syncHandlers.push(sync);
+            deferred.resolve(sync);   
+        };      
+        
+        // check remote filter
+        var checkRemoteFilter = function() {           
+            destDB.get(filterId).then(function(res) {
+                createSync();
+            })['catch'](function(err) {
+                if ( err.name == 'not_found' ) {
+                    destDB.put(filter).then(function(res) {
+                        createSync();  
+                    })['catch'](function(err) {
+                        deferred.reject(err);
+                    });                
+                } else {
+                    deferred.reject(err);
+                }
+            });
+        };
+
+        // check local filter        
+        db.get(filterId).then(function(res) {
+            checkRemoteFilter(); 
+        })['catch'](function(err) {
+            if ( err.name == 'not_found' ) {
+                db.put(filter).then(function(res) {
+                   checkRemoteFilter(); 
+                })['catch'](function(err) {
+                   deferred.reject(err);            
+                });
+            } else {
+                deferred.reject(err);
+            }
+        });
+        
+        return deferred.promise();
+    },
+    
+    setupSync: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var profile = self.getProfile();
+        
+        // check if sync configured 
+        if ( !profile || Ext.isEmpty(profile.fpos_dist_ids) ) {            
+            self.setSync(false);
+            setTimeout(function() {
+                deferred.resolve();
+            },0);             
+        } else {        
+                        
+            // cancel active syncs
+            if ( self.syncHandlers ) {
+                Ext.each(self.syncHandlers, function(sync) {
+                    sync.cancel();
+                });
+            }
+            
+            // create/start handlers
+            self.setSync(true);       
+            self.syncHandlers = [];
+            
+            var procCount = 0;
+            var procNotify = function(err) {
+                procCount++;
+                if ( procCount >= profile.fpos_dist_ids.length ) {
+                    if ( self.syncHandlers.length === 0 ) {
+                        deferred.reject(err);
+                    } else {
+                        deferred.resolve();
+                    }
+                }
+            };
+            
+            Ext.each(profile.fpos_dist_ids, function(dest) {
+                self.addSync(self.syncHandlers, dest.name)
+                        ['catch'](procNotify).then(procNotify);
+                       
+                
+            });
+            
+        }        
+
         return deferred.promise();
     },
     

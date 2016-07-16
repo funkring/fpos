@@ -392,7 +392,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             var toWeight = product.get('to_weight');
             var noGroup = toWeight || profile.iface_nogroup || product.get('pos_nogroup') || false;
-            
+            var hideMenu = false;
+        
             if ( !noGroup ) {
                 self.lineStore.each(function(line) {
                     if ( line.get('product_id') === product.getId() ) {
@@ -438,6 +439,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 if ( product.get('pos_price') ) {
                     flags +="p";
+                    hideMenu = true;
                 }
                 if ( flags.length > 0) {
                     values.flags = flags;
@@ -466,8 +468,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // set tag to other if is an income or expense
                 if ( product.get('expense_pdt') ) {
                     values.tag = "o";
+                    hideMenu = true;
                 } else if ( product.get('income_pdt') ) {
                     values.tag = "i";
+                    hideMenu = true;
                 }  else if ( values.tag ) {
                     values.tag = null;
                 }
@@ -476,6 +480,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 changedLine = self.lineStore.add(values)[0];
                 if ( changedLine ) {
                     changedLine.dirty = true;
+                }
+                
+                // hide menu
+                if ( hideMenu ) {
+                    ViewManager.hideMenus();
                 }
             }
             
@@ -1400,7 +1409,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onEditOrder: function() {
-        if ( !this.isDraft() ) return;
+        if ( !this.isDraft() ) return;                
+        ViewManager.hideMenus();
         
         var self = this;
         var lines = self.getOrderItemList().getSelection();
@@ -1482,16 +1492,43 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 self.order.set('turnover',self.round(self.order.get('turnover')+turnover));
                 // cpos
                 self.order.set('cpos', self.round(cpos));
-                
-                // save
-                self.order.save({
-                    callback: function() {
-                        self.seq = self.order.get('seq');
-                        self.turnover = self.order.get('turnover');
-                        self.cpos = self.order.get('cpos');
-                        deferred.resolve();           
-                    }
-                });
+              
+                // update counters
+                var updateCounters = function() {
+                    self.seq = self.order.get('seq');
+                    self.turnover = self.order.get('turnover');
+                    self.cpos = self.order.get('cpos');
+                };
+              
+                if ( Config.getSync() && self.order.get('place_id') ) {
+                    // special handling if sync
+                    var orderCopy = ModelUtil.createDocument(self.order);
+                    orderCopy.fdoo__ir_model = 'fpos.order';
+                    
+                    db.post(orderCopy).then(function() {
+                        updateCounters();
+                        // reject order
+                        self.order.reject();
+                        // erase order                        
+                        self.order.erase({
+                            callback: function(op) {                                
+                                deferred.resolve();                                  
+                            }
+                        });                     
+                    })['catch'](function(err) {
+                        deferred.reject(err);
+                    });
+                       
+                } else {
+                               
+                    // save
+                    self.order.save({
+                        callback: function() {
+                            updateCounters();
+                            deferred.resolve();   
+                        }
+                    });
+                }
             };
             
             

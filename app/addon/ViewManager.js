@@ -286,8 +286,8 @@ Ext.define('Ext.form.ViewManager', {
     },
     
     handleError: function(err, alternativeError, forward) {
-        if ( !err.name || !err.message) {
-            if ( err.data && err.data.name && err.data.message ) {
+        if ( !err || !err.name || !err.message) {
+            if ( err && err.data && err.data.name && err.data.message ) {
                 err = err.data;
             } else {
                 err = alternativeError;
