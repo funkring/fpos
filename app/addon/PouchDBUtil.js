@@ -391,7 +391,7 @@ Ext.define('Ext.proxy.PouchDBUtil',{
         return deferred.promise();
     },
 
-    syncWithOdoo: function(db, client, sync_config) {
+    syncWithOdoo: function(db, client, sync_config, options) {
         var deferred = Ext.create('Ext.ux.Deferred');
         // invoke before sync
         client.invoke("jdoc.jdoc","jdoc_couchdb_before",[sync_config])
@@ -406,7 +406,7 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                     .toString()+couchdb_config.db;
                                 
                 // sync with couchdb
-                db.sync(target_url)
+                db.sync(target_url, options)
                     ['catch'](function(err) {
                         deferred.reject(err); 
                     }).then(function(sync_res) {

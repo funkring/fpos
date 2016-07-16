@@ -104,6 +104,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.cpos = 0;
         self.turnover = 0;
         self.displayDelay = Config.getDisplayDelay();
+        self.lastDate = null;
         
         self.mode = '*';
         self.op = '€';
@@ -1530,52 +1531,71 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // write order                
                 var date = futil.datetimeToStr(new Date());
-                self.order.set('payment_ids',fixed_payments);
-                self.order.set('date', date);
-                self.order.set('seq', seq);
-                self.order.set('name', Config.formatSeq(seq));
-                self.order.set('state','paid');
+                var lastDate = self.lastDate;
+                if ( !lastDate ) {
+                    lastDate = Config.getProfile().last_date;
+                    if ( !lastDate ) {
+                        lastDate = "2001-01-01 00:00:00";
+                    }
+                }
                 
-                // turnover
-                self.order.set('turnover',self.round(self.order.get('turnover')+turnover));
-                // cpos
-                self.order.set('cpos', self.round(cpos));
-              
-                // update counters
-                var updateCounters = function() {
-                    self.seq = self.order.get('seq');
-                    self.turnover = self.order.get('turnover');
-                    self.cpos = self.order.get('cpos');
-                };
-              
-                if ( Config.getSync() && self.order.get('place_id') ) {
-                    // special handling if sync
-                    var orderCopy = ModelUtil.createDocument(self.order);
-                    orderCopy.fdoo__ir_model = 'fpos.order';
-                    
-                    db.post(orderCopy).then(function() {
-                        updateCounters();
-                        // reject order
-                        self.order.reject();
-                        // erase order                        
-                        self.order.erase({
-                            callback: function(op) {                                
-                                deferred.resolve();                                  
-                            }
-                        });                     
-                    })['catch'](function(err) {
-                        deferred.reject(err);
-                    });
-                       
+                // check last date
+                if ( date < lastDate ) {                    
+                    deferred.reject({name: 'wrong_date', message: 'Datum und/oder Uhrzeit ist auf der Kasse falsch eingestellt!'});    
                 } else {
-                               
-                    // save
-                    self.order.save({
-                        callback: function() {
+                
+                    self.order.set('payment_ids',fixed_payments);
+                    self.order.set('date', date);
+                    self.order.set('seq', seq);
+                    self.order.set('name', Config.formatSeq(seq));
+                    self.order.set('state','paid');
+                    
+                    // turnover
+                    self.order.set('turnover',self.round(self.order.get('turnover')+turnover));
+                    // cpos
+                    self.order.set('cpos', self.round(cpos));
+                  
+                    // update counters
+                    var updateCounters = function() {
+                        self.seq = self.order.get('seq');
+                        self.turnover = self.order.get('turnover');
+                        self.cpos = self.order.get('cpos');
+                        self.lastDate = self.order.get('date');
+                    };
+                  
+                    if ( Config.getSync() && self.order.get('place_id') ) {
+                        // special handling if sync
+                        var orderCopy = ModelUtil.createDocument(self.order);
+                        
+                        // set/override basic data
+                        orderCopy.fdoo__ir_model = 'fpos.order';
+                        orderCopy.fpos_user_id = Config.getProfile().user_id;
+                        orderCopy.user_id = Config.getUser()._id;
+                        
+                        db.post(orderCopy).then(function() {
                             updateCounters();
-                            deferred.resolve();   
-                        }
-                    });
+                            // reject order
+                            self.order.reject();
+                            // erase order                        
+                            self.order.erase({
+                                callback: function(op) {                                
+                                    deferred.resolve();                                  
+                                }
+                            });                     
+                        })['catch'](function(err) {
+                            deferred.reject(err);
+                        });
+                           
+                    } else {
+                                   
+                        // save
+                        self.order.save({
+                            callback: function() {
+                                updateCounters();
+                                deferred.resolve();   
+                            }
+                        });
+                    }                    
                 }
             };
             

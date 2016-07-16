@@ -252,6 +252,16 @@ Ext.define('Fpos.controller.MainCtrl', {
         }).then(function() {
             // sync
             ViewManager.startLoading("Synchronisiere Daten");
+            
+            var options = {};
+            if ( Config.getSync() ) {
+                // add filter options if in sync
+                var fpos_user_id = Config.getProfile().user_id;
+                options.filter = function(doc) {
+                    return doc.fdoo__ir_model !== 'fpos.order' || doc.fpos_user_id == fpos_user_id; 
+                };
+            }
+            
             return DBUtil.syncWithOdoo(db, client, {
                name: 'fpos',
                resync: typeof(resync) === "boolean" && resync || false,
@@ -322,7 +332,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                        ndomain: [['active','=',false]]
                    }
                ] 
-            });
+            }, options);
         }).then(function() {
             ViewManager.stopLoading(); 
             //self.resetConfig();
