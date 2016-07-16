@@ -33,6 +33,7 @@ Ext.define('Fpos.Config', {
         hwStatusId: null,
         cashJournal: null,
         sync: false,
+        syncState: 'idle',
         syncHandlers: null,
         journalById: {}
     },
@@ -120,7 +121,21 @@ Ext.define('Fpos.Config', {
                 live: true,
                 retry: true, 
                 filter: filterName
-            }); 
+            }).on('change', function(info) {
+                self.setSyncState('change');  
+                Ext.Viewport.fireEvent('syncChange', info);
+            }).on('error', function(err) {
+                self.setSyncState('error');  
+            }).on('paused', function(err) {
+               if ( err ) {
+                 self.setSyncState('error');  
+               } else {
+                 self.setSyncState('paused');
+               }               
+            }).on('active', function() {
+               self.setSyncState('active');
+            });
+            
             syncHandlers.push(sync);
             deferred.resolve(sync);   
         };      
@@ -189,6 +204,7 @@ Ext.define('Fpos.Config', {
                 procCount++;
                 if ( procCount >= profile.fpos_dist_ids.length ) {
                     if ( self.syncHandlers.length === 0 ) {
+                        self.setSyncState('error');
                         deferred.reject(err);
                     } else {
                         deferred.resolve();

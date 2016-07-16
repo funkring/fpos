@@ -284,7 +284,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // reload event
         Ext.Viewport.on({
             scope: self,
-            reloadData: self.fullDataReload
+            reloadData: self.fullDataReload            
         });
 
         // product input event         
@@ -304,15 +304,23 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             scope: self,
             validateLines: self.onValidateLines            
         });
-        
+       
+        // key down event 
         Ext.Viewport.on({
             scope: self,
             posKey: self.onKeyDown
         });
         
+        // user change
         Ext.Viewport.on({
             scope: self,
             userChange: self.onUserChange
+        });
+        
+        // data changed
+        Ext.Viewport.on({
+           scope: self,
+           syncChange: self.onChange
         });
         
         // reload data
@@ -514,6 +522,46 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    /**
+     * handle change event
+     */
+    onChange: function(info) {
+        var self = this;
+        if ( info.direction == 'pull' ) {    
+            if ( info.change && info.change.docs ) {
+                Ext.each(info.change.docs, function(doc) {
+                    if ( doc.fdoo__ir_model == 'fpos.order' ) {
+                        // check if it is a place                        
+                        if ( doc.place_id ) {
+                            // set the new place amount
+                            var place = self.placeStore.getPlaceById(doc.place_id);        
+                            if ( place ) {
+                                if ( doc._deleted ) {
+                                    place.set('amount', 0);
+                                } else {
+                                    place.set('amount', doc.amount_total);
+                                }
+                            }
+                        }
+                        
+                        // reload data if data is the same
+                        // as current selected            
+                        if ( self.order && self.order.getId() == doc._id ) {
+                            if ( doc._deleted ) {
+                                 if ( Config.getProfile().iface_place ) {
+                                    Ext.Viewport.fireEvent("showPlace");
+                                 } else {
+                                     self.nextOrder();
+                                 }                                     
+                            } else {
+                                self.reloadData();
+                            }    
+                        } 
+                    }
+                });
+            }     
+        } 
+    },
     
     /**
      * change operation mode
