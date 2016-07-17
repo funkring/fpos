@@ -1540,7 +1540,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 
                 // check last date
-                if ( date < lastDate ) {                    
+                if ( date < lastDate ) {
                     deferred.reject({name: 'wrong_date', message: 'Datum und/oder Uhrzeit ist auf der Kasse falsch eingestellt!'});    
                 } else {
                 
