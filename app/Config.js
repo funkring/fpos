@@ -13,7 +13,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.Printer'
     ],
     config : {       
-        version : '3.0.22',
+        version : '3.0.23',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
