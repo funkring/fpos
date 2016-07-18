@@ -96,6 +96,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.place = null;
         self.order = null;
         self.printTemplate = null;
+        self.printPlaceTemplate = null;
         self.initialLoad = false;
         self.postActive = false; 
         self.tempOrder = null;
@@ -322,6 +323,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         Ext.Viewport.on({
            scope: self,
            syncChange: self.onChange
+        });
+        
+        // order changed
+        Ext.Viewport.on({
+           scope: self,
+           orderLogChanged: self.onOrderChanged 
         });
         
         // reload data
@@ -597,13 +604,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     onSaveOrder: function() {
         var self = this;
         if ( !self.isEditable() ) return;
+        
+        ViewManager.hideMenus();
          
         var place_id = self.order.get('place_id');
         var place = place_id ? self.placeStore.getPlaceById(place_id) : null;
-        
+
         if ( place ) {
-        
-            // create temp order
+            // create temp order            
             if ( self.op == '-' ) {
                 var db = Config.getDB();
                 if ( !self.tempOrder ) {
@@ -633,18 +641,23 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         // or remove
                         self.lineStore.remove(line);
                     }                                  
-                });
-                
+                });                
             } 
-            
+                        
             // save order
             place.set('amount',self.order.get('amount_total'));
-            self.validateLines(true)['catch'](function(err) {
+            self.validateLines(true, Config.hasPrinters() && place)['catch'](function(err) {
                 ViewManager.handleError(err, {name:'Fehler', message:'Bestellung konnte nicht boniert werden'});
-            }).then(function(){        
-                Ext.Viewport.fireEvent("showPlace");
+            }).then(function(){
+                // show places
+                Ext.Viewport.fireEvent("showPlace");                
             });       
         }
+    },
+    
+    // print place order
+    onOrderChanged: function(order) {
+        this.printPlaceOrder(order);
     },
     
     round: function(val) {
@@ -748,7 +761,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     // validate lines of current order
-    validateLines: function(forceSave) {
+    validateLines: function(forceSave, storeLog) {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         // primary check
@@ -787,7 +800,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     updateLines = true;
                     line.commit();
                 }
-                lines.push(ModelUtil.createDocument(line, null, !forceSave));
+                
+                // create doc
+                var doc = ModelUtil.createDocument(line, null, !forceSave);
+                lines.push(doc);
             });
             
             // round
@@ -812,11 +828,84 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // notify display update
             self.displayTask.delay(self.displayDelay);
 
+            // create log
+            var orderLogChanged = false;
+            if ( storeLog ) {   
+                // check if there exist old lines, if it is a new 
+                // order don't store log
+                var oldLines = self.order.raw.line_ids;                
+                var logs = self.order.get("log_ids");
+                var logLines = [];
+                if ( (oldLines && oldLines.length > 0) || (logs && logs.length > 0) ) {
+                    
+                    // diff function
+                    var createDiff = function(line, oldLine) {
+                        var qty = (line && line.qty || 0.0) - (oldLine && oldLine.qty || 0.0);
+                        if ( qty ) {
+                            var logEntry = {
+                                product_id: (line && line.product_id) || (oldLine && oldLine.product_id) || null,
+                                uom_id: (line && line.uom_id) || (oldLine && oldLine.uom_id) || null,
+                                name: (line && line.name) || (oldLine && oldLine.name) || null,
+                                notice: (line && line.notice ) || (oldLine && oldLine.notice) || null,
+                                qty : qty
+                            };
+                            logLines.push(logEntry);
+                        }
+                    };
+                    
+                    // build old line dict
+                    var oldLinesDict = {};
+                    Ext.each(oldLines, function(line) {
+                       oldLinesDict[line._id] = line; 
+                    });
+                    
+                    // build new line dict
+                    var newLinesDict = {};
+                    var newLines = self.order.get('line_ids');
+                    Ext.each(newLines, function(line) {
+                       newLinesDict[line._id] = line;
+                       var oldLine = oldLinesDict[line._id];
+                       createDiff(line, oldLine);
+                    });                   
+                    
+                    // check removed
+                    Ext.each(oldLines, function(line) {
+                       var newLine = newLinesDict[line._id];
+                       if ( !newLine ) {
+                            createDiff(newLine, line);
+                       }
+                    });                 
+                } else {
+                    orderLogChanged = true;
+                }
+                
+                // create log entries
+                if ( logLines.length > 0) {
+                    orderLogChanged = true;
+                    var date = futil.datetimeToStr(new Date());
+                    var log = {
+                        date: date,
+                        user_id : Config.getUser()._id,
+                        fpos_user_id : Config.getProfile().user_id,
+                        line_ids : logLines                        
+                    };
+                    if ( logs ) {
+                        self.order.set("log_ids", logs.concat([log]));                        
+                    } else {
+                        self.order.set("log_ids", [log]);
+                    }                    
+                }
+            }
+            
             // save
             // ( only save if it is dirty, not places are active or force save was passed)            
             if ( self.order.dirty && (!Config.getProfile().iface_place || forceSave)) {
                 self.order.save({
                     callback: function() {
+                        // send changed event                        
+                        if ( orderLogChanged ) {
+                            Ext.Viewport.fireEvent("orderLogChanged", self.order.getData());
+                        }                        
                         deferred.resolve();
                     }
                 });                
@@ -975,6 +1064,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
         self.initialLoad = true;
         self.printTemplate = null;
+        self.printPlaceTemplate = null;
         self.place = null;
         
         self.seq = 0;
@@ -1492,7 +1582,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var db = Config.getDB();
         var profile = Config.getProfile();
         var hasSeq = false;
-        
+
         self.validateLines(true)['catch'](function(err) {
             deferred.reject(err);
         }).then(function(){
@@ -1975,37 +2065,156 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             lines : order.line_ids,
             priceColWidth: "32%",
             attribWidth: "34%",
-            date: futil.strToDate(this.order.get('date'))
+            date: futil.strToDate(order.date)
         };
         
         // render it
         var html = self.printTemplate.apply(data);
         // print/show it
         if ( !Config.hasPrinter() ) { 
-            html = '<div class="PrintReport">' + html + '</div>';       
-            if ( !self.reportPanel ) {
-                self.reportPanel = Ext.create('Ext.Panel',{
-                    hideOnMaskTap: true,
-                    modal: true,
-                    centered: true,
-                    scrollable: true,
-                    cls: 'PrintReport',
-                    height: '400px',
-                    width: '300px',
-                    layout: 'vbox',
-                    html: html 
-                });                
-                Ext.Viewport.add(self.reportPanel);
-            } else {
-                self.reportPanel.setHtml(html);
-                self.reportPanel.show();
-            }
+            self.previewPrint(html);
         } else {
             Config.printHtml(html);
         }
-       
+        
         // open cash drawer
         Config.openCashDrawer();
+    },
+    
+    
+    previewPrint: function(html) {
+        var self = this;
+        html = '<div class="PrintReport">' + html + '</div>';       
+        if ( !self.reportPanel ) {
+            self.reportPanel = Ext.create('Ext.Panel',{
+                hideOnMaskTap: true,
+                modal: true,
+                centered: true,
+                scrollable: true,
+                cls: 'PrintReport',
+                height: '400px',
+                width: '300px',
+                layout: 'vbox',
+                html: html 
+            });                
+            Ext.Viewport.add(self.reportPanel);
+        } else {
+            self.reportPanel.setHtml(html);
+            self.reportPanel.show();
+        }
+    },
+    
+    printPlaceOrder: function(order) {
+        var self = this;   
+        if ( !self.printPlaceTemplate ) {
+            var profile = Config.getProfile();
+            self.printPlaceTemplate = Ext.create('Ext.XTemplate',
+                '<table width="100%">',
+                    '<tr>',
+                        '<td colspan="2"><hr/></td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Platz:</td>',
+                        '<td>{place}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Datum:</td>',
+                        '<td>{date:date("d.m.Y H:i:s")}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Kasse:</td>',
+                        '<td>{[Config.getProfile().name]}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td width="{attribWidth}">Bediener:</td>',
+                        '<td>{[Config.getUser().name]}</td>',
+                    '</tr>',
+                    '<tr>',
+                        '<td colspan="2"><hr/></td>',
+                    '</tr>',
+                '</table>',
+                '<table width="100%">',
+                '<tpl for="lines">',
+                    '<tr>',
+                        '<td width="{amountWidth}" align="right">{[this.formatAmount(values)]}</td>',
+                        '<td>&nbsp;{[this.getUnit(values.uom_id)]} {name}</td>',
+                    '</tr>',
+                    '<tpl if="notice">',
+                        '<tr>',
+                            '<td></td>',
+                            '<td>{[this.formatText(values.notice)]}</td>',
+                        '</tr>',
+                    '</tpl>',
+                '</tpl>',
+                '</table>',
+                {
+                    getUnit: function(uom_id) {
+                        var uom = self.unitStore.getById(uom_id);
+                        return uom ? uom.get('name') : '';
+                    },
+                    formatText: function(text) {
+                        return text ? text.replace(/\n/g,'<br/>') : '';
+                    },
+                    formatAmount: function(values)  {
+                        var dec = values.a_dec;
+                        if ( dec < 0 ) {
+                            return futil.formatFloat(values.qty, 0);
+                        } else if ( dec > 0 ) {
+                            return futil.formatFloat(values.qty, dec);
+                        } else {
+                            return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                        }
+                    }                  
+                }                
+            );
+        }
+
+        // get order if not passed
+        if (!order) {
+            order = this.order.getData();
+        }
+        
+        // data
+        var place = self.placeStore.getPlaceById(order.place_id);        
+        var data = {
+            o: order,
+            lines: order.line_ids,
+            amountWidth: "30%",
+            attribWidth: "34%",
+            date: futil.strToDate(order.date),
+            place: place && place.get('name') || ''        
+        };
+        
+        // check log ids
+        if ( order.log_ids && order.log_ids.length > 0 ) {
+            var lastLog = order.log_ids[order.log_ids.length-1];
+            data.lines = lastLog.line_ids;
+            data.date = futil.strToDate(lastLog.date);
+        }
+        
+        // print/show
+        var lines = data.lines;
+        Ext.each(Config.getPrinters(), function(printer) {
+            var filtered = [];
+            Ext.each(lines, function(line) {
+                if ( printer.isProductAllowed(line.product_id) ) {
+                    filtered.push(line);
+                }  
+            });
+            
+            data.lines = filtered;
+            if ( filtered.length > 0 ) { 
+                var html = self.printPlaceTemplate.apply(data);
+                
+                if ( !printer.isAvailable() ) {
+                    self.previewPrint(html); 
+                }  else {
+                    printer.printHtml(html)['catch'](function(err) {
+                       ViewManager.handleError(err); 
+                    });
+                }
+            }
+        });
     },
     
     display: function() {
@@ -2378,7 +2587,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         summary.total += amount;   
     },
     
-    
     createCashReport: function(user, detail, finish) {
         var self = this;
 
@@ -2398,12 +2606,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( !user_id || !fpos_user_id )
             return;
         
-        // get products
-        var products = {};
-        Ext.each(self.productStore.allProducts, function(product) {
-            products[product.getId()] = product;
-        });
-
         // start        
         if ( finish ) {
             ViewManager.startLoading("Kassenabschluss erstellen");
@@ -2429,7 +2631,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             // get product detail                            
                             var pos_report = false;
                             if (line.product_id) {
-                                var product = products[line.product_id];
+                                var product = self.productStore.getProductById(line.product_id);
                                 if (product) {
                                     pos_report = product.get('pos_report');
                                 }
@@ -2619,8 +2821,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // FINISH
                 if ( finish && profile.fpos_income_id && profile.fpos_expense_id ) {
                     // get income/expense products
-                    var product_income = products[profile.fpos_income_id];
-                    var product_expense = products[profile.fpos_expense_id];
+                    var product_income = self.productStore.getProductById(profile.fpos_income_id);
+                    var product_expense = self.productStore.getProductById(profile.fpos_expense_id);
                     if ( product_income &&  product_expense ) {
                         // check for expense
                         if ( cpos > 0.0 ) {

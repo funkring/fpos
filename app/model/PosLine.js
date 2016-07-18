@@ -5,6 +5,7 @@ Ext.define('Fpos.model.PosLine', {
        'Ext.proxy.PouchDB'
    ],
    config: {
+       identifier: 'uuid',
        fields: ['name',
                 'product_id',
                 'uom_id',
@@ -24,8 +25,10 @@ Ext.define('Fpos.model.PosLine', {
                 'a_dec',
                 'p_pre',
                 'p_dec',
+                '_id',
                 {name:'qty_prev', persist:false},
                 {name:'qty_diff', persist:false},
-                {name:'qty_op', persist:false}]
+                {name:'qty_op', persist:false}],
+      idProperty: '_id'
    }
 });

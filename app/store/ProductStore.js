@@ -24,6 +24,7 @@ Ext.define('Fpos.store.ProductStore', {
     resetIndex: function() {
         this.productByCategoryId = {};
         this.productByEan = {};
+        this.productById = {};
         this.allProducts = [];   
         this.productQueue = [];  
         this.showAll = true;   
@@ -42,6 +43,7 @@ Ext.define('Fpos.store.ProductStore', {
                  }*/
                  
                  // product by ean
+                 self.productById[product.getId()] = product; 
                  var ean = product.get('ean13');
                  if ( ean ) {
                      self.productByEan[ean] = product;
@@ -60,6 +62,10 @@ Ext.define('Fpos.store.ProductStore', {
                  }
             }
         });
+    },
+    
+    getProductById: function(productId) {
+        return this.productById[productId];
     },
     
     searchProductByEan: function(ean) {

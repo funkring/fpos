@@ -9,7 +9,8 @@ Ext.define('Fpos.Config', {
         'Ext.client.OdooClient',
         'Ext.ux.Deferred',
         'Ext.util.Format',
-        'Ext.form.ViewManager'
+        'Ext.form.ViewManager',
+        'Fpos.core.Printer'
     ],
     config : {       
         version : '3.0.22',
@@ -86,6 +87,10 @@ Ext.define('Fpos.Config', {
         return deferred.promise();
     },
     
+    updateSyncState: function(newState, oldState) {
+        Ext.Viewport.fireEvent('syncState', newState);
+    },
+    
     addSync: function(syncHandlers, dest) {
         var deferred = Ext.create('Ext.ux.Deferred');
         var self = this;
@@ -123,7 +128,6 @@ Ext.define('Fpos.Config', {
                 filter: filterName
             }).on('change', function(info) {
                 self.setSyncState('change');  
-                Ext.Viewport.fireEvent('syncChange', info);
             }).on('error', function(err) {
                 self.setSyncState('error');  
             }).on('paused', function(err) {
@@ -134,6 +138,10 @@ Ext.define('Fpos.Config', {
                }               
             }).on('active', function() {
                self.setSyncState('active');
+            }).on('complete', function() {
+                self.setSyncState('complete');
+            }).on('denied', function() {
+               self.setSyncState('error');
             });
             
             syncHandlers.push(sync);
@@ -238,6 +246,24 @@ Ext.define('Fpos.Config', {
         if ( this.hasPrinter() ) {
             window.PosHw.printHtml(html);
         }          
+    },
+    
+    getPrinters: function() {        
+        var self = this;
+        if ( self.printer === undefined ) {   
+            self.printer = [];             
+            var printerProfiles = self.getProfile().fpos_printer_ids;
+            if ( printerProfiles && printerProfiles.length >= 0 ) {
+                Ext.each(printerProfiles, function(profile) {
+                    self.printer.push(Ext.create('Fpos.core.Printer', {'profile': profile}));
+                });
+            }
+        }
+        return self.printer;
+    },
+    
+    hasPrinters: function() {
+        return this.getPrinters().length > 0;
     },
     
     hasDisplay: function() {

@@ -164,6 +164,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             showPlace: self.showPlace
         });  
+        
+        // sync state
+        Ext.Viewport.on({
+            scope: self,
+            syncState: self.onSyncState
+        });
       
         // add key listener
         ViewManager.pushKeyboardListener(self);
@@ -1030,5 +1036,13 @@ Ext.define('Fpos.controller.MainCtrl', {
         if ( Ext.Viewport.getActiveItem() == mainView && mainView.getActiveItem() == self.basePanel && self.basePanel.getActiveItem() == self.posPanel ) {
             Ext.Viewport.fireEvent("posKey", e);
         }        
+    },
+    
+    onSyncState: function(state) {
+        if ( state == 'error' ) {
+            this.getMainMenuButton().setBadgeText('1');
+        } else {
+            this.getMainMenuButton().setBadgeText('');
+        }
     }
 });
