@@ -30,6 +30,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             loginButton: '#loginButton',
             placeButton: '#placeButton',
             saveOrderButton: '#saveOrderButton',
+            saveOrderButtonMobile: '#saveOrderButtonMobile',
             userButton1: '#userButton1',
             userButton2: '#userButton2',
             userButton3: '#userButton3',
@@ -753,6 +754,11 @@ Ext.define('Fpos.controller.MainCtrl', {
                 // set left menu                
                 var productMenu =  Ext.create('Ext.Menu', {
                         cls: 'ProductMenu',
+                        listeners: {
+                          hiddenchange: function(menu) {
+                             self.getSaveOrderButtonMobile().setHidden(menu.getHidden());
+                          } 
+                        },
                         items: [
                             {                                
                                 xtype: 'fpos_product_small',

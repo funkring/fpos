@@ -113,6 +113,15 @@ Ext.define('Fpos.view.Main', {
                 },
                 {
                     xtype: 'button',
+                    text: 'Bonieren',
+                    id: 'saveOrderButtonMobile', 
+                    ui: 'forward',    
+                    align: 'left',
+                    action: 'saveOrder',
+                    hidden: true 
+                },  
+                {
+                    xtype: 'button',
                     iconCls: 'list',
                     id: 'mainMenuButton',
                     ui: 'plain',
