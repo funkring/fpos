@@ -61,6 +61,13 @@ Ext.define('Fpos.view.TestView', {
                         cls : 'TestButton'
                      },
                      {
+                         xtype: 'button',
+                         text: 'Reset Dist',
+                         action: 'resetDistDB',
+                         ui: 'posInputButtonBlack',
+                         cls : 'TestButton'
+                     },
+                     {
                         xtype: 'button',
                         text: 'Reset DB',    
                         action: 'resetDB',

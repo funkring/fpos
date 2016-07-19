@@ -423,7 +423,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                                                         };
                                                                         
                                                                         // try setup sync
-                                                                        Config.setupSync()['catch'](function(err) {
+                                                                        Config.setupRemote()['catch'](function(err) {
                                                                             ViewManager.stopLoading();
                                                                             ViewManager.handleError(err,{
                                                                                     name: "Ausnahmefehler beim Laden", 

@@ -507,7 +507,7 @@ Ext.define('Ext.proxy.PouchDB', {
                                 filtered.addSorters(sorters);                          
                             }
                             
-                            //filter and sort
+                            //filter and sort                            
                             filtered.addAll(records);
                             records = filtered.items.slice();
                         }

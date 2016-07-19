@@ -31,6 +31,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=resetDB]' : {
                 release: 'resetDB'
+            },
+            'button[action=resetDistDB]' : {
+                release: 'resetDistDB'
             }
         }
     },
@@ -105,6 +108,7 @@ Ext.define('Fpos.controller.TestCtrl', {
     
     delDB: function() {
         var self = this;
+        Config.cancelSync();
         self.beforeTest();
         Ext.Msg.confirm('Komplett Löschung','Wollen sie wirklich alle Daten löschen?', function(buttonId) {
             if ( buttonId == 'yes' && !Config.getUser() ) {          
@@ -118,8 +122,34 @@ Ext.define('Fpos.controller.TestCtrl', {
         });
     },
     
+    resetDistDB: function() {
+        var self = this;
+        Config.cancelSync();
+        self.beforeTest();
+        Ext.Msg.confirm('Zurücksetzung','Wollen sie alle Daten des Verteilers zurücksetzen?', function(buttonId) {
+            if ( buttonId == 'yes' && !Config.getUser() ) {
+                var profile = Config.getProfile();
+                if ( !Ext.isEmpty(profile.fpos_dist_ids) ) {
+                    Ext.each(profile.fpos_dist_ids, function(dist) {
+                        var distDB = new PouchDB(dist.name);
+                        distDB.destroy().then(function() {
+                            self.getTestLabel().setHtml(dist.name + " deleted!");
+                        })['catch'](function(err) {
+                            if  (err) {
+                                self.getTestLabel().setHtml(err);
+                            } else {
+                                self.getTestLabel().setHtml(dist.name + " unable to delete!");
+                            }
+                        });
+                    });
+                }      
+            }
+        });    
+    },
+    
     resetDB: function() {
         var self = this;
+        Config.cancelSync();
         self.beforeTest();
         Ext.Msg.confirm('Zurücksetzung','Wollen sie wirklich alle Daten zurücksetzen?', function(buttonId) {
             if ( buttonId == 'yes' && !Config.getUser() ) {          

@@ -861,8 +861,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     // build new line dict
                     var newLinesDict = {};
-                    var newLines = self.order.get('line_ids');
-                    Ext.each(newLines, function(line) {
+                    Ext.each(lines, function(line) {
                        newLinesDict[line._id] = line;
                        var oldLine = oldLinesDict[line._id];
                        createDiff(line, oldLine);
@@ -905,7 +904,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         // send changed event                        
                         if ( orderLogChanged ) {
                             Ext.Viewport.fireEvent("orderLogChanged", self.order.getData());
-                        }                        
+                        }                      
                         deferred.resolve();
                     }
                 });                
@@ -1656,7 +1655,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     if ( Config.getSync() && self.order.get('place_id') ) {
                         // special handling if sync
                         var orderCopy = ModelUtil.createDocument(self.order);
-                        
                         // set/override basic data
                         orderCopy.fdoo__ir_model = 'fpos.order';
                         orderCopy.fpos_user_id = Config.getProfile().user_id;
@@ -1664,12 +1662,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         
                         db.post(orderCopy).then(function() {
                             updateCounters();
+                            orderCopy.partner = self.order.get('partner');
                             // reject order
                             self.order.reject();
                             // erase order                        
                             self.order.erase({
                                 callback: function(op) {                                
-                                    deferred.resolve();                                  
+                                    deferred.resolve(orderCopy);                                  
                                 }
                             });                     
                         })['catch'](function(err) {
@@ -1682,7 +1681,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         self.order.save({
                             callback: function() {
                                 updateCounters();
-                                deferred.resolve();   
+                                deferred.resolve(self.order.getData());   
                             }
                         });
                     }                    
@@ -1742,12 +1741,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         name: "Buchungsfehler",
                         message: "Verkauf konnte nicht gebucht werden"
                     }, true);
-                }).then(function() {
+                }).then(function(postedOrder) {
                    // post finished
                    self.postActive = false;
                                       
                    // print               
-                   self.printOrder();
+                   self.printOrder(postedOrder);
                    
                    // do next
                    if ( Config.getProfile().iface_place ) {
@@ -1863,24 +1862,30 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '<td colspan="2"><hr/></td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Beleg:</td>',
+                        '<td width="34%">Beleg:</td>',
                         '<td>{o.name}</td>',
-                    '</tr>',
+                    '</tr>',                    
                     '<tr>',
-                        '<td width="{attribWidth}">Datum:</td>',
+                        '<td width="34%">Datum:</td>',
                         '<td>{date:date("d.m.Y H:i:s")}</td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Kasse:</td>',
+                        '<td width="34%">Kasse:</td>',
                         '<td>{[Config.getProfile().name]}</td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Bediener:</td>',
+                        '<td width="34%">Bediener:</td>',
                         '<td>{[Config.getUser().name]}</td>',
                     '</tr>',
+                    '<tpl if="place">',
+                    '<tr>',
+                        '<td width="34%">Platz:</td>',
+                        '<td>{place}</td>',
+                    '</tr>',
+                    '</tpl>',
                     '<tpl if="o.ref">',
                     '<tr>',
-                        '<td width="{attribWidth}">Referenz:</td>',
+                        '<td width="34%">Referenz:</td>',
                         '<td>{o.ref}</td>',
                     '</tr>',
                     '</tpl>',
@@ -1910,7 +1915,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '<table width="100%">',
                 '<tr>',
                     '<td>Bezeichnung</td>',
-                    '<td align="right" width="{priceColWidth}">Betrag {[Config.getCurrency()]}</td>',
+                    '<td align="right" width="32%">Betrag {[Config.getCurrency()]}</td>',
                 '</tr>',
                 '<tr>',                
                     '<td colspan="2"><hr/></td>',
@@ -1931,7 +1936,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<tpl else>',
                         '<tr>',
                             '<td>{name}</td>',
-                            '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                            '<td align="right" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
                         '</tr>',
                         '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
                             '<tr>',
@@ -1982,12 +1987,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '</tr>',
                 '<tr>',
                     '<td align="right"><b>S U M M E</b></td>',
-                    '<td align="right" width="{priceColWidth}"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
+                    '<td align="right" width="32%"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
                 '</tr>',
                 '<tpl for="o.payment_ids">',
                 '<tr>',
                     '<td align="right">{[this.getJournal(values.journal_id)]}</td>',
-                    '<td align="right" width="{priceColWidth}">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',        
+                    '<td align="right" width="32%">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',        
                 '</tr>',
                 '</tpl>',                
                 '</table>',                                
@@ -2058,14 +2063,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if (!order) {
             order = this.order.getData();
         }
+
+        // get place        
+        var place = self.placeStore.getPlaceById(order.place_id);
+        if ( place ) {
+            place = place.get('name');
+        }
         
         // data
         var data = {
             o: order,
             lines : order.line_ids,
-            priceColWidth: "32%",
-            attribWidth: "34%",
-            date: futil.strToDate(order.date)
+            date: futil.strToDate(order.date),
+            place: place
         };
         
         // render it
@@ -2114,19 +2124,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '<td colspan="2"><hr/></td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Platz:</td>',
+                        '<td width="34%">Platz:</td>',
                         '<td>{place}</td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Datum:</td>',
+                        '<td width="34%">Datum:</td>',
                         '<td>{date:date("d.m.Y H:i:s")}</td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Kasse:</td>',
+                        '<td width="34%">Kasse:</td>',
                         '<td>{[Config.getProfile().name]}</td>',
                     '</tr>',
                     '<tr>',
-                        '<td width="{attribWidth}">Bediener:</td>',
+                        '<td width="34%">Bediener:</td>',
                         '<td>{[Config.getUser().name]}</td>',
                     '</tr>',
                     '<tr>',
@@ -2136,7 +2146,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '<table width="100%">',
                 '<tpl for="lines">',
                     '<tr>',
-                        '<td width="{amountWidth}" align="right">{[this.formatAmount(values)]}</td>',
+                        '<td width="20%" align="right">{[this.formatAmount(values)]}</td>',
                         '<td>&nbsp;{[this.getUnit(values.uom_id)]} {name}</td>',
                     '</tr>',
                     '<tpl if="notice">',
@@ -2174,15 +2184,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             order = this.order.getData();
         }
         
+        // get place        
+        var place = self.placeStore.getPlaceById(order.place_id);
         // data
-        var place = self.placeStore.getPlaceById(order.place_id);        
         var data = {
             o: order,
             lines: order.line_ids,
-            amountWidth: "30%",
-            attribWidth: "34%",
             date: futil.strToDate(order.date),
-            place: place && place.get('name') || ''        
+            place: place && place.get('name') || ''
         };
         
         // check log ids

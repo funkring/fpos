@@ -10,7 +10,8 @@ Ext.define('Fpos.Config', {
         'Ext.ux.Deferred',
         'Ext.util.Format',
         'Ext.form.ViewManager',
-        'Fpos.core.Printer'
+        'Fpos.core.Printer',
+        'Fpos.core.HwProxy'
     ],
     config : {       
         version : '3.0.23',
@@ -31,7 +32,6 @@ Ext.define('Fpos.Config', {
         apkUrl: "http://downloads.oerp.at/fpos.apk",
         qtyDecimals: 3,
         hwStatus: { err: null },
-        hwStatusId: null,
         cashJournal: null,
         sync: false,
         syncState: 'idle',
@@ -57,23 +57,12 @@ Ext.define('Fpos.Config', {
         var deferred = Ext.create('Ext.ux.Deferred');
     
         // check for poshw plugin
-        if ( window.PosHw && !self.getHwStatusId() ) {
+        if ( window.PosHw ) {
             window.PosHw.getStatus(function(hwstatus) {
                 // set first status            
                 self.setHwStatus(hwstatus);
-                
-                /*
-                // init interval
-                self.setHwStatusId(setInterval(function() {
-                    window.PosHw.getStatus(function(hwstatus) {
-                       self.setHwStatus(hwstatus); 
-                    }, function(err) {
-                       self.setHwStatus({ err : err});
-                    });
-                 }, 1000));*/
-                 
-                 // resolve
-                 deferred.resolve(hwstatus);
+                // resolve
+                deferred.resolve(hwstatus);
                  
             }, function(err) {
                 self.setHwStatus({ err : err });
@@ -183,51 +172,82 @@ Ext.define('Fpos.Config', {
         return deferred.promise();
     },
     
-    setupSync: function() {
+    cancelSync: function() {
+        var self = this;
+        // cancel active syncs
+        if ( self.syncHandlers ) {
+            Ext.each(self.syncHandlers, function(sync) {
+                sync.cancel();
+            });
+        }
+    },
+    
+    /**
+     * setup remote connections
+     */ 
+    setupRemote: function() {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         var profile = self.getProfile();
         
-        // check if sync configured 
-        if ( !profile || Ext.isEmpty(profile.fpos_dist_ids) ) {            
-            self.setSync(false);
-            setTimeout(function() {
-                deferred.resolve();
-            },0);             
-        } else {        
-                        
-            // cancel active syncs
-            if ( self.syncHandlers ) {
-                Ext.each(self.syncHandlers, function(sync) {
-                    sync.cancel();
-                });
-            }
-            
-            // create/start handlers
-            self.setSync(true);       
-            self.syncHandlers = [];
-            
-            var procCount = 0;
-            var procNotify = function(err) {
-                procCount++;
-                if ( procCount >= profile.fpos_dist_ids.length ) {
-                    if ( self.syncHandlers.length === 0 ) {
-                        self.setSyncState('error');
-                        deferred.reject(err);
-                    } else {
-                        deferred.resolve();
-                    }
-                }
-            };
-            
-            Ext.each(profile.fpos_dist_ids, function(dest) {
-                self.addSync(self.syncHandlers, dest.name)
-                        ['catch'](procNotify).then(procNotify);
-                       
+        // cancel sync
+        self.cancelSync();
+         
+        // create sync (if sync is configured)
+        var setupSync = function() { 
+            if ( !profile || Ext.isEmpty(profile.fpos_dist_ids) ) {            
+                self.setSync(false);
+                setTimeout(function() {
+                    deferred.resolve();
+                },0);             
+            } else {        
                 
-            });
-            
-        }        
+                // create/start handlers
+                self.setSync(true);       
+                self.syncHandlers = [];
+                
+                var procCount = 0;
+                var procNotify = function(err) {
+                    procCount++;
+                    if ( procCount >= profile.fpos_dist_ids.length ) {
+                        if ( self.syncHandlers.length === 0 ) {
+                            self.setSyncState('error');
+                            deferred.reject(err);
+                        } else {
+                            deferred.resolve();
+                        }
+                    }
+                };
+                
+                Ext.each(profile.fpos_dist_ids, function(dest) {
+                    self.addSync(self.syncHandlers, dest.name)
+                            ['catch'](procNotify).then(procNotify);
+                           
+                    
+                });
+                
+            }
+        };
+
+        // check hwproxy        
+        if ( !window.PosHw && profile.iface_print_via_proxy ) {
+            var proxyUrl = 'http://localhost:8045';
+            var proxy = Ext.create('Fpos.core.HwProxy', { url: profile.proxy_ip || 'http://localhost:8045' });
+            proxy.getStatus(function(hwstatus) {
+                // setup sync
+                window.PosHw = proxy;
+                self.setHwStatus(hwstatus);                
+                setupSync();
+            }, function(err) {
+                // error
+                self.setHwStatus({ err : err });
+                deferred.reject(err);
+            });    
+        
+        } else {
+            // setup without hwproxy
+            setupSync();
+        }
 
         return deferred.promise();
     },

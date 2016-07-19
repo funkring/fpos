@@ -19,7 +19,7 @@ Ext.define('Fpos.store.PlaceStore', {
         this.showAll = true;   
     },
     
-    getPlaceById: function(placeId) {
+    getPlaceById: function(placeId) {         
         return this.placeById[placeId];
     },
     
