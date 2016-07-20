@@ -103,6 +103,11 @@ Ext.define('Ext.event.publisher.TouchGesture', {
 
         if (this.eventProcessors[type]) {
             this.eventProcessors[type].call(this, e);
+            if (type === 'touchend' && lastEventType && lastEventType === 'touchstart') {
+                e.preventDefault();
+            }
+        
+            this.lastEventType = type;
             return;
         }
 
