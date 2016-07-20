@@ -77,7 +77,6 @@
 		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
 		<source-file src="src/android_serialport_api/SerialPort.java" target-dir="src/android_serialport_api/" />
 		<source-file src="src/hardware/print/printer.java" target-dir="src/hardware/print/" />
-		<source-file src="src/hardware/print/printBroadcastReceiver.java" target-dir="src/hardware/print/" />
 		<source-file src="src/com/ctrl/gpio/Ioctl.java" target-dir="src/com/ctrl/gpio/" />
 		<source-file src="src/com/ctrl/gpio/GpioControl.java" target-dir="src/com/ctrl/gpio/" />
 		<source-file src="src/com/cloudpos/apidemo/jniinterface/MoneyboxInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />

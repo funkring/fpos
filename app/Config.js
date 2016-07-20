@@ -117,6 +117,7 @@ Ext.define('Fpos.Config', {
                 retry: true, 
                 filter: filterName
             }).on('change', function(info) {
+                Ext.Viewport.fireEvent('syncChange', info);
                 self.notifySyncState('change');  
             }).on('error', function(err) {
                 self.notifySyncState('error');  
