@@ -751,14 +751,18 @@ Ext.define('Fpos.controller.MainCtrl', {
                     ]
                 });
                 
+                // listener only if places
+                var productMenuListeners = {};
+                if ( profile.iface_place ) {
+                    productMenuListeners.hiddenchange = function(menu) {
+                        self.getSaveOrderButtonMobile().setHidden(menu.getHidden());
+                    }; 
+                }
+                
                 // set left menu                
                 var productMenu =  Ext.create('Ext.Menu', {
                         cls: 'ProductMenu',
-                        listeners: {
-                          hiddenchange: function(menu) {
-                             self.getSaveOrderButtonMobile().setHidden(menu.getHidden());
-                          } 
-                        },
+                        listeners: productMenuListeners,
                         items: [
                             {                                
                                 xtype: 'fpos_product_small',

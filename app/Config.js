@@ -76,8 +76,9 @@ Ext.define('Fpos.Config', {
         return deferred.promise();
     },
     
-    updateSyncState: function(newState, oldState) {
-        Ext.Viewport.fireEvent('syncState', newState);
+    notifySyncState: function(syncState) {
+        this.setSyncState(syncState);
+        Ext.Viewport.fireEvent('syncState', syncState);
     },
     
     addSync: function(syncHandlers, dest) {
@@ -116,21 +117,21 @@ Ext.define('Fpos.Config', {
                 retry: true, 
                 filter: filterName
             }).on('change', function(info) {
-                self.setSyncState('change');  
+                self.notifySyncState('change');  
             }).on('error', function(err) {
-                self.setSyncState('error');  
+                self.notifySyncState('error');  
             }).on('paused', function(err) {
                if ( err ) {
-                 self.setSyncState('error');  
+                 self.notifySyncState('error');  
                } else {
-                 self.setSyncState('paused');
+                 self.notifySyncState('paused');
                }               
             }).on('active', function() {
-               self.setSyncState('active');
+               self.notifySyncState('active');
             }).on('complete', function() {
-                self.setSyncState('complete');
+                self.notifySyncState('complete');
             }).on('denied', function() {
-               self.setSyncState('error');
+               self.notifySyncState('error');
             });
             
             syncHandlers.push(sync);
@@ -211,7 +212,7 @@ Ext.define('Fpos.Config', {
                     procCount++;
                     if ( procCount >= profile.fpos_dist_ids.length ) {
                         if ( self.syncHandlers.length === 0 ) {
-                            self.setSyncState('error');
+                            self.notifySyncState('error');
                             deferred.reject(err);
                         } else {
                             deferred.resolve();

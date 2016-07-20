@@ -2508,7 +2508,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     uom_id: line.uom_id,
                     subtotal_incl: subtotal_incl,
                     sequence : 0,
-                    discount: 0.0
+                    discount: discount
                 };
                 variants[key] = entry;
             } else {            
@@ -2890,6 +2890,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     //FINISH                                                    
                     self.reloadData(function() {
                         self.validateLines()['catch'](function(err) {
+                            ViewManager.stopLoading();
                             ViewManager.handleError(err,{
                                 name: "Kassenbericht Fehler",
                                 message: "Kassenbericht konnte nicht erstellt werden"
