@@ -601,7 +601,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 },
                 items: [
                     {
-                        text: 'Kassenabschluss',
+                        text: 'Abschluss',
                         action: 'createCashState',
                         ui: 'posInputButtonOrange'
                     },

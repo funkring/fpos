@@ -102,14 +102,14 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                     preferredX = viewWidth;
                 }
             } else {
-                preferredX = Math.round(viewWidth / gridX)-3;
+                preferredX = Math.round(viewWidth / gridX)-4;
             }
             if ( gridY < 2) {
                 if ( viewHeight > preferredY ) {
                     preferredY = viewHeight;
                 }
             } else {
-                preferredY = Math.round(viewHeight / gridY)-3;
+                preferredY = Math.round(viewHeight / gridY)-4;
             }
             self.buttonWidth = preferredX.toString() + "px";
             self.buttonHeight = preferredY.toString() + "px";
