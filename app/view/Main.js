@@ -111,6 +111,7 @@ Ext.define('Fpos.view.Main', {
                     ui: 'back',
                     hidden: true                    
                 },
+                /*
                 {
                     xtype: 'button',
                     text: 'Bonieren',
@@ -119,7 +120,7 @@ Ext.define('Fpos.view.Main', {
                     align: 'left',
                     action: 'saveOrder',
                     hidden: true 
-                },  
+                },*/
                 {
                     xtype: 'button',
                     iconCls: 'list',
