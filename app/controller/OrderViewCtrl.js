@@ -2547,15 +2547,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         summary.total += amount; 
     },
     
-    updatePaymentSummary: function(summary, payment) {
-        var journal_name = Config.getJournal(payment.journal_id).name;
-        var entry = summary.map[journal_name];
+    updatePaymentSummary: function(summary, payment, ignoreCashIO) {
+        var journal = Config.getJournal(payment.journal_id);
+        var entry = summary.map[journal.name];
         var amount = payment.amount || 0.0;
+        
+        // ignore cashio
+        if ( ignoreCashIO && journal.type == 'cash' ) {
+            amount -= ignoreCashIO;
+        } 
+        
         if (!entry) {
             entry = {
                 tag: 's',
                 flags: '2',
-                name: journal_name,
+                name: journal.name,
                 price: amount,                                
                 qty : 1.0,
                 subtotal_incl: amount,
@@ -2635,6 +2641,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 Ext.each(orders, function(order) {
                     if ( !order.tag && (finish || !user || order.user_id == user._id) ) {
+                        var ignoreCashIO = 0.0;
+                        
                         // positions                        
                         Ext.each(order.line_ids, function(line) {
                             // get product detail                            
@@ -2651,8 +2659,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 self.updateLineSummary(sumLine, line, ignoreDetail);                             
                             } else if ( line.tag == 'i') {
                                 self.updateLineIOSummary(sumIncome, line, ignoreDetail);
+                                ignoreCashIO -= line.subtotal_incl;
                             } else if ( line.tag == 'o') {
                                 self.updateLineIOSummary(sumExpense, line, ignoreDetail);
+                                ignoreCashIO += line.subtotal_incl;
                             }
                         });
                         
@@ -2665,7 +2675,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             
                             // calc payment
                             Ext.each(order.payment_ids, function(payment) {
-                                self.updatePaymentSummary(sumPayment, payment);
+                                self.updatePaymentSummary(sumPayment, payment, ignoreCashIO);
                             });
                         }
                     }              
@@ -2715,19 +2725,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         
                 }
                 
-                // PAYMENTS                   
-                if ( sumPayment.names.length > 0 ) {
-                     lines.push({
-                        name : "Zahlungen",
-                        price : sumPayment.total,
-                        qty : 1.0,
-                        subtotal_incl : sumPayment.total,
-                        discount : 0.0,
-                        sequence : seq++,
-                        tag : 's',
-                        flags: 'l'
-                    });
-                    
+                
+                // PAYMENTS         
+                
+                lines.push({
+                    name : "Umsatz",
+                    price : sumPayment.total,
+                    qty : 1.0,
+                    subtotal_incl : sumPayment.total,
+                    discount : 0.0,
+                    sequence : seq++,
+                    tag : 's',
+                    flags: 'l'
+                });
+                
+                if ( sumPayment.names.length > 0 ) {    
                     sumPayment.names.sort();
                     Ext.each(sumPayment.names, function(name) {                    
                         var entry = sumPayment.map[name];
@@ -2737,19 +2749,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
 
 
-                // INCOME
-                if ( sumIncome.names.length > 0) {
-                     lines.push({
-                        name : "Einzahlungen",
-                        price : sumIncome.total,
-                        qty : 1.0,
-                        subtotal_incl : sumIncome.total,
-                        discount : 0.0,
-                        sequence : seq++,
-                        tag : 's',
-                        flags: 'l'
-                    });
+                // INCOME   
+                             
+                lines.push({
+                    name : "Einzahlungen",
+                    price : sumIncome.total,
+                    qty : 1.0,
+                    subtotal_incl : sumIncome.total,
+                    discount : 0.0,
+                    sequence : seq++,
+                    tag : 's',
+                    flags: 'l'
+                });
                     
+                if ( sumIncome.names.length > 0) {
                     sumIncome.names.sort();
                     Ext.each(sumIncome.names, function(name) {                    
                         var entry = sumIncome.map[name];
@@ -2759,18 +2772,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 
                 // EXPENSE
-                if ( sumExpense.names.length > 0) {
-                     lines.push({
-                        name : "Auszahlungen",
-                        price : sumExpense.total,
-                        qty : 1.0,
-                        subtotal_incl : sumExpense.total,
-                        discount : 0.0,
-                        sequence : seq++,
-                        tag : 's',
-                        flags: 'l'
-                    });
-                    
+                               
+                lines.push({
+                    name : "Auszahlungen",
+                    price : sumExpense.total,
+                    qty : 1.0,
+                    subtotal_incl : sumExpense.total,
+                    discount : 0.0,
+                    sequence : seq++,
+                    tag : 's',
+                    flags: 'l'
+                });
+                   
+                if ( sumExpense.names.length > 0) { 
                     sumExpense.names.sort();
                     Ext.each(sumExpense.names, function(name) {                    
                         var entry = sumExpense.map[name];
@@ -2779,19 +2793,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     } );
                 }
                  
-                // TAXES                   
-                if ( sumTax.names.length > 0 ) {
-                     lines.push({
-                        name : "Steuern",
-                        price : sumTax.total,
-                        qty : 1.0,
-                        subtotal_incl : sumTax.total,
-                        discount : 0.0,
-                        sequence : seq++,
-                        tag : 's',
-                        flags: 'l'
-                    });
-                    
+                // TAXES
+                
+                lines.push({
+                    name : "Steuern",
+                    price : sumTax.total,
+                    qty : 1.0,
+                    subtotal_incl : sumTax.total,
+                    discount : 0.0,
+                    sequence : seq++,
+                    tag : 's',
+                    flags: 'l'
+                });
+                
+                if ( sumTax.names.length > 0 ) {    
                     sumTax.names.sort();
                     Ext.each(sumTax.names, function(name) {                    
                         var entry = sumTax.map[name];
@@ -2801,19 +2816,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 
                 // LINES                   
-                if ( sumLine.names.length > 0 ) {
 
-                     lines.push({
-                        name : header,
-                        price : sumLine.total,
-                        qty : 1.0,
-                        subtotal_incl : sumLine.total,
-                        discount : 0.0,
-                        sequence : seq++,
-                        tag : 's',
-                        flags: 'lb'
-                    });
-                    
+                lines.push({
+                    name : header,
+                    price : sumLine.total,
+                    qty : 1.0,
+                    subtotal_incl : sumLine.total,
+                    discount : 0.0,
+                    sequence : seq++,
+                    tag : 's',
+                    flags: 'lb'
+                });
+                
+                if ( sumLine.names.length > 0 ) {                    
                     sumLine.names.sort();
                     Ext.each(sumLine.names, function(name) {                    
                         var variants = sumLine.map[name];
