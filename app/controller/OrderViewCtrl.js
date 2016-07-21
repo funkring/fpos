@@ -1553,11 +1553,29 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         var lines = self.getOrderItemList().getSelection();
         var form;
-        if ( lines.length > 0 && !lines[0].get('tag')) {            
-            form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position'});
+        if ( lines.length > 0 && !lines[0].get('tag')) {    
+            var option = {'title' : 'Position'};
+            form = Ext.create("Fpos.view.OrderLineFormView", {'title' : 'Position',
+                                                              'listeners' : {
+                                                                  'show' : function() {
+                                                                       var textfield = this.down('textfield');
+                                                                       if ( textfield ) {
+                                                                            textfield.focus();
+                                                                       }
+                                                                  }
+                                                              }});
             form.setRecord(lines[0]);
         } else {
-            form =  Ext.create("Fpos.view.OrderFormView", {'title' : 'Verkauf'});
+            form =  Ext.create("Fpos.view.OrderFormView", {'title' : 'Verkauf',
+                                                           'listeners' : {
+                                                                  'show' : function() {
+                                                                       var textfield = this.down('textfield');
+                                                                       if ( textfield ) {
+                                                                            textfield.focus();
+                                                                       }
+                                                                  }
+                                                              } 
+                                                            });
             form.setRecord(this.order);
         }
         
