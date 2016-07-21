@@ -100,10 +100,9 @@ Ext.define('Ext.event.publisher.TouchGesture', {
         var type = e.type,
             lastEventType = this.lastEventType,
             touchList = [e];
-
         if (this.eventProcessors[type]) {
-            this.eventProcessors[type].call(this, e);
-            if (type === 'touchend' && lastEventType && lastEventType === 'touchstart') {
+            this.eventProcessors[type].call(this, e);            
+            if (type === 'touchend' && lastEventType && lastEventType === 'touchstart' && (!e.srcElement || ( e.srcElement.localName !== 'textarea' && e.srcElement.localName !== "input" )) ) {
                 e.preventDefault();
             }
         
