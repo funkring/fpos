@@ -100,6 +100,8 @@ Ext.define('Ext.event.publisher.TouchGesture', {
         var type = e.type,
             lastEventType = this.lastEventType,
             touchList = [e];
+            
+        // oerp.at - begin
         if (this.eventProcessors[type]) {
             this.eventProcessors[type].call(this, e);            
             if (type === 'touchend' && lastEventType && lastEventType === 'touchstart' && (!e.srcElement || ( e.srcElement.localName !== 'textarea' && e.srcElement.localName !== "input" )) ) {
@@ -109,6 +111,7 @@ Ext.define('Ext.event.publisher.TouchGesture', {
             this.lastEventType = type;
             return;
         }
+        // oerp.at - end
 
         if ('button' in e && e.button > 0) {
             return;
