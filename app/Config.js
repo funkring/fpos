@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '3.0.23',
+        version : '4.0.0',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -29,7 +29,7 @@ Ext.define('Fpos.Config', {
         admin: false,
         decimals: 2,
         wallpaperUrl: "http://downloads.oerp.at/oerp_android_wallpaper_",
-        apkUrl: "http://downloads.oerp.at/fpos.apk",
+        apkUrl: "http://downloads.oerp.at/fpos_4.apk",
         qtyDecimals: 3,
         hwStatus: { err: null },
         cashJournal: null,

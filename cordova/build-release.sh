@@ -3,7 +3,7 @@
 ALIAS=fpos
 APK=./platforms/android/build/outputs/apk/android-armv7-release-unsigned.apk
 APK_RELEASE=${APK%%-unsigned.apk}.apk
-APK_PUBLISH=root@downloads.oerp.at:/var/www/downloads/${ALIAS}.apk
+APK_PUBLISH=root@downloads.oerp.at:/var/www/downloads/${ALIAS}_4.apk
 
 echo "Build $APK_RELEASE"
 
