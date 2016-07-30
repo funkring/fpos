@@ -501,7 +501,7 @@ Ext.define('Fpos.controller.MainCtrl', {
            if ( futil.hasSmallRes() ) { 
                infoTmpl = Ext.create('Ext.XTemplate', 
                             '<div style="width:120px;height:120px;margin:auto;">',
-                              '<img src="resources/icons/AppInfo_120x120.png">',
+                              '<img src="resources/icons/AppInfo_120x120.png" srcset="resources/icons/AppInfo_120x120.png 1x, resources/icons/AppInfo_120x120_x2.png 2x, resources/icons/AppInfo_120x120_x3.png 3x>',
                             '</div>',
                             '<p align="center">',
                             'Version {version}',
@@ -509,7 +509,7 @@ Ext.define('Fpos.controller.MainCtrl', {
            } else {
                infoTmpl = Ext.create('Ext.XTemplate', 
                             '<div style="width:512px;height:512px;margin:auto;">',
-                              '<img src="resources/icons/AppInfo_512x512.png">',
+                              '<img src="resources/icons/AppInfo_512x512.png" srcset="resources/icons/AppInfo_512x512.png 1x, resources/icons/AppInfo_512x512_x2.png 2x, resources/icons/AppInfo_512x512_x3.png 3x">',
                             '</div>',
                             '<p align="center">',
                             'Version {version}',
