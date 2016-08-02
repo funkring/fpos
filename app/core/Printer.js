@@ -6,12 +6,15 @@ Ext.define('Fpos.core.Printer', {
                'Ext.ux.Deferred'],
     
     config : {
-        profile: null
+        profile: null,
+        timeout: 3500,
+        queueSize: 50     
     },
     
     constructor: function(config) {
         this.initConfig(config);
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
+        this.queue = [];
     },
     
     updateProfile: function(profile, oldProfile) {
@@ -45,6 +48,36 @@ Ext.define('Fpos.core.Printer', {
     isAvailable: function() {
         return !this.getProfile().local || Config.hasPrinter();
     },
+        
+    remotePrint: function(html, callback) {
+        openerplib.json_rpc(this.getProfile().name, "printHtml", [html], callback, { timeout: this.getTimeout() });
+    },
+    
+    printQueue: function() {
+        var self = this;
+        if ( self.queue.length > 0 ) {
+            var html = self.queue[0];
+            self.remotePrint(html, function(err) {
+                if (err) {
+                    // on errer queue 
+                    // again, but wait a while
+                    setTimeout(function() {
+                        self.printQueue();
+                    }, self.getTimeout());
+                } else {
+                    // remove element and print
+                    // again immediatly if there are
+                    // one more element
+                    self.queue.shift();
+                    if ( self.queue.length > 0 ) {
+                        setTimeout(function() {
+                            self.printQueue();
+                        },0);
+                    }
+                }
+            });
+        }
+    },
     
     printHtml: function(html) {
         var self = this;
@@ -55,13 +88,40 @@ Ext.define('Fpos.core.Printer', {
                deferred.resolve();
             },0);        
         } else {
-            openerplib.json_rpc(self.getProfile().name, "printHtml", [html], function(err) {
-                if (err) {
-                    deferred.reject(err);
-                } else {
-                    deferred.resolve();
-                }
-            });
+            // if queue started, print into queue
+            if ( self.queue.length > 0 ) {
+                // enque
+                setTimeout(function() {                    
+                    // check max queue size
+                    if ( self.queue.length > self.getQueueSize() ) {
+                        deferred.reject({name: 'queue_full', message: 'Print queue is full!'});
+                    } else {
+                        // queue 
+                        self.queue.push(html);
+                        // start queue again,
+                        // if needed
+                        if ( self.queue.length == 1 ) {
+                            self.printQueue();  
+                        }
+                        deferred.resolve();    
+                    }
+                });                
+            } else {
+                // otherwise print directly
+                self.remotePrint(html, function(err) {
+                    if ( err ) {
+                        // start queue
+                        self.queue.push(html);
+                        setTimeout(function() {
+                            self.printQueue();    
+                        }, self.getTimeout());
+                        //                                                
+                        deferred.reject(err);
+                    } else {
+                        deferred.resolve();
+                    }
+                });
+            }
         }
         return deferred.promise();
     }

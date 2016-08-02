@@ -109,6 +109,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         
         self.mode = '*';
         self.op = '€';
+        self.op_all = false;
         self.inputSign = 1; 
         self.inputText = '';
         self.roundFactor = Math.pow(10,Config.getDecimals());
@@ -142,7 +143,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         display.setTpl(Ext.create('Ext.XTemplate',
            '<div class="PosOrderState">',
                '<div class="PosOrderCurrency">',
-               '{[this.getOp()]}',
+               '{[this.getOp()]}',               
                '</div>',
                '<div class="PosOrderInfo">',
                   '<div class="PosOrderInfo2">',                        
@@ -157,6 +158,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             '</div>',
             {
                 getOp: function() {
+                    if ( self.op == '-' ) {
+                        if ( self.op_all) return '--';
+                        return '–';
+                    }
                     return self.op;
                 }
             }));
@@ -592,10 +597,25 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }, '-');
                 break;
             case '-' :
-                ViewManager.startLoading("GESAMT Modus...");
-                self.reloadData(function() {
-                   ViewManager.stopLoading();
-                }, '€');
+                if ( self.op_all ) {
+                    ViewManager.startLoading("GESAMT Modus...");
+                    self.reloadData(function() {
+                       ViewManager.stopLoading();
+                    }, '€');
+                } else {
+                    ViewManager.startLoading("GESAMT SPLIT Modus...");
+                    self.op_all = true;
+                    // select all
+                    self.lineStore.each(function(line) {
+                        var qty = line.get('qty_prev') || 0.0;
+                        line.set('qty', qty);                        
+                        line.set('qty_diff', qty);
+                    });                    
+                    // validate
+                    self.validateLines().then(function() {
+                        ViewManager.stopLoading();
+                    });
+                }
                 break;
         }
     },
@@ -644,13 +664,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 });                
             } 
                         
-            // save order
-            place.set('amount',self.order.get('amount_total'));
+            // save order            
             self.validateLines(true, Config.hasPrinters() && place)['catch'](function(err) {
                 ViewManager.handleError(err, {name:'Fehler', message:'Bestellung konnte nicht boniert werden'});
             }).then(function(){
                 // show places
-                Ext.Viewport.fireEvent("showPlace");                
+                Ext.Viewport.fireEvent("showPlace");
+                place.set('amount',self.order.get('amount_total'));                
             });       
         }
     },
@@ -902,7 +922,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 self.order.save({
                     callback: function() {
                         // send changed event                        
-                        if ( orderLogChanged ) {
+                        if ( orderLogChanged && self.op !== '-' ) {
                             Ext.Viewport.fireEvent("orderLogChanged", self.order.getData());
                         }                      
                         deferred.resolve();
@@ -1109,6 +1129,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             // set default operation
             self.op = '€';
+            self.op_all = false;
             
             // load if valid user and not places are activ or places are active 
             // and a valid place exist
@@ -1772,10 +1793,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         var place = place_id ? self.placeStore.getPlaceById(place_id) : null;        
                         if ( place ) {
                           // set new amount
-                          var amount = place.get('amount') || 0.0;
-                          if ( amount ) {
-                              amount = amount - self.order.get('amount_total');
-                              if ( amount < 0.0 ) amount = 0.0;
+                          var amount = 0.0;
+                          if ( self.op == '-' ) { 
+                              // split operation
+                              amount = place.get('amount') || 0.0;
+                              if ( amount ) {
+                                  amount = amount - self.order.get('amount_total');
+                                  if ( amount < 0.0 ) amount = 0.0;
+                              }
                           }
                           place.set('amount',amount);
                         }
