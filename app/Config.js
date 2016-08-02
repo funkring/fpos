@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.0',
+        version : '4.0.1',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -232,7 +232,7 @@ Ext.define('Fpos.Config', {
         };
 
         // check hwproxy        
-        if ( !window.PosHw && profile.iface_print_via_proxy ) {
+        if ( profile.iface_print_via_proxy ) {
             var proxyUrl = 'http://localhost:8045';
             var proxy = Ext.create('Fpos.core.HwProxy', { url: profile.proxy_ip || 'http://localhost:8045' });
             proxy.getStatus(function(hwstatus) {

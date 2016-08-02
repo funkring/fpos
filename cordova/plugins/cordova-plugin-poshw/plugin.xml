@@ -37,120 +37,124 @@
         <framework src="com.android.support:support-v4:+" />
         
 		<source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
-		<source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/hardware/print/printer.java" target-dir="src/hardware/print/" />
+		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio/" />
+		<source-file src="src/android/pt/Cprinter.java" target-dir="src/android/pt/" />
+		<source-file src="src/com/authentication/utils/LooperBuffer.java" target-dir="src/com/authentication/utils/" />
+		<source-file src="src/com/authentication/utils/DataUtils.java" target-dir="src/com/authentication/utils/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardEvent.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/ContactlessInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/HALMsrInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/MoneyboxInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/PinpadInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/PrinterInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SerialPortInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/IDCardProperty.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/CustomerDisplayInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/LEDInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/IDCardJniInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardSlotInfo.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/cloudpos/apidemo/jniinterface/ContactlessEvent.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
+		<source-file src="src/com/ctrl/gpio/Ioctl.java" target-dir="src/com/ctrl/gpio/" />
+		<source-file src="src/com/ctrl/gpio/GpioControl.java" target-dir="src/com/ctrl/gpio/" />
+		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/FileUtil.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/StringUtil.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
 		<source-file src="src/at/oerp/pos/ReadConfig.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/PosHwScale.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/PosHwDisplay.java" target-dir="src/at/oerp/pos/" />
+		<source-file src="src/at/oerp/pos/CtrlBytes.java" target-dir="src/at/oerp/pos/" />
 		<source-file src="src/at/oerp/pos/PosHwService.java" target-dir="src/at/oerp/pos/" />
 		<source-file src="src/at/oerp/pos/WeightResult.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/CtrlBytes.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwDisplay.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwScale.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/ScaleServiceImpl.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/T508AQService.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
-		<source-file src="src/at/oerp/pos/hw/t508aq/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
-		<source-file src="src/at/oerp/pos/hw/ts7002/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
-		<source-file src="src/at/oerp/pos/hw/ts7002/TS7002PosService.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
-		<source-file src="src/at/oerp/pos/hw/h510/H510PosService.java" target-dir="src/at/oerp/pos/hw/h510/" />
 		<source-file src="src/at/oerp/pos/hw/h510/Printer58mm.java" target-dir="src/at/oerp/pos/hw/h510/" />
-		<source-file src="src/at/oerp/pos/hw/ts7003/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
-		<source-file src="src/at/oerp/pos/hw/ts7003/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
-		<source-file src="src/at/oerp/pos/hw/ts7003/TS7003PosService.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
-		<source-file src="src/at/oerp/pos/hw/st808/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/st808/" />
-		<source-file src="src/at/oerp/pos/hw/st808/ScaleServiceImpl.java" target-dir="src/at/oerp/pos/hw/st808/" />
-		<source-file src="src/at/oerp/pos/hw/st808/Printer58mm.java" target-dir="src/at/oerp/pos/hw/st808/" />
-		<source-file src="src/at/oerp/pos/hw/st808/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/st808/" />
-		<source-file src="src/at/oerp/pos/hw/st808/ST808Service.java" target-dir="src/at/oerp/pos/hw/st808/" />
-		<source-file src="src/at/oerp/pos/hw/p8000/P8000Service.java" target-dir="src/at/oerp/pos/hw/p8000/" />
-		<source-file src="src/at/oerp/pos/hw/p8000/Printer58mm.java" target-dir="src/at/oerp/pos/hw/p8000/" />
-		<source-file src="src/at/oerp/pos/hw/cm550/Printer58mm.java" target-dir="src/at/oerp/pos/hw/cm550/" />
+		<source-file src="src/at/oerp/pos/hw/h510/H510PosService.java" target-dir="src/at/oerp/pos/hw/h510/" />
 		<source-file src="src/at/oerp/pos/hw/cm550/CM550Service.java" target-dir="src/at/oerp/pos/hw/cm550/" />
+		<source-file src="src/at/oerp/pos/hw/cm550/Printer58mm.java" target-dir="src/at/oerp/pos/hw/cm550/" />
+		<source-file src="src/at/oerp/pos/hw/gp7002/Printer58mm.java" target-dir="src/at/oerp/pos/hw/gp7002/" />
+		<source-file src="src/at/oerp/pos/hw/gp7002/GP7002PosService.java" target-dir="src/at/oerp/pos/hw/gp7002/" />
+		<source-file src="src/at/oerp/pos/hw/ts7002/TS7002PosService.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
+		<source-file src="src/at/oerp/pos/hw/ts7002/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
+		<source-file src="src/at/oerp/pos/hw/android/AndroidHwService.java" target-dir="src/at/oerp/pos/hw/android/" />
+		<source-file src="src/at/oerp/pos/hw/st808/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/st808/" />
+		<source-file src="src/at/oerp/pos/hw/st808/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/st808/" />
+		<source-file src="src/at/oerp/pos/hw/st808/Printer58mm.java" target-dir="src/at/oerp/pos/hw/st808/" />
+		<source-file src="src/at/oerp/pos/hw/st808/ScaleServiceImpl.java" target-dir="src/at/oerp/pos/hw/st808/" />
+		<source-file src="src/at/oerp/pos/hw/st808/ST808Service.java" target-dir="src/at/oerp/pos/hw/st808/" />
 		<source-file src="src/at/oerp/pos/hw/cpos800/CPOS800Service.java" target-dir="src/at/oerp/pos/hw/cpos800/" />
 		<source-file src="src/at/oerp/pos/hw/cpos800/PrinterAPI.java" target-dir="src/at/oerp/pos/hw/cpos800/" />
 		<source-file src="src/at/oerp/pos/hw/cpos800/Printer58mm.java" target-dir="src/at/oerp/pos/hw/cpos800/" />
 		<source-file src="src/at/oerp/pos/hw/cpos800/SerialPortManager.java" target-dir="src/at/oerp/pos/hw/cpos800/" />
-		<source-file src="src/at/oerp/util/FileUtil.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/StringUtil.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
+		<source-file src="src/at/oerp/pos/hw/p8000/Printer58mm.java" target-dir="src/at/oerp/pos/hw/p8000/" />
+		<source-file src="src/at/oerp/pos/hw/p8000/P8000Service.java" target-dir="src/at/oerp/pos/hw/p8000/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/T508AQService.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/t508aq/ScaleServiceImpl.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/ts7003/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
+		<source-file src="src/at/oerp/pos/hw/ts7003/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
+		<source-file src="src/at/oerp/pos/hw/ts7003/TS7003PosService.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
 		<source-file src="src/android_serialport_api/SerialPort.java" target-dir="src/android_serialport_api/" />
-		<source-file src="src/hardware/print/printer.java" target-dir="src/hardware/print/" />
-		<source-file src="src/com/ctrl/gpio/Ioctl.java" target-dir="src/com/ctrl/gpio/" />
-		<source-file src="src/com/ctrl/gpio/GpioControl.java" target-dir="src/com/ctrl/gpio/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/MoneyboxInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/PinpadInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/HALMsrInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/LEDInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/ContactlessInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/IDCardProperty.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/CustomerDisplayInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/IDCardJniInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/ContactlessEvent.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardSlotInfo.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/SmartCardEvent.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/PrinterInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/cloudpos/apidemo/jniinterface/SerialPortInterface.java" target-dir="src/com/cloudpos/apidemo/jniinterface/" />
-		<source-file src="src/com/authentication/utils/LooperBuffer.java" target-dir="src/com/authentication/utils/" />
-		<source-file src="src/com/authentication/utils/DataUtils.java" target-dir="src/com/authentication/utils/" />
-		<source-file src="src/android/pt/Cprinter.java" target-dir="src/android/pt/" />
-		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio/" />
 		
-		<source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs/" />
-		<source-file src="libs/allutils.jar" target-dir="libs/" />
 		<source-file src="libs/minilcd7003.jar" target-dir="libs/" />
-		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs/" />
-		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs/" />
 		<source-file src="libs/J1011.jar" target-dir="libs/" />
-		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_idcard.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_pinpad.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/ZCSComboV2.4.0.jar" target-dir="libs/" />
+		<source-file src="libs/allutils.jar" target-dir="libs/" />
+		<source-file src="libs/acssmc-1.1.2.jar" target-dir="libs/" />
+		<source-file src="libs/tagsoup-1.2.1.jar" target-dir="libs/" />
+		<source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi/" />
 		<source-file src="libs/armeabi/libS1009.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libDecodeWlt.so" target-dir="libs/armeabi/" />
 		<source-file src="libs/armeabi/libprinter7003.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_contactlesscard.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_idcard.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_moneybox.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libfreetypefont.so" target-dir="libs/armeabi/" />
 		<source-file src="libs/armeabi/libjni_cloudpos_printer.so" target-dir="libs/armeabi/" />
 		<source-file src="libs/armeabi/libJNISerial.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_smartcard.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_serial.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libDecodeWlt.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libminilcd7003.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_customerdisplay.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_contactlesscard.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libfreetypefont.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libhardware-print.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libjni_cloudpos_moneybox.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi/libwltdecode.so" target-dir="libs/armeabi/" />
 		<source-file src="libs/armeabi/libjni_cloudpos_led.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libN20Epp.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_pinpad.so" target-dir="libs/armeabi/" />
 		<source-file src="libs/armeabi/libjni_cloudpos_msr.so" target-dir="libs/armeabi/" />
-		<source-file src="libs/armeabi-v7a/libJNIEMV.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libN20Epp.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_idcard.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_pinpad.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_serial.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_customerdisplay.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libserial_port.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libJNIEMV.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libhardware-print.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libjni_cloudpos_smartcard.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libminilcd7003.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi/libctrl_gpio.so" target-dir="libs/armeabi/" />
+		<source-file src="libs/armeabi-v7a/libwltdecode.so" target-dir="libs/armeabi-v7a/" />
 		<source-file src="libs/armeabi-v7a/libS1009.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libDecodeWlt.so" target-dir="libs/armeabi-v7a/" />
 		<source-file src="libs/armeabi-v7a/libprinter7003.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_contactlesscard.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_idcard.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_moneybox.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libfreetypefont.so" target-dir="libs/armeabi-v7a/" />
 		<source-file src="libs/armeabi-v7a/libjni_cloudpos_printer.so" target-dir="libs/armeabi-v7a/" />
 		<source-file src="libs/armeabi-v7a/libJNISerial.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_smartcard.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libserial_port.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_serial.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libDecodeWlt.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libctrl_gpio.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libminilcd7003.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_customerdisplay.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_contactlesscard.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libfreetypefont.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libhardware-print.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libjni_cloudpos_moneybox.so" target-dir="libs/armeabi-v7a/" />
-		<source-file src="libs/armeabi-v7a/libwltdecode.so" target-dir="libs/armeabi-v7a/" />
 		<source-file src="libs/armeabi-v7a/libjni_cloudpos_led.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libN20Epp.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_pinpad.so" target-dir="libs/armeabi-v7a/" />
 		<source-file src="libs/armeabi-v7a/libjni_cloudpos_msr.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_serial.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_customerdisplay.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libserial_port.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libJNIEMV.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libhardware-print.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libjni_cloudpos_smartcard.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libminilcd7003.so" target-dir="libs/armeabi-v7a/" />
+		<source-file src="libs/armeabi-v7a/libctrl_gpio.so" target-dir="libs/armeabi-v7a/" />
 		
 		<source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
 		<source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
+
 
         <config-file target="config.xml" parent="/*">
             <feature name="PosHw">

@@ -3,8 +3,10 @@ package at.oerp.pos;
 import java.io.IOException;
 
 import android.app.Application;
+import at.oerp.pos.hw.android.AndroidHwService;
 import at.oerp.pos.hw.cm550.CM550Service;
 import at.oerp.pos.hw.cpos800.CPOS800Service;
+import at.oerp.pos.hw.gp7002.GP7002PosService;
 import at.oerp.pos.hw.h510.H510PosService;
 import at.oerp.pos.hw.p8000.P8000Service;
 import at.oerp.pos.hw.st808.ST808Service;
@@ -40,8 +42,10 @@ public abstract class PosHwService {
 			return new P8000Service(app);
 		} else if ( CM550Service.isHardware() ) {
 			return new CM550Service(app);
+		} else if ( GP7002PosService.isHardware() ) {
+			return new GP7002PosService(app);
 		}
-		return null;
+		return new AndroidHwService(app);
 	}
 	
 	

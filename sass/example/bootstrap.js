@@ -1824,7 +1824,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.Element-traversal": "../../touch/src/dom/Element.traversal.js",
   "Ext.TapLabel": "../../app/addon/TapLabel.js",
   "Ext.client": "../../app/addon",
-  "Ext.cmd": "../../../../../bin/Sencha/Cmd/6.0.2.14/plugins/src",
+  "Ext.cmd": "../../../../../.local/opt/Sencha/Cmd/6.0.2.14/plugins/src",
   "Ext.core.DomQuery": "../../touch/src/dom/Query.js",
   "Ext.data.ModelUtil": "../../app/addon/ModelUtil.js",
   "Ext.data.reader.PouchDB": "../../app/addon/PouchDB.js",

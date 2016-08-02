@@ -25,7 +25,8 @@ public class Cprinter {
 	public  native  int printUpca(byte[] bytes);
 	public  native  int printUpce(byte[] bytes);
 	public  native  int printImage(byte[] bytes);
-	public  native  int printString(String content);       
+	public  native  int printString(String content);   
+	public  native  int printString(byte[] paramArrayOfByte, int paramInt);
 	  
     static {  
     	 

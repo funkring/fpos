@@ -16,7 +16,7 @@
     <allow-intent href="geo:*" />
     <preference name="loglevel" value="DEBUG" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
-    <preference name="xwalkVersion" value="18+" />
+    <preference name="xwalkVersion" value="19+" />
     <preference name="xwalkCommandLine" value="--disable-pull-to-refresh-effect" />
     <preference name="xwalkMode" value="embedded" />
     <preference name="xwalkMultipleApk" value="true" />
