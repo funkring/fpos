@@ -7,7 +7,7 @@ Ext.define('Fpos.core.Printer', {
     
     config : {
         profile: null,
-        timeout: 3500,
+        timeout: 2000,
         queueSize: 50     
     },
     
@@ -15,6 +15,7 @@ Ext.define('Fpos.core.Printer', {
         this.initConfig(config);
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.queue = [];
+        this.active = false;
     },
     
     updateProfile: function(profile, oldProfile) {
@@ -48,11 +49,38 @@ Ext.define('Fpos.core.Printer', {
     isAvailable: function() {
         return !this.getProfile().local || Config.hasPrinter();
     },
-        
+       
+    /**
+     * @private
+     */ 
     remotePrint: function(html, callback) {
         openerplib.json_rpc(this.getProfile().name, "printHtml", [html], callback, { timeout: this.getTimeout() });
     },
     
+    /**
+     * @private
+     */
+    handleNext: function(timeout) {
+        var self = this;
+        if ( !self.active ) {
+            self.active = true;
+            setTimeout(function() {
+                self.active = false;
+                self.printQueue(); 
+            }, timeout || 0);            
+        }
+    },
+    
+    /**
+     * @private
+     */
+    retry: function() {
+        this.handleNext(this.getTimeout()*2);
+    },
+    
+    /**
+     * @private
+     */
     printQueue: function() {
         var self = this;
         if ( self.queue.length > 0 ) {
@@ -61,18 +89,14 @@ Ext.define('Fpos.core.Printer', {
                 if (err) {
                     // on errer queue 
                     // again, but wait a while
-                    setTimeout(function() {
-                        self.printQueue();
-                    }, self.getTimeout());
+                    self.retry();
                 } else {
                     // remove element and print
                     // again immediatly if there are
                     // one more element
                     self.queue.shift();
                     if ( self.queue.length > 0 ) {
-                        setTimeout(function() {
-                            self.printQueue();
-                        },0);
+                        self.handleNext();
                     }
                 }
             });
@@ -94,15 +118,13 @@ Ext.define('Fpos.core.Printer', {
                 setTimeout(function() {                    
                     // check max queue size
                     if ( self.queue.length > self.getQueueSize() ) {
+                        // reject error
                         deferred.reject({name: 'queue_full', message: 'Print queue is full!'});
                     } else {
-                        // queue 
+                        // handle next 
                         self.queue.push(html);
-                        // start queue again,
-                        // if needed
-                        if ( self.queue.length == 1 ) {
-                            self.printQueue();  
-                        }
+                        self.handleNext();
+                        // finished                    
                         deferred.resolve();    
                     }
                 });                
@@ -110,14 +132,13 @@ Ext.define('Fpos.core.Printer', {
                 // otherwise print directly
                 self.remotePrint(html, function(err) {
                     if ( err ) {
-                        // start queue
+                        // retry
                         self.queue.push(html);
-                        setTimeout(function() {
-                            self.printQueue();    
-                        }, self.getTimeout());
-                        //                                                
+                        self.retry();
+                        // reject error                                          
                         deferred.reject(err);
                     } else {
+                        // finished
                         deferred.resolve();
                     }
                 });
