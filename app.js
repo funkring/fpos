@@ -53,6 +53,7 @@ Ext.application({
     controllers: [
         'MainCtrl',
         'TestCtrl',
+        'AdminCtrl',
         'ProductViewCtrl',
         'OrderViewCtrl',
         'PartnerCtrl',

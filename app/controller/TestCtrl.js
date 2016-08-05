@@ -46,7 +46,7 @@ Ext.define('Fpos.controller.TestCtrl', {
     testInterface: function() {
         var self = this;
         self.beforeTest();
-        var valid = window.PosHw.test(function(res) {
+        window.PosHw.test(function(res) {
             self.getTestLabel().setHtml(res);
         }, 
         function(err) {
@@ -61,7 +61,7 @@ Ext.define('Fpos.controller.TestCtrl', {
                    "<br>um zu testen ob der Druck" +
                    "<br>funktioniert"+
                    "<br><br><br><br><br><br>";
-        var valid = window.PosHw.printHtml(html, function(res) {
+        window.PosHw.printHtml(html, function(res) {
             self.getTestLabel().setHtml(res || '');
         }, 
         function(err) {
@@ -72,7 +72,7 @@ Ext.define('Fpos.controller.TestCtrl', {
     testDisplay : function() {
         var self = this;
         self.beforeTest();
-        var valid = window.PosHw.display("23",function(res) {
+        window.PosHw.display("23",function(res) {
             self.getTestLabel().setHtml("OK!");
         }, 
         function(err) {
@@ -83,7 +83,7 @@ Ext.define('Fpos.controller.TestCtrl', {
     testCashdrawer : function() {
         var self = this;
         self.beforeTest();
-        var valid = window.PosHw.openCashDrawer(function() {
+        window.PosHw.openCashDrawer(function() {
             self.getTestLabel().setHtml("OK!");
         }, 
         function(err) {

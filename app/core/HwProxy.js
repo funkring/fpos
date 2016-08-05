@@ -73,6 +73,16 @@ Ext.define('Fpos.core.HwProxy', {
         });
     },
     
+    openExternCashDrawer: function(successCallback, errorCallback) {
+        openerplib.json_rpc(this.getUrl(), "openExternCashDrawer", {}, function(err, res) {
+            if (err) {
+                if (errorCallback) errorCallback(err);
+            } else {
+                if (successCallback) successCallback(res);
+            }
+        });
+    },
+    
     test: function(successCallback, errorCallback) {
         openerplib.json_rpc(this.getUrl(), "test", {}, function(err, res) {
             if (err) {

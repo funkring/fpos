@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.1',
+        version : '4.0.2',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -30,6 +30,7 @@ Ext.define('Fpos.Config', {
         decimals: 2,
         wallpaperUrl: "http://downloads.oerp.at/oerp_android_wallpaper_",
         apkUrl: "http://downloads.oerp.at/fpos_4.apk",
+        downloadUrl: "http://downloads.oerp.at",
         qtyDecimals: 3,
         hwStatus: { err: null },
         cashJournal: null,
@@ -412,7 +413,7 @@ Ext.define('Fpos.Config', {
     },
     
     updateApp: function() {
-        if ( !cordova || cordova.platformId !== 'android')
+        if ( typeof(cordova) == 'undefined' || cordova.platformId !== 'android')
             return false;
             
         var self = this;
@@ -424,6 +425,58 @@ Ext.define('Fpos.Config', {
         
         window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
            fileSystem.root.getFile('download/fpos.apk', {
+               create: true,
+               exclusive: false
+           }, function(fileEntry) {
+               
+               var localPath = fileEntry.toURL();
+               var fileTransfer = new FileTransfer();
+               
+               ViewManager.startLoading("Download...");
+               
+               fileTransfer.download(apkUrl, localPath, function(entry) {
+                       window.plugins.webintent.startActivity({ 
+                           action: window.plugins.webintent.ACTION_VIEW,
+                           url:  'file://' + entry.toURL(),
+                           type: 'application/vnd.android.package-archive'
+                       },
+                       function() {
+                           ViewManager.stopLoading();
+                       },
+                       function(err) {
+                           ViewManager.stopLoading();
+                           ViewManager.handleError(err, defaultError);
+                       }
+                    );                  
+                }, function(err) {
+                    ViewManager.stopLoading();
+                    ViewManager.handleError(err, defaultError);
+                });
+           }, function(err) {
+               ViewManager.stopLoading();
+               ViewManager.handleError(err, defaultError);
+           });
+        }, function(err) {
+            ViewManager.stopLoading();
+            ViewManager.handleError(err, defaultError);
+        });
+        
+        return true;        
+    },
+    
+    downloadApk: function(apkFile) {
+        if ( typeof(cordova) == 'undefined' || cordova.platformId !== 'android')
+            return false;
+            
+        var self = this;
+        var apkUrl = self.getDownloadUrl() + '/' + apkFile;
+        var defaultError =  {
+           name : "Download fehlgeschlagen!",
+           message: "Datei " + apkUrl + " konnte nicht geladen werden"
+        };
+        
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+           fileSystem.root.getFile('download/' + apkFile, {
                create: true,
                exclusive: false
            }, function(fileEntry) {
@@ -547,7 +600,12 @@ Ext.define('Fpos.Config', {
     
     openCashDrawer: function() {
         if ( window.PosHw ) {
-            return window.PosHw.openCashDrawer();
+            var profile = this.getProfile();
+            if ( profile && profile.iface_trigger ) {
+                return window.PosHw.openExternalCashDrawer();
+            } else {
+                return window.PosHw.openCashDrawer();
+            }
         }
         return false;
     }

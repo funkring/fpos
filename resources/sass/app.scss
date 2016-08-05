@@ -233,6 +233,28 @@ div.MenuButton > span.x-button-label {
    white-space: normal;
 }
 
+// ******************************************************************
+// Menu Band
+// ******************************************************************
+
+.MenuBand {
+   background-color: $fpos-input-grey !important;
+   background-image: none;
+   width: 240px;
+}
+
+.MenuBandButton {
+   color: $fpos-white !important; 
+   width: 228px;
+   height: 56px;
+   font-size: 0.8em;
+   margin: 6px;
+}
+
+div.MenuBandButton > span.x-button-label {
+   white-space: normal;
+}
+
 
 // ******************************************************************
 // ProductView

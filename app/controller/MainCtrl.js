@@ -48,6 +48,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=showHwTest]' : {
                 release: 'showHwTest'
             },
+            'button[action=showAdmin]' : {
+                release: 'showAdmin'
+            },
             'button[action=sync]' : {
                 release: 'onSyncTap'
             },
@@ -578,6 +581,11 @@ Ext.define('Fpos.controller.MainCtrl', {
                         action: 'provisioning'  
                     },
                     {
+                        text: 'Administration',
+                        action: 'showAdmin',
+                        ui: 'posInputButtonOrange'
+                    },
+                    {
                         text: 'Test',
                         action: 'showHwTest',
                         ui: 'posInputButtonRed'
@@ -904,6 +912,17 @@ Ext.define('Fpos.controller.MainCtrl', {
         self.getMainView().push({
             title: "Test",
             xtype: 'fpos_test'        
+        });
+    },
+    
+    /**
+     * show admin
+     */
+    showAdmin: function() {
+        var self = this;
+        self.getMainView().push({
+            title: "Administration",
+            xtype: 'fpos_admin'        
         });
     },
     
