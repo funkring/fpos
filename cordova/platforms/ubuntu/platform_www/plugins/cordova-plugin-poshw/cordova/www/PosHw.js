@@ -26,6 +26,10 @@ module.exports = {
         cordova.exec(successCallback, errorCallback, "PosHw", "openCashDrawer", []);
     },
     
+    openExternCashDrawer: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "openExternCashDrawer", []);
+    },
+    
     test: function(successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "test", []);
     },

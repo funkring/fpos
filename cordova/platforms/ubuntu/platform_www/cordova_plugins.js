@@ -221,8 +221,8 @@ module.exports.metadata =
     "cordova-plugin-crosswalk-webview": "1.8.0",
     "cordova-plugin-file": "4.1.1",
     "cordova-plugin-file-transfer": "1.5.0",
-    "cordova-plugin-poshw": "1.0.5",
-    "cordova-plugin-whitelist": "1.2.0"
+    "cordova-plugin-whitelist": "1.2.0",
+    "cordova-plugin-poshw": "1.0.5"
 }
 // BOTTOM OF METADATA
 });

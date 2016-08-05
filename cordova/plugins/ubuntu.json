@@ -19,10 +19,10 @@
         "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-whitelist": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },

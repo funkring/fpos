@@ -602,7 +602,7 @@ Ext.define('Fpos.Config', {
         if ( window.PosHw ) {
             var profile = this.getProfile();
             if ( profile && profile.iface_trigger ) {
-                return window.PosHw.openExternalCashDrawer();
+                return window.PosHw.openExternCashDrawer();
             } else {
                 return window.PosHw.openCashDrawer();
             }

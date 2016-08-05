@@ -2607,6 +2607,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.Config": [
     "Config"
   ],
+  "Fpos.controller.AdminCtrl": [],
   "Fpos.controller.MainCtrl": [],
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.PartnerCtrl": [],
@@ -2638,6 +2639,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.store.ProductStore": [],
   "Fpos.store.ProductUnitStore": [],
   "Fpos.store.TopStore": [],
+  "Fpos.view.AdminView": [],
   "Fpos.view.CategoryItem": [],
   "Fpos.view.ConfigView": [],
   "Fpos.view.Main": [],
@@ -3632,6 +3634,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.viewport.Viewport": [],
   "Ext.viewport.WindowsPhone": [],
   "Fpos.Config": [],
+  "Fpos.controller.AdminCtrl": [],
   "Fpos.controller.MainCtrl": [],
   "Fpos.controller.OrderViewCtrl": [],
   "Fpos.controller.PartnerCtrl": [],
@@ -3663,6 +3666,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.store.ProductStore": [],
   "Fpos.store.ProductUnitStore": [],
   "Fpos.store.TopStore": [],
+  "Fpos.view.AdminView": [
+    "widget.fpos_admin"
+  ],
   "Fpos.view.CategoryItem": [
     "widget.fpos_category_item"
   ],

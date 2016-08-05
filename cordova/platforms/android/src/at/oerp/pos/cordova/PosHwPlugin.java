@@ -158,6 +158,15 @@ public class PosHwPlugin extends CordovaPlugin {
 						}
 					});
 					
+					api.put("openExternCashDrawer", new PosHwPluginCmd() {
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							service.openExternCashDrawer();
+							callbackContext.success();
+							return true;
+						}
+					});
+					
 					api.put("test", new PosHwPluginCmd() {
 						
 						@Override

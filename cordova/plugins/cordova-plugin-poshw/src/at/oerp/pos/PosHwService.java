@@ -3,6 +3,8 @@ package at.oerp.pos;
 import java.io.IOException;
 
 import android.app.Application;
+import android.content.Intent;
+import android.util.Log;
 import at.oerp.pos.hw.android.AndroidHwService;
 import at.oerp.pos.hw.cm550.CM550Service;
 import at.oerp.pos.hw.cpos800.CPOS800Service;
@@ -16,8 +18,16 @@ import at.oerp.pos.hw.ts7003.TS7003PosService;
 
 public abstract class PosHwService {
 	
+	private final static String TAG = "PosHwService";
+
+	/**
+	 * app instance
+	 */
 	final protected Application app;
 	
+	/**
+	 * is open yes or no
+	 */
 	private boolean open;
 	
 	/**
@@ -155,5 +165,20 @@ public abstract class PosHwService {
 	 */
 	public abstract boolean openCashDrawer()
 						throws IOException;
+	
+	
+	/**
+	 * open external cashdrawer
+	 */
+	public boolean openExternCashDrawer() {
+		try {
+			Intent intent = new Intent("at.oerp.poshw.cashdrawer.TRIGGER");
+			this.app.sendBroadcast(intent);
+			return true;
+		} catch ( Throwable e ) {
+			Log.e(TAG, e.getMessage(), e);
+			return false;
+		}
+	}
 }
 	
