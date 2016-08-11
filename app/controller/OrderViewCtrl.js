@@ -2683,7 +2683,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var seq = 1;
                 
                 Ext.each(orders, function(order) {
-                    if ( !order.tag && (finish || !user || order.user_id == user._id) ) {
+                    if ( !order.tag && (!user || order.user_id == user._id) ) {
                         var ignoreCashIO = 0.0;
                         
                         // positions                        
@@ -2710,7 +2710,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         });
                         
                         //payment and taxes
-                        if ( finish || !user ) {
+                        if ( !user ) {
                             // calc taxes
                             Ext.each(order.tax_ids, function(tax) {
                                 self.updateTaxSummary(sumTax, tax);
@@ -2742,7 +2742,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // STATE
                 
                 // if detail show current state
-                if ( finish || !user ) {
+                if ( !user ) {
                     lines.push(
                         {
                             // TURNOVER
