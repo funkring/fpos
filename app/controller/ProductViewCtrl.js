@@ -310,13 +310,10 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         }
         
         // load categories
-        var categories = [];
-        self.allCategoryStore.each(function(childCategory) {
-            if ( childCategory.get('parent_id') == categoryId && !childCategory.get('pos_unavail') ) {       
-                childCategory.set('selected',false);
-                childCategory.set('parent',false);
-                categories.push(childCategory);
-            } 
+        var categories = self.allCategoryStore.getChilds(categoryId);
+        Ext.each(categories, function(childCategory) {
+            childCategory.set('selected',false);
+            childCategory.set('parent',false);
         });
            
         // get parents

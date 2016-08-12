@@ -13,7 +13,7 @@ Ext.define('Fpos.core.Printer', {
     
     constructor: function(config) {
         this.initConfig(config);
-        this.productStore = Ext.StoreMgr.lookup("ProductStore");
+        this.productStore = Ext.StoreMgr.lookup("ProductStore");        
         this.queue = [];
         this.active = false;
     },
@@ -24,8 +24,15 @@ Ext.define('Fpos.core.Printer', {
         self.categories = {};
         if ( profile ) {
             if ( profile.pos_category_ids && profile.pos_category_ids.length > 0) {
+                var categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
                 Ext.each(profile.pos_category_ids, function(categoryId) {
-                    self.categories[categoryId] = true;  
+                    // enable category
+                    self.categories[categoryId] = true;
+                    // enable also child categories
+                    categoryStore.eachChild(function(childCategory) {
+                        self.categories[childCategory.getId()] = true;
+                    });
+                    // one category found
                     self.hasCategories = true;
                 });
             }

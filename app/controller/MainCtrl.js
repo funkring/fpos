@@ -389,6 +389,9 @@ Ext.define('Fpos.controller.MainCtrl', {
                 // load category
                 self.categoryStore.load({
                     callback: function() {
+                    
+                        // build category index
+                        self.categoryStore.buildIndex();
                         
                         // load tops
                         self.topStore.load({
