@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.2',
+        version : '4.0.3',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -600,12 +600,7 @@ Ext.define('Fpos.Config', {
     
     openCashDrawer: function() {
         if ( window.PosHw ) {
-            var profile = this.getProfile();
-            if ( profile && profile.iface_trigger ) {
-                return window.PosHw.openExternCashDrawer();
-            } else {
-                return window.PosHw.openCashDrawer();
-            }
+            return window.PosHw.openCashDrawer();            
         }
         return false;
     }
