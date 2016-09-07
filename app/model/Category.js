@@ -8,8 +8,10 @@ Ext.define('Fpos.model.Category', {
        fields: ['name',                 
                 'parent_id',
                 'sequence',
+                'pos_main',
                 'pos_color',
                 'pos_unavail',
+                'after_product',
                 {name:'selected', persist:false},
                 {name:'parent', persist:false}
                ],

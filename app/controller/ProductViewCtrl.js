@@ -193,7 +193,48 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         var product = button.getRecord();
         if ( product ) {
             // send productInput EVENT
-            Ext.Viewport.fireEvent("productInput", product);            
+            Ext.Viewport.fireEvent("productInput", product);       
+            
+            // category action
+            // after product input
+            if ( this.categoryId ) {
+                var category = this.allCategoryStore.getById(this.categoryId);
+                if ( category ) {
+                
+                    var afterProduct = category.get('after_product');                    
+                    if ( afterProduct ) {
+                    
+                        if ( afterProduct == 'root') {
+                            // load root
+                            this.loadCategory(null);
+                        } else {
+                            var parent_id = category.get('parent_id');
+                            if  ( afterProduct == 'parent' ) {
+                                // load parent                           
+                                this.loadCategory(parent_id);
+                            } else if ( afterProduct == 'main' ) {
+                                // search next main category
+                                var main_id = null;
+                                while ( parent_id && !main_id) {
+                                    var parent = this.allCategoryStore.getById(parent_id);
+                                    if ( parent ) {
+                                        if ( parent.get('pos_main') ) {
+                                            main_id = parent.getId();                                        
+                                        }        
+                                        parent_id = parent.get('parent_id');
+                                    } else {
+                                        parent_id = null;
+                                    }                                
+                                }                            
+                                // load main
+                                this.loadCategory(main_id);
+                            } 
+                        }
+                        
+                    }
+                    
+                }
+            }     
         }
     },
     

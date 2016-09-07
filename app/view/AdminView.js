@@ -22,14 +22,7 @@ Ext.define('Fpos.view.AdminView', {
                         action: 'adminResetDB',
                         ui: 'posInputButtonRed',
                         cls : 'MenuBandButton'        
-                     },
-                     {
-                        xtype: 'button',
-                        text: 'externen Kassenöffner installieren',    
-                        action: 'usbTriggerDownload',
-                        ui: 'posInputButtonBlack',
-                        cls : 'MenuBandButton'        
-                     }
+                    }
                 ]                 
             }
         ]

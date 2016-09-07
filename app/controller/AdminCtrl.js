@@ -11,9 +11,6 @@ Ext.define('Fpos.controller.AdminCtrl', {
         control: {     
             'button[action=adminResetDB]' : {
                 release: 'resetDB'
-            },
-            'button[action=usbTriggerDownload]' : {
-                release: 'usbTriggerDownload'
             }
         }
     },
@@ -65,11 +62,6 @@ Ext.define('Fpos.controller.AdminCtrl', {
                 });        
             }
         });
-    },
-    
-    
-    usbTriggerDownload: function() {
-        Config.downloadApk('fpos-usb-trigger.apk');
     }
     
 });

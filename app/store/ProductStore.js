@@ -30,6 +30,18 @@ Ext.define('Fpos.store.ProductStore', {
         this.showAll = true;   
     },
     
+    addToCategory: function(categ_id, product) {
+        if ( categ_id ) {
+             this.showAll = false; 
+             var list = this.productByCategoryId[categ_id];
+             if ( !list ) {
+                 list = [];
+                 this.productByCategoryId[categ_id] = list;                     
+             }
+             list.push(product);     
+        }
+    },
+    
     buildIndex: function() {
         var self = this;
         this.resetIndex();
@@ -37,10 +49,11 @@ Ext.define('Fpos.store.ProductStore', {
              if ( product.get('sale_ok') ) {
                  // all products
                  self.allProducts.push(product);
-                 /*
-                 if ( self.productQueue.length < 30) {
+                 
+                 // add to favorite
+                 if ( product.get('pos_fav') ) {
                      self.productQueue.push(product);
-                 }*/
+                 }
                  
                  // product by ean
                  self.productById[product.getId()] = product; 
@@ -50,16 +63,8 @@ Ext.define('Fpos.store.ProductStore', {
                  }
                  
                  // add category
-                 var categ_id = product.get('pos_categ_id');
-                 if ( categ_id ) {
-                     self.showAll = false; 
-                     var list = self.productByCategoryId[categ_id];
-                     if ( !list ) {
-                         list = [];
-                         self.productByCategoryId[categ_id] = list;                     
-                     }
-                     list.push(product);                 
-                 }
+                 self.addToCategory(product.get('pos_categ_id'), product);
+                 self.addToCategory(product.get('pos_categ2_id'), product);
             }
         });
     },
