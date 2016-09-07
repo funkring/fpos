@@ -1621,7 +1621,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var profile = Config.getProfile();
         var hasSeq = false;
 
-        self.validateLines(true)['catch'](function(err) {
+        var place_id = self.order.get('place_id');
+
+        self.validateLines(true, Config.hasPrinters() && place_id)['catch'](function(err) {
             deferred.reject(err);
         }).then(function(){
             
@@ -1691,7 +1693,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         self.lastDate = self.order.get('date');
                     };
                   
-                    if ( Config.getSync() && self.order.get('place_id') ) {
+                    if ( Config.getSync() && place_id ) {
                         // special handling if sync
                         var orderCopy = ModelUtil.createDocument(self.order);
                         // set/override basic data
