@@ -181,7 +181,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             scope: self,
             syncState: self.onSyncState
         });
-      
+        
         // add key listener
         ViewManager.pushKeyboardListener(self);
               
@@ -1053,18 +1053,24 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     onShowMainMenu: function() {
-       if ( Ext.Viewport.getMenus().right.isHidden() ) {
-            Ext.Viewport.showMenu("right");
-       } else {
-            Ext.Viewport.hideMenu("right");
+       var menu = Ext.Viewport.getMenus().right;
+       if ( menu ) {
+           if ( menu.isHidden() ) {
+                Ext.Viewport.showMenu("right");
+           } else {
+                Ext.Viewport.hideMenu("right");
+           }
        }
     },
     
     onShowProductMenu: function() {
-       if ( Ext.Viewport.getMenus().left.isHidden() ) {
-            Ext.Viewport.showMenu("left");
-       } else {
-            Ext.Viewport.hideMenu("left");
+       var menu = Ext.Viewport.getMenus().left;
+       if ( menu ) { 
+           if ( menu.isHidden() ) {
+                Ext.Viewport.showMenu("left");
+           } else {
+                Ext.Viewport.hideMenu("left");
+           }
        }
     },
     
@@ -1074,7 +1080,13 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // check if is active
         if ( Ext.Viewport.getActiveItem() == mainView && mainView.getActiveItem() == self.basePanel && self.basePanel.getActiveItem() == self.posPanel ) {
-            Ext.Viewport.fireEvent("posKey", e);
+            // scan
+            if ( e.keyCode == 229 ) {
+                self.onShowProductMenu();
+            } else {
+                // otherwise            
+                Ext.Viewport.fireEvent("posKey", e);
+            }
         }        
     },
     

@@ -3074,10 +3074,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     break;
                 case 8:
                     this.onPayment();
-                    break;
-                case 229:
-                    // SCAN
-                    break;
+                    break;                
             }
         } 
     },
