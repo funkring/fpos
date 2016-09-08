@@ -26,7 +26,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             },
             productSearch: {    
                 keyup : 'searchItemKeyUp',
-                clearicontap: 'searchItemClearIconTap'                
+                clearicontap: 'searchItemClearIconTap'
             },
             productView: {
                 initialize: 'productViewInitialize'
@@ -42,6 +42,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.shown = false;
         //this.cache = {};
         
         //search task
@@ -58,16 +59,33 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     
     productViewInitialize: function() {
         var self = this;
-        self.loadCategory(null);
+        
+        // add listener
+        self.getProductDataView().addListener({
+            'painted' : {
+                fn: self.onProductViewPainted,
+                scope: self,
+                order: 'before'
+            }        
+        });
         
         // global event after sync
         Ext.Viewport.on({
             scope: self,
             reloadData: function() {
+                self.shown = false;
                 self.productButtonTmpl = null;
                 self.loadCategory(null);
             }
         });     
+    },
+    
+    onProductViewPainted: function() {
+        // prepare first initialisation
+        if ( !this.shown ) {
+            this.shown = true;
+            this.loadCategory(null);
+        }
     },
     
     tapSelectCategory: function(button) {
@@ -93,7 +111,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      */  
     productButtonInitialize: function(button) {     
         var self = this;   
-        if ( !self.productButtonTmpl ) {     
+        if ( !self.productButtonTmpl ) {    
             var viewWidth = self.getProductDataView().element.getWidth()-6;
             var viewHeight = self.getProductDataView().element.getHeight()-6;
             var defaultWidth = self.getDefaultButtonWidth();
