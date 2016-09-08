@@ -93,7 +93,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             }            
         }
     },
-       
+    
+    onBackButton: function() {
+        ViewManager.hideMenus();
+    },
+    
+          
     init: function() {
         this.taxStore = Ext.StoreMgr.lookup("AccountTaxStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");     
@@ -103,6 +108,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.eanDetect = [];
         this.fastUserSwitch = false;
+        
+        document.addEventListener("backbutton", this.onBackButton, false);
         
         /*
         var self = this;

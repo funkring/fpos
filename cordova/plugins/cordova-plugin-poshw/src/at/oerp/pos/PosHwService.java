@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Intent;
 import android.util.Log;
 import at.oerp.pos.hw.android.AndroidHwService;
+import at.oerp.pos.hw.citaqv5.CITAQV5Service;
 import at.oerp.pos.hw.cm550.CM550Service;
 import at.oerp.pos.hw.cpos800.CPOS800Service;
 import at.oerp.pos.hw.gp7002.GP7002PosService;
@@ -54,6 +55,8 @@ public abstract class PosHwService {
 			return new CM550Service(app);
 		} else if ( GP7002PosService.isHardware() ) {
 			return new GP7002PosService(app);
+		} else if ( CITAQV5Service.isHardware() ) {
+			return new CITAQV5Service(app);
 		}
 		return new AndroidHwService(app);
 	}

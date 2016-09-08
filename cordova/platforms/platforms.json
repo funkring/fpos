@@ -1,5 +1,4 @@
 {
     "android": "5.1.1",
-    "browser": "4.1.0",
     "ubuntu": "https://github.com/apache/cordova-ubuntu"
 }

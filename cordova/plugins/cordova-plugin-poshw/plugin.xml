@@ -38,6 +38,9 @@
         
 		<source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
 		<source-file src="src/hardware/print/printer.java" target-dir="src/hardware/print/" />
+		<source-file src="src/woyou/aidlservice/jiuiv5/IYmodemSPI.aidl" target-dir="src/woyou/aidlservice/jiuiv5/" />
+		<source-file src="src/woyou/aidlservice/jiuiv5/ICallback.aidl" target-dir="src/woyou/aidlservice/jiuiv5/" />
+		<source-file src="src/woyou/aidlservice/jiuiv5/IWoyouService.aidl" target-dir="src/woyou/aidlservice/jiuiv5/" />
 		<source-file src="src/android/gpio/GpioJNI.java" target-dir="src/android/gpio/" />
 		<source-file src="src/android/pt/Cprinter.java" target-dir="src/android/pt/" />
 		<source-file src="src/com/authentication/utils/LooperBuffer.java" target-dir="src/com/authentication/utils/" />
@@ -96,6 +99,8 @@
 		<source-file src="src/at/oerp/pos/hw/t508aq/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/pos/hw/t508aq/Printer58mm.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
 		<source-file src="src/at/oerp/pos/hw/t508aq/ScaleServiceImpl.java" target-dir="src/at/oerp/pos/hw/t508aq/" />
+		<source-file src="src/at/oerp/pos/hw/citaqv5/Printer58mm.java" target-dir="src/at/oerp/pos/hw/citaqv5/" />
+		<source-file src="src/at/oerp/pos/hw/citaqv5/CITAQV5Service.java" target-dir="src/at/oerp/pos/hw/citaqv5/" />
 		<source-file src="src/at/oerp/pos/hw/ts7003/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
 		<source-file src="src/at/oerp/pos/hw/ts7003/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
 		<source-file src="src/at/oerp/pos/hw/ts7003/TS7003PosService.java" target-dir="src/at/oerp/pos/hw/ts7003/" />
@@ -154,7 +159,6 @@
 		
 		<source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
 		<source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
-
 
         <config-file target="config.xml" parent="/*">
             <feature name="PosHw">
