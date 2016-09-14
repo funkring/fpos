@@ -75,6 +75,9 @@ Ext.define('Fpos.controller.MainCtrl', {
             'button[action=fastSwitchUser]' : {
                 release: 'onFastSwitchUser'
             },
+            'button[action=closeApp]' : {
+                release: 'onCloseApp'
+            },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
@@ -209,6 +212,10 @@ Ext.define('Fpos.controller.MainCtrl', {
             this.switchUser(button.user);
         }
     },
+    
+    onCloseApp: function(button) {
+       navigator.app.exitApp(); 
+    }, 
     
     // setup user user
     switchUser: function(user) {
@@ -599,6 +606,10 @@ Ext.define('Fpos.controller.MainCtrl', {
                         text: 'Test',
                         action: 'showHwTest',
                         ui: 'posInputButtonRed'
+                    },
+                    {
+                        text: 'Beenden',
+                        action: 'closeApp'
                     }
                 ]    
          });
@@ -639,7 +650,11 @@ Ext.define('Fpos.controller.MainCtrl', {
                     {
                         text: 'Kassenbericht',
                         action: 'createCashReport'
-                    }    
+                    },
+                    {
+                        text: 'Beenden',
+                        action: 'closeApp'
+                    }
                    
                 ]    
          });
