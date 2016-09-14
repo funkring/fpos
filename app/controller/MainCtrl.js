@@ -16,6 +16,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Fpos.view.OrderView',
         'Fpos.view.OrderInputViewMedium',
         'Fpos.view.OrderInputViewPhone',
+        'Fpos.view.OrderInputViewPhoneLeft',
         'Fpos.view.OrderInputView',
         'Fpos.view.TestView',
         'Fpos.view.ProductViewSmall',
@@ -573,16 +574,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     getBaseMenu: function() {
        if (!this.baseMenu ) {
-          this.baseMenu =  Ext.create('Ext.Menu', {
-                //scrollable: 'vertical',
-                cls: 'MainMenu',
-                defaults: {
-                    xtype: 'button',
-                    flex: 1,
-                    cls: 'MenuButton',
-                    ui: 'posInputButtonBlack'  
-                },
-                items: [
+          var items = [
                     {
                         text: 'Einstellungen',
                         action: 'editConfig',
@@ -606,20 +598,17 @@ Ext.define('Fpos.controller.MainCtrl', {
                         text: 'Test',
                         action: 'showHwTest',
                         ui: 'posInputButtonRed'
-                    },
-                    {
-                        text: 'Beenden',
-                        action: 'closeApp'
-                    }
-                ]    
-         });
-       }
-       return this.baseMenu;
-    },
-    
-    getUserMenu: function() {
-       if (!this.userMenu ) {
-          this.userMenu =  Ext.create('Ext.Menu', {
+                    }                    
+                ];
+        
+          if ( navigator.app ) {
+              items.push({
+                text: 'Beenden',
+                action: 'closeApp'
+              });
+          }        
+        
+          this.baseMenu =  Ext.create('Ext.Menu', {
                 //scrollable: 'vertical',
                 cls: 'MainMenu',
                 defaults: {
@@ -628,7 +617,15 @@ Ext.define('Fpos.controller.MainCtrl', {
                     cls: 'MenuButton',
                     ui: 'posInputButtonBlack'  
                 },
-                items: [
+                items: items
+         });
+       }
+       return this.baseMenu;
+    },
+    
+    getUserMenu: function() {
+       if (!this.userMenu ) {
+          var items = [
                     {
                         text: 'Abschluss',
                         action: 'createCashState',
@@ -650,13 +647,26 @@ Ext.define('Fpos.controller.MainCtrl', {
                     {
                         text: 'Kassenbericht',
                         action: 'createCashReport'
-                    },
-                    {
-                        text: 'Beenden',
-                        action: 'closeApp'
-                    }
-                   
-                ]    
+                    }                 
+                ];
+                
+          if ( navigator.app ) {
+              items.push({
+                text: 'Beenden',
+                action: 'closeApp'
+              });
+          }     
+          
+          this.userMenu =  Ext.create('Ext.Menu', {
+                //scrollable: 'vertical',
+                cls: 'MainMenu',
+                defaults: {
+                    xtype: 'button',
+                    flex: 1,
+                    cls: 'MenuButton',
+                    ui: 'posInputButtonBlack'  
+                },
+                items: items
          });
        }
        return this.userMenu;
@@ -692,6 +702,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         ViewManager.setViewOption(self.basePanel, 'menu', null);
         // notify change        
         self.mainActiveItemChange(self.getMainView(), self.basePanel);
+        // show product menu
+        self.onShowProductMenu();
     },
     
     showPlace: function() {
@@ -764,6 +776,18 @@ Ext.define('Fpos.controller.MainCtrl', {
         // pos panel
         if ( !self.posPanel ) {
             if ( Config.hasNumpad() || Config.isPhonePos() ) {
+                // determine keyboard layout
+                var keyboardLayout;
+                if ( Config.hasNumpad() ) {
+                    keyboardLayout = 'fpos_order_input_small';
+                } else {
+                    if ( profile.iface_printleft ) {
+                        keyboardLayout = 'fpos_order_input_phone_left';
+                    } else {
+                        keyboardLayout = 'fpos_order_input_phone';    
+                    }
+                    
+                }
                 // smaller pos
                 self.posPanel = Ext.create("Ext.Panel", {
                     layout: 'hbox',
@@ -777,7 +801,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                     flex: 1                        
                                 },
                                 {
-                                    xtype: Config.hasNumpad() ? 'fpos_order_input_small' : 'fpos_order_input_phone'   
+                                    xtype: keyboardLayout
                                 }                            
                             ]          
                         }              
@@ -1005,6 +1029,13 @@ Ext.define('Fpos.controller.MainCtrl', {
         self.getLoginButton().setText("Anmelden");
         
         if ( !self.pinInput ) {
+            // get vars
+            var title = "PIN für die Anmeldung";
+            var profile = Config.getProfile();
+            if ( profile ) {
+                title = "PIN für " + profile.name;
+            }
+            
             // create
             var pinInputConfig = {
                     hideOnMaskTap: false,
@@ -1014,7 +1045,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     maxlen: 4,
                     minlen: 4,
                     emptyValue: "----",
-                    title : "PIN für die Anmeldung"
+                    title : title
                 };
                 
             if ( Config.hasNumpad() ) {
@@ -1026,8 +1057,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                 
             // add handler
             self.pinInput.setHandler(function(view, pin) {
-                var settings = Config.getSettings();
-                var profile = Config.getProfile();
+                var settings = Config.getSettings();              
                 var user = null;
     
                 // check profile and search user            

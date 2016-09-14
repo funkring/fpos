@@ -14,7 +14,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             productSearch: '#productSearch',
             categoryDataView: '#categoryDataView',
             productView: '#productView',
-            productDataView: '#productDataView'
+            productDataView: '#productDataView',
+            categoryToolbar: '#categoryToolbar'
         },
         control: {
             'button[action=selectCategory]' : {
@@ -84,6 +85,13 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         // prepare first initialisation
         if ( !this.shown ) {
             this.shown = true;
+            // hide search
+            var profile = Config.getProfile();
+            if ( profile && profile.iface_nosearch )  {
+                this.getCategoryToolbar().setHidden(true);
+            }
+                        
+            // load root
             this.loadCategory(null);
         }
     },

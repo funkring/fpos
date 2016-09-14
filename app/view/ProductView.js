@@ -34,6 +34,7 @@ Ext.define('Fpos.view.ProductView', {
                             {
                                 xtype: 'toolbar',
                                 ui: 'categoryToolbar',
+                                id: 'categoryToolbar',
                                 items: [
                                     {
                                         flex: 1,
