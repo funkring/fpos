@@ -146,7 +146,7 @@ public class Printer58mm extends PosHwPrinter implements CtrlBytes, LinePrintDri
 		case FONT_SMALL:
 			return 48.0/42.0;
 		default:
-			return 48.0/30.0;
+			return 48.0/32.0;
 		}
 	}
 

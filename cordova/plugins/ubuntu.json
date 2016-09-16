@@ -19,10 +19,10 @@
         "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-crosswalk-webview": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-crosswalk-webview": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },

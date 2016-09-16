@@ -63,11 +63,19 @@
                 "parents": {
                     "/*": [
                         {
+                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
+                            "count": 1
+                        },
+                        {
                             "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
                             "count": 1
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />",
                             "count": 1
                         },
                         {
@@ -145,14 +153,6 @@
                         {
                             "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_MONEYBOX\" />",
                             "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />",
-                            "count": 1
                         }
                     ],
                     "/manifest": [
@@ -203,10 +203,10 @@
         "com.borismus.webintent": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-crosswalk-webview": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-crosswalk-webview": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
@@ -437,7 +437,7 @@
         "cordova-plugin-file": "4.1.1",
         "cordova-plugin-file-transfer": "1.5.0",
         "com.borismus.webintent": "1.0.0",
-        "cordova-plugin-poshw": "1.0.5",
-        "cordova-plugin-crosswalk-webview": "2.0.0"
+        "cordova-plugin-crosswalk-webview": "2.0.0",
+        "cordova-plugin-poshw": "1.0.5"
     }
 }
