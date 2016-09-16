@@ -29,7 +29,7 @@ Ext.define('Fpos.core.Printer', {
                     // enable category
                     self.categories[categoryId] = true;
                     // enable also child categories
-                    categoryStore.eachChild(function(childCategory) {
+                    categoryStore.eachChild(categoryId, function(childCategory) {
                         self.categories[childCategory.getId()] = true;
                     });
                     // one category found
