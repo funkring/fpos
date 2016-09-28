@@ -172,58 +172,64 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         orderItemList.setItemTpl(Ext.create('Ext.XTemplate',
                 '<li>',
                 '<tpl if="this.hasFlag(values,\'2\')">',
-                '<div class="PosOrderIndent"></div>',
+                    '<div class="PosOrderIndent"></div>',
                 '</tpl>',
-                '<tpl if="!this.hasFlag(values,\'d\') && (tag || this.hasFlag(values,\'u\'))">',
-                '<div class="PosOrderLineName">',
-                    '{name}',
-                '</div>',
-                '<div class="PosOrderLinePrice">',
-                     '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
-                '</div>',
-                '<tpl else>',
-                '<div class="PosOrderLineDescription">',
+                '<tpl if="this.hasTag(values,\'#\')">',
                     '<div class="PosOrderLineName">',
                         '{name}',
-                    '</div>',                   
-                    '<div class="PosOrderLineAmount">',
-                        '<tpl if="qty_op == \'+\' && values.qty_diff && values.qty_diff != values.qty">',
-                            '<b>',
-                            '&nbsp;+&nbsp;',
-                            '{[this.formatAmount(values, values.qty_diff || 0.0)]}',
-                            '</b>',
-                            ' = ', 
-                        '</tpl>',
-                        '{[this.formatAmount(values, values.qty)]}',
-                        '<tpl if="qty_op == \'-\' && values.qty_prev && values.qty_prev != values.qty">',
-                            '&nbsp;',
-                            '/',
-                            '&nbsp;',
-                            '{[this.formatAmount(values, values.qty_prev || 0.0)]}',
-                        '</tpl>',
-                        '&nbsp;',
-                        '{[this.getUnit(values.uom_id)]}',
-                        ' * ',
-                        '{[futil.formatFloat(values.price,Config.getDecimals())]}&nbsp;{[Config.getCurrency()]}',
-                        '<tpl if="netto">',
-                          '<tpl if="qty != 0 && qty != 1">',
-                          ' = <b>{[futil.formatFloat(values.subtotal,Config.getDecimals())]}&nbsp;{[Config.getCurrency()]}</b>',
-                          '</tpl>',
-                          '&nbsp;',
-                          '<b>NETTO</b>',
-                        '</tpl>',
-                        ' ',
-                        '<tpl if="discount &gt; 0.0">',
-                            '<span class="PosOrderLineDiscount">',
-                            '- {[futil.formatFloat(values.discount,Config.getDecimals())]}&nbsp;%',
-                            '</span>',
-                        '</tpl>',
-                       
-                    '</div>',                    
-                '</div>',
-                '<div class="PosOrderLinePrice">',
-                    '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
-                '</div>', 
+                    '</div>',                
+                '<tpl else>',
+                    '<tpl if="!this.hasFlag(values,\'d\') && (tag || this.hasFlag(values,\'u\'))">',
+                        '<div class="PosOrderLineName">',
+                            '{name}',
+                        '</div>',
+                        '<div class="PosOrderLinePrice">',
+                             '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
+                        '</div>',
+                    '<tpl else>',
+                        '<div class="PosOrderLineDescription">',
+                            '<div class="PosOrderLineName">',
+                                '{name}',
+                            '</div>',                   
+                            '<div class="PosOrderLineAmount">',
+                                '<tpl if="qty_op == \'+\' && values.qty_diff && values.qty_diff != values.qty">',
+                                    '<b>',
+                                    '&nbsp;+&nbsp;',
+                                    '{[this.formatAmount(values, values.qty_diff || 0.0)]}',
+                                    '</b>',
+                                    ' = ', 
+                                '</tpl>',
+                                '{[this.formatAmount(values, values.qty)]}',
+                                '<tpl if="qty_op == \'-\' && values.qty_prev && values.qty_prev != values.qty">',
+                                    '&nbsp;',
+                                    '/',
+                                    '&nbsp;',
+                                    '{[this.formatAmount(values, values.qty_prev || 0.0)]}',
+                                '</tpl>',
+                                '&nbsp;',
+                                '{[this.getUnit(values.uom_id)]}',
+                                ' * ',
+                                '{[futil.formatFloat(values.price,Config.getDecimals())]}&nbsp;{[Config.getCurrency()]}',
+                                '<tpl if="netto">',
+                                  '<tpl if="qty != 0 && qty != 1">',
+                                  ' = <b>{[futil.formatFloat(values.subtotal,Config.getDecimals())]}&nbsp;{[Config.getCurrency()]}</b>',
+                                  '</tpl>',
+                                  '&nbsp;',
+                                  '<b>NETTO</b>',
+                                '</tpl>',
+                                ' ',
+                                '<tpl if="discount &gt; 0.0">',
+                                    '<span class="PosOrderLineDiscount">',
+                                    '- {[futil.formatFloat(values.discount,Config.getDecimals())]}&nbsp;%',
+                                    '</span>',
+                                '</tpl>',
+                               
+                            '</div>',                    
+                        '</div>',
+                        '<div class="PosOrderLinePrice">',
+                            '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
+                        '</div>',
+                    '</tpl>', 
                 '</tpl>',
                 '</li>',
                 {                
@@ -340,6 +346,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.reloadData();
     },
     
+    updatePlace: function(place, amount, userId) {
+        if ( place ) {
+            if ( this.order ) {
+                if ( amount === undefined ) amount = this.order.get('amount_total');
+                if ( userId === undefined ) userId = this.order.get('user_id');
+            } 
+            if ( !amount ) amount = 0.0;
+            if ( !userId ) userId = null;
+            place.set('amount', amount);
+            place.set('user', Config.getUserName(userId)); 
+        }
+    },
+    
     placeInput: function(place) {
         var self = this;
         self.place = place;
@@ -355,7 +374,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // save
                 self.validateLines(true).then(function() {
-                    place.set('amount',self.order.get('amount_total'));
+                    self.updatePlace(place);
                 });
             }
         });
@@ -462,6 +481,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     flags +="p";
                     hideMenu = true;
                 }
+                var pos_sec = product.get('pos_sec');
+                if ( pos_sec  ) {
+                    // section 1 or 2
+                    flags +=pos_sec;
+                }                
                 if ( flags.length > 0) {
                     values.flags = flags;
                 }
@@ -493,6 +517,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 } else if ( product.get('income_pdt') ) {
                     values.tag = "i";
                     hideMenu = true;
+                } else if ( product.get('pos_cm' ) ) {
+                    values.tag = "#";
                 }  else if ( values.tag ) {
                     values.tag = null;
                 }
@@ -550,9 +576,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             var place = self.placeStore.getPlaceById(doc.place_id);        
                             if ( place ) {
                                 if ( doc._deleted ) {
-                                    place.set('amount', 0);
+                                    self.updatePlace(place, 0.0);
                                 } else {
-                                    place.set('amount', doc.amount_total);
+                                    self.updatePlace(place, doc.amount_total, doc.user_id);
                                 }
                             }
                         }
@@ -670,7 +696,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }).then(function(){
                 // show places
                 Ext.Viewport.fireEvent("showPlace");
-                place.set('amount',self.order.get('amount_total'));                
+                self.updatePlace(place);                                
             });       
         }
     },
@@ -861,14 +887,35 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     // diff function
                     var createDiff = function(line, oldLine) {
                         var qty = (line && line.qty || 0.0) - (oldLine && oldLine.qty || 0.0);
+                        
+                        // get val
+                        var get = function(prop) {
+                            return (line && line[prop]) || (oldLine && oldLine[prop]) || null;                            
+                        }; 
+                        
                         if ( qty ) {
                             var logEntry = {
-                                product_id: (line && line.product_id) || (oldLine && oldLine.product_id) || null,
-                                uom_id: (line && line.uom_id) || (oldLine && oldLine.uom_id) || null,
-                                name: (line && line.name) || (oldLine && oldLine.name) || null,
-                                notice: (line && line.notice ) || (oldLine && oldLine.notice) || null,
+                                product_id: get('product_id'),
+                                uom_id: get('uom_id'),
+                                name: get('name'),
+                                notice: get('notice'),
+                                tag: get('tag'),
                                 qty : qty
                             };
+                            
+                            // copy val
+                            var copy = function(prop) {
+                                var val = get(prop);
+                                if (val) logEntry[prop] = val;
+                            };
+                            
+                            // copy vals
+                            copy('flags');
+                            copy('a_pre');
+                            copy('a_dec');
+                            copy('p_pre');
+                            copy('p_dec');
+                            
                             logLines.push(logEntry);
                         }
                     };
@@ -1106,9 +1153,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {'include_docs':true}).then(function(res) {
                Ext.each(res.rows, function(row) {
                   var place = self.placeStore.getPlaceById(row.doc.place_id);
-                  if ( place ) {
-                    place.set('amount',row.doc.amount_total);
-                  } 
+                  self.updatePlace(place, row.doc.amount_total, row.doc.user_id);
                });
                self.reloadData(callback, op);
            });
@@ -1259,7 +1304,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         }                         
                         self.validateLines();
                     }
-                }     
+                } else if ( tag == '#' ) {
+                    self.lineStore.remove(record);
+                    self.validateLines();
+                } 
             }           
         } else {
             // handle payment
@@ -1804,7 +1852,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                   if ( amount < 0.0 ) amount = 0.0;
                               }
                           }
-                          place.set('amount',amount);
+                          self.updatePlace(place, amount);
                         }
                         
                         // finish all
@@ -1966,62 +2014,64 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="3"><hr/></td>',
                 '</tr>',
                 '<tpl for="lines">',
-                    '<tpl if="this.hasFlag(values,\'l\')">',
-                        '<tr>',                
-                            '<td colspan="3"><hr/></td>',
-                        '</tr>',
-                    '</tpl>',
-                    '<tpl if="this.hasTag(values,\'c\')">',
-                        '<tr>',
-                            '<td colspan="3">{name}</td>',                        
-                        '</tr>',
-                        '<tr>',
-                            '<td colspan="3">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
-                        '</tr>',
-                    '<tpl else>',                       
-                        '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
+                    '<tpl if="!this.hasTag(values,\'#\')">',
+                        '<tpl if="this.hasFlag(values,\'l\')">',
+                            '<tr>',                
+                                '<td colspan="3"><hr/></td>',
+                            '</tr>',
+                        '</tpl>',
+                        '<tpl if="this.hasTag(values,\'c\')">',
                             '<tr>',
-                                '<td colspan="3">{name}</td>',
+                                '<td colspan="3">{name}</td>',                        
+                            '</tr>',
+                            '<tr>',
+                                '<td colspan="3">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                            '</tr>',
+                        '<tpl else>',                       
+                            '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
+                                '<tr>',
+                                    '<td colspan="3">{name}</td>',
+                                '</tr>',
+                                '<tr>',
+                                    '<td width="5%">&nbsp;</td>',
+                                    '<td>',
+                                        '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
+                                         '<tpl if="values.qty != 1.0">',
+                                            ' * ',
+                                            '{[futil.formatFloat(values.price,Config.getDecimals())]}',
+                                            ' ',
+                                            '{[Config.getCurrency()]}',
+                                            '<tpl if="netto">',
+                                            ' ',
+                                            'NETTO',
+                                            '</tpl>',
+                                        '</tpl>', 
+                                        '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
+                                    '</td>',    
+                                    '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',                        
+                                '</tr>',
+                            '<tpl else>',
+                                '<tr>',
+                                    '<td colspan="2">{name}</td>',
+                                    '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                                '</tr>',
+                            '</tpl>',
+                        '</tpl>',                          
+                        '<tpl if="notice">',
+                            '<tr>',
+                                '<td width="5%">&nbsp;</td>',
+                                '<td colspan="2"><hr/></td>',                    
                             '</tr>',
                             '<tr>',
                                 '<td width="5%">&nbsp;</td>',
-                                '<td>',
-                                    '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
-                                     '<tpl if="values.qty != 1.0">',
-                                        ' * ',
-                                        '{[futil.formatFloat(values.price,Config.getDecimals())]}',
-                                        ' ',
-                                        '{[Config.getCurrency()]}',
-                                        '<tpl if="netto">',
-                                        ' ',
-                                        'NETTO',
-                                        '</tpl>',
-                                    '</tpl>', 
-                                    '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
-                                '</td>',    
-                                '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',                        
-                            '</tr>',
-                        '<tpl else>',
-                            '<tr>',
-                                '<td colspan="2">{name}</td>',
-                                '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                                '<td colspan="2">{[this.formatText(values.notice)]}</td>',                    
+                            '</tr>',                        
+                        '</tpl>',
+                        '<tpl if="this.hasFlag(values,\'b\') && (xindex &lt; xcount)">',
+                            '<tr>',                
+                                '<td colspan="3"><hr/></td>',
                             '</tr>',
                         '</tpl>',
-                    '</tpl>',                          
-                    '<tpl if="notice">',
-                        '<tr>',
-                            '<td width="5%">&nbsp;</td>',
-                            '<td colspan="2"><hr/></td>',                    
-                        '</tr>',
-                        '<tr>',
-                            '<td width="5%">&nbsp;</td>',
-                            '<td colspan="2">{[this.formatText(values.notice)]}</td>',                    
-                        '</tr>',                        
-                    '</tpl>',
-                    '<tpl if="this.hasFlag(values,\'b\') && (xindex+1 < xcount)">',
-                        '<tr>',                
-                            '<td colspan="3"><hr/></td>',
-                        '</tr>',
                     '</tpl>',
                 '</tpl>',
                 '<tr>',                
@@ -2187,14 +2237,28 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '</table>',
                 '<table width="100%">',
                 '<tpl for="lines">',
-                    '<tr>',
-                        '<td width="20%" align="right">{[this.formatAmount(values)]}</td>',
-                        '<td>&nbsp;{[this.getUnit(values.uom_id)]} {name}</td>',
-                    '</tr>',
+                    '<tpl if="this.hasFlag(values,\'1\') && (xindex &gt; 1)">',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
+                        '</tr>',
+                    '</tpl>',                    
+                    '<tr>',                        
+                        '<tpl if="this.hasTag(values,\'#\')">',
+                            '<td colspan="2">{name}</td>',
+                        '<tpl else>',
+                            '<td width="20%" align="right">{[this.formatAmount(values)]}</td>',
+                            '<td>&nbsp;{[this.getUnit(values.uom_id)]} {name}</td>',
+                        '</tpl>',
+                    '</tr>',                    
                     '<tpl if="notice">',
                         '<tr>',
                             '<td></td>',
                             '<td>{[this.formatText(values.notice)]}</td>',
+                        '</tr>',
+                    '</tpl>',
+                    '<tpl if="this.hasFlag(values,\'1\')">',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
                         '</tr>',
                     '</tpl>',
                 '</tpl>',
@@ -2216,7 +2280,25 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         } else {
                             return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
                         }
-                    }                  
+                    },
+                    hasTag: function(values, tag) {
+                        if ( !tag ) {
+                            return values.tag ? true : false;
+                        } else if ( !values.tag ) {
+                            return false;
+                        } else {
+                            return values.tag == tag;
+                        }
+                    },
+                    hasFlag: function(values, flag) {
+                        if ( !flag) {
+                            return values.flags ? true : false;
+                        } else if ( !values.flags ) {
+                            return false;
+                        } else {
+                            return values.flags.indexOf(flag) > -1;
+                        }
+                    }             
                 }                
             );
         }
@@ -2438,7 +2520,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }).then(function(res) {
                 // reset places
                 Ext.each(resetPlaces, function(place) {
-                    place.set('amount',0.0);
+                    self.updatePlace(place, 0.0);
                 });
                 
                 return Config.queryLastOrder().then(function(res) {
@@ -3008,7 +3090,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }).then(function(res) {
                 // reset places
                 Ext.each(resetPlaces, function(place) {
-                    place.set('amount',0.0);
+                    self.updatePlace(place, 0.0);
                 });
                 createReport();
             });

@@ -625,12 +625,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     getUserMenu: function() {
        if (!this.userMenu ) {
-          var items = [
-                    {
-                        text: 'Abschluss',
-                        action: 'createCashState',
-                        ui: 'posInputButtonOrange'
-                    },
+          var items = [                    
                     {
                         text: 'Sicherung und Datenabgleich',
                         action: 'sync',
@@ -639,23 +634,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                     {
                         text: 'Druck wiederholen',
                         action: 'printAgain'
-                    },
-                    {
-                        text: 'Meine Verkäufe',
-                        action: 'createCashUserReport'
-                    },
-                    {
-                        text: 'Kassenbericht',
-                        action: 'createCashReport'
                     }                 
                 ];
-                
-          if ( navigator.app ) {
-              items.push({
-                text: 'Beenden',
-                action: 'closeApp'
-              });
-          }     
           
           this.userMenu =  Ext.create('Ext.Menu', {
                 //scrollable: 'vertical',
@@ -673,11 +653,56 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     getManagerMenu: function() {
-       return this.getUserMenu();
+        if (!this.managerMenu ) {
+              var items = [
+                        {
+                            text: 'Abschluss',
+                            action: 'createCashState',
+                            ui: 'posInputButtonOrange'
+                        },
+                        {
+                            text: 'Sicherung und Datenabgleich',
+                            action: 'sync',
+                            ui: 'posInputButtonGreen'  
+                        },   
+                        {
+                            text: 'Druck wiederholen',
+                            action: 'printAgain'
+                        },
+                        {
+                            text: 'Meine Verkäufe',
+                            action: 'createCashUserReport'
+                        },
+                        {
+                            text: 'Kassenbericht',
+                            action: 'createCashReport'
+                        }                 
+                    ];
+                    
+              if ( navigator.app ) {
+                  items.push({
+                    text: 'Beenden',
+                    action: 'closeApp'
+                  });
+              }     
+              
+              this.managerMenu =  Ext.create('Ext.Menu', {
+                    //scrollable: 'vertical',
+                    cls: 'MainMenu',
+                    defaults: {
+                        xtype: 'button',
+                        flex: 1,
+                        cls: 'MenuButton',
+                        ui: 'posInputButtonBlack'  
+                    },
+                    items: items
+             });
+       }
+       return this.managerMenu;
     },
     
     getAdminMenu: function() {
-       return this.getUserMenu();
+       return this.getManagerMenu();
     }, 
     
     resetBasePanel: function() {
@@ -747,18 +772,25 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     openPos: function() {
+        // init vars
         var i;
         var self = this;
         var profile = Config.getProfile();
         
-        // init vars        
+        // init users
+        var currentUser = Config.getUser();
+        var isAdmin = currentUser.pos_role === 'admin';
+        
+        // init fast user switch
         self.fastUserSwitch = profile.iface_fastuswitch && !Config.isMobilePos();        
         for ( i=0; i<self.userButtons.length; i++ ) {
             if ( self.fastUserSwitch ) {
                 if ( i < profile.user_ids.length ) {
                     var user = profile.user_ids[i];
-                    self.userButtons[i].user = user;
-                    self.userButtons[i].setText(user.name);
+                    if ( isAdmin || user.pos_role == currentUser.pos_role || user.pos_role === 'user' ) {
+                        self.userButtons[i].user = user;
+                        self.userButtons[i].setText(user.name);
+                    }
                 }
             } else {
                 self.userButtons[i].user = null;
@@ -888,9 +920,9 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     
     // update user switches
-    updateUserSwitches: function() {
-        var user = Config.getUser();
-        if ( this.fastUserSwitch ) {            
+    updateUserSwitches: function() {        
+        if ( this.fastUserSwitch ) {
+            var user = Config.getUser();            
             Ext.each(this.userButtons, function(button) {
                 var buttonUser = button.user;
                 if ( buttonUser ) {

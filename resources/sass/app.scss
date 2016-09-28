@@ -689,3 +689,15 @@ div.TopButtonSmall > span.x-button-label {
     padding: 2px 5px;
     border-radius: 2px;
 }
+
+.PlaceUser {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    vertical-align: bottom;
+    line-height: 13px;
+    color: $fpos-white !important; 
+    background-color: $fpos-input-grey !important;
+    padding: 2px 5px;
+    border-radius: 2px;
+}

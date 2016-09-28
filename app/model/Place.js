@@ -11,7 +11,8 @@ Ext.define('Fpos.model.Place', {
                 'top_id',
                 'pos_color',
                 'pos_unavail',
-                {name:'amount', persist:false}
+                {name:'amount', persist:false},
+                {name:'user', persist: false}
                ],
        identifier: 'uuid',
        proxy: {

@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.6',
+        version : '4.0.7',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -24,6 +24,7 @@ Ext.define('Fpos.Config', {
         maxRows : 10,
         settings : null,
         user : null,
+        users: null,
         profile: null,
         currency: "€",
         admin: false,
@@ -366,7 +367,8 @@ Ext.define('Fpos.Config', {
     },
       
     updateProfile: function(profile) {
-        var self = this;        
+        var self = this;
+        var users = {};        
         if (profile) {
             var journalById = self.getJournalById();
             // set cash journal
@@ -376,7 +378,27 @@ Ext.define('Fpos.Config', {
                     self.setCashJournal(journal); 
                 }
             }); 
+            
+            // set users
+            Ext.each(profile.user_ids, function(user) {
+                users[user._id] = user; 
+            });
+        }       
+        self.setUsers(users);
+    },
+    
+    getUserById: function(userId) {
+        if ( userId ) {
+            var users = this.getUsers();
+            if ( users ) return users[userId];
         }
+        return undefined;
+    },
+    
+    getUserName: function(userId) {
+        var user = this.getUserById(userId);
+        if ( user ) return user.name;
+        return '';
     },
     
     getJournal: function(journal_id) {

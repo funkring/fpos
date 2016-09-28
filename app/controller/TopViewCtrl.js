@@ -129,6 +129,9 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                       '</tpl>',
                       '<tpl if="amount">',
                         '<span class="PlaceAmount">{[futil.formatFloat(values.amount)]} {[Config.getCurrency()]}</span>',
+                        '<tpl if="user">',
+                            '<span class="PlaceUser">{user}</span>',
+                        '</tpl>',                                                
                       '</tpl>'
                       );
             } else {     
@@ -140,7 +143,10 @@ Ext.define('Fpos.controller.TopViewCtrl', {
                      '</div>',
                  '</div>',
                  '<tpl if="amount">',
-                   '<span class="PlaceAmount">{[futil.formatFloat(values.amount)]} {[Config.getCurrency()]}</span>',
+                    '<span class="PlaceAmount">{[futil.formatFloat(values.amount)]} {[Config.getCurrency()]}</span>',
+                    '<tpl if="user">',
+                        '<span class="PlaceUser">{user}</span>',
+                    '</tpl>',                                                
                  '</tpl>');
             }
         }
