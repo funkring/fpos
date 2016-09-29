@@ -56,6 +56,15 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             this.setDefaultButtonWidth(73);
         }     
         
+        // listen on place input, for reseting category
+        Ext.Viewport.on({
+            scope: self,
+            placeInput: self.onPlaceInput
+        });           
+    },
+    
+    onPlaceInput: function() {
+        this.loadCategory(null);
     },
     
     productViewInitialize: function() {

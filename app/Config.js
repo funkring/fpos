@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.7',
+        version : '4.0.8',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -613,7 +613,8 @@ Ext.define('Fpos.Config', {
     },
     
     isMobilePos: function() {
-        return futil.screenWidth() < 600;
+        var phyWidth = futil.physicalScreenWidth();
+        return futil.screenWidth() < 600 || (phyWidth > 600 && phyWidth < 1024);
     },
     
     isPhonePos: function() {
