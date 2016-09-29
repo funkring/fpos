@@ -161,7 +161,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             
             var screenWidth = futil.screenWidth();
             var imageText = '';
-            var productPrice = '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>'; 
+            var productPrice = '<span class="ProductPrice">{[futil.formatFloat(values.price)]} / {[this.getUnit(values.uom_id)]}</span>'; 
              
             if ( self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
                 self.productButtonCls = 'ProductButton';
