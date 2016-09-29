@@ -807,9 +807,9 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // pos panel
         if ( !self.posPanel ) {
+            var keyboardLayout;
             if ( Config.hasNumpad() || Config.isPhonePos() ) {
                 // determine keyboard layout
-                var keyboardLayout;
                 if ( Config.hasNumpad() ) {
                     keyboardLayout = 'fpos_order_input_small';
                 } else {
@@ -868,6 +868,10 @@ Ext.define('Fpos.controller.MainCtrl', {
                 });
                  
             } else {                       
+                keyboardLayout = 'fpos_order_input';
+                if ( Config.isMobilePos() || Config.isTabletPos() ) {
+                    keyboardLayout = 'fpos_order_input_medium';
+                }
             
                 // big pos
                 self.posPanel = Ext.create("Ext.Panel", {
@@ -885,7 +889,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                     flex: 1                        
                                 },
                                 {
-                                    xtype: Config.isMobilePos() ? 'fpos_order_input_medium' : 'fpos_order_input'  
+                                    xtype: keyboardLayout
                                 }
                             
                             ]          

@@ -51,10 +51,14 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             self.loadProducts(self.categoryId, self.searchValue);
         });   
         
-        this.smallButton = Config.isMobilePos();
-        if ( this.smallButton ) {
-            this.setDefaultButtonWidth(73);
-        }     
+        // check size
+        if ( Config.isMobilePos() ) {
+            self.smallButton = true;
+            self.setDefaultButtonWidth(73);
+        } else if ( Config.isTabletPos() ) {
+            self.smallButton = true;
+            self.setDefaultButtonWidth(87);
+        }
         
         // listen on place input, for reseting category
         Ext.Viewport.on({
@@ -157,30 +161,34 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             
             var screenWidth = futil.screenWidth();
             var imageText = '';
+            var productPrice = '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>'; 
              
             if ( self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
                 self.productButtonCls = 'ProductButton';
-               
-                if ( !self.smallButton ) {
+                
+                if ( self.smallButton ) {
+                    productPrice = '<span class="ProductPrice">{[futil.formatFloat(values.price)]}</span>';
+                } else {
                     imageText = '<div class="ProductText">{pos_name}</div>';
-                }                
+                }      
+                           
                 self.productButtonTmpl = Ext.create('Ext.XTemplate',
                       '<tpl if="image_small">',
                           '<div class="ProductImage">',
                             '<img src="data:image/jpeg;base64,{image_small}"/>',                                        
                           '</div>',
                           imageText,
-                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                          productPrice,
                       '<tpl elseif="pos_name.length &lt;= 7">',
                          '<div class="ProductTextOnlyBig">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
+                          productPrice,                  
                       '<tpl else>',
                          '<div class="ProductTextOnly">',
                             '{pos_name}',
                           '</div>',
-                          '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',
+                          productPrice,
                       '</tpl>',{
                           getUnit: function(uom_id) {
                             var uom = self.unitStore.getById(uom_id);

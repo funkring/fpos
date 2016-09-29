@@ -613,8 +613,12 @@ Ext.define('Fpos.Config', {
     },
     
     isMobilePos: function() {
-        var phyWidth = futil.physicalScreenWidth();
-        return futil.screenWidth() < 600 || (phyWidth > 600 && phyWidth < 1024);
+        return futil.screenWidth() < 600;
+    },
+    
+    isTabletPos: function() {
+        var width = futil.screenWidth();
+        return ( width > 600 && width < 1024 );        
     },
     
     isPhonePos: function() {
