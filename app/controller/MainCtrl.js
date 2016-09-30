@@ -186,6 +186,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             syncState: self.onSyncState
         });
         
+        // after silent cash state sync
+        Ext.Viewport.on({
+            scope: self,
+            cashStateSilentFinished: self.onSyncTap
+        });
+        
         // add key listener
         ViewManager.pushKeyboardListener(self);
               
@@ -625,7 +631,12 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     getUserMenu: function() {
        if (!this.userMenu ) {
-          var items = [                    
+          var items = [        
+                    {
+                        text: 'Abschluss und Datenabgleich',
+                        action: 'createCashStateSilent',
+                        ui: 'posInputButtonOrange'
+                    },            
                     {
                         text: 'Sicherung und Datenabgleich',
                         action: 'sync',

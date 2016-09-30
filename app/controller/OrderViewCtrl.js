@@ -72,6 +72,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=createCashState]' : {
                 release: 'onCreateCashState'
             },
+            'button[action=createCashStateSilent]' : {
+                release: 'onCreateCashStateSilent'
+            },
             'button[action=createCashReport]' : {
                 release: 'onCashReport'  
             },
@@ -1803,7 +1806,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
 
         return deferred.promise();      
     },
-    
+        
     onCash: function() {
         ViewManager.hideMenus();
         var self = this;
@@ -1938,9 +1941,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // only post
                 postOrder();
             }
-            
-            
-            
         }      
     },
     
@@ -2737,7 +2737,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         summary.total += amount;   
     },
     
-    createCashReport: function(user, detail, finish) {
+    createCashReport: function(user, detail, finish, callback) {
         var self = this;
 
          // reset place
@@ -3030,12 +3030,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     'tag' : tag,
                     'amount_tax' : 0.0,
                     'amount_total' : 0.0
-                })['catch'](function(err) {          
+                })['catch'](function(err) {
                   ViewManager.stopLoading();
                   ViewManager.handleError(err,{
                         name: "Kassenbericht Fehler",
                         message: "Kassenbericht konnte nicht erstellt werden"
-                   });
+                  });
                 }).then(function(res) {
                     //FINISH                                                    
                     self.reloadData(function() {
@@ -3046,7 +3046,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 message: "Kassenbericht konnte nicht erstellt werden"
                            });
                         }).then(function(){
-                            ViewManager.stopLoading();    
+                            ViewManager.stopLoading();
+                            if ( callback ) callback();    
                         });                        
                     });
                 });
@@ -3111,11 +3112,73 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
-    onCreateCashState: function() {
-        ViewManager.hideMenus();
-        this.createCashReport(null, false, true);
+    onCreateCashStateSilent: function() {
+        var self = this;
+        ViewManager.hideMenus();        
+         
+        var createSilent = function() {
+            self.createCashReport(null, false, true, function() {
+                var place_id = self.order.get('place_id');
+                if ( !self.postActive && self.isDraft() && (!self.isPayment() || self.validatePayment()) && !place_id ) {
+                    // CHECK THAT 
+                    // ONLY CALLED ONCE
+                    ViewManager.startLoading("Buchen...");
+                    
+                    // post active
+                    self.postActive = true;
+                    var reload = false;
+                   
+                    // post
+                    self.postOrder()['catch'](function(err) {
+                        // post finished
+                        self.postActive = false;
+                        
+                        // stop loading after error
+                        ViewManager.stopLoading();
+                        ViewManager.handleError(err,{
+                            name: "Buchungsfehler",
+                            message: "Verkauf konnte nicht gebucht werden"
+                        }, true);
+                    }).then(function(postedOrder) {
+                        // post finished
+                        self.postActive = false;
+                        ViewManager.stopLoading();
+                        Ext.Viewport.fireEvent("cashStateSilentFinished");
+                    });
+                }
+            });
+        };
+        
+        // finish
+        if ( Config.getProfile().iface_place ) {
+            Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
+                if ( buttonId == 'yes' ) {          
+                    createSilent();
+                }
+            });        
+        } else {
+            createSilent();
+        }
     },
     
+    onCreateCashState: function() {
+        var self = this;        
+        ViewManager.hideMenus();      
+        
+        // finish 
+        if ( Config.getProfile().iface_place ) {
+            Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
+                if ( buttonId == 'yes' ) {          
+                   self.createCashReport(null, false, true);
+                } else {
+                   Ext.Viewport.fireEvent("showPlace");    
+                }
+            });        
+        } else {
+            this.createCashReport(null, false, true);
+        }
+    },
+        
     onCashReport: function() {
         ViewManager.hideMenus();
         this.createCashReport(null, false);
