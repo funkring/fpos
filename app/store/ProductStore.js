@@ -42,30 +42,45 @@ Ext.define('Fpos.store.ProductStore', {
         }
     },
     
+    addProduct: function(product) {
+        if ( product.get('sale_ok') ) {
+            // all products
+            this.allProducts.push(product);
+            
+            // add to favorite
+            if ( product.get('pos_fav') ) {
+                this.productQueue.push(product);
+            }
+            
+            // product by ean
+            this.productById[product.getId()] = product; 
+            var ean = product.get('ean13');
+            if ( ean ) {
+                this.productByEan[ean] = product;
+            }
+            
+            // add category
+            this.addToCategory(product.get('pos_categ_id'), product);
+            this.addToCategory(product.get('pos_categ2_id'), product);
+        }
+    },
+    
+    readProduct: function(uuid, callback) { 
+        var self = this;
+        self.getProxy().readDocument(uuid, function(err, product) {
+            // add product if not added
+            if ( product && !self.productById[uuid] ) {
+                self.addProduct(product);
+            }
+            if ( callback ) callback(err, product);
+        });  
+    },
+    
     buildIndex: function() {
         var self = this;
         this.resetIndex();
         self.each(function(product) {
-             if ( product.get('sale_ok') ) {
-                 // all products
-                 self.allProducts.push(product);
-                 
-                 // add to favorite
-                 if ( product.get('pos_fav') ) {
-                     self.productQueue.push(product);
-                 }
-                 
-                 // product by ean
-                 self.productById[product.getId()] = product; 
-                 var ean = product.get('ean13');
-                 if ( ean ) {
-                     self.productByEan[ean] = product;
-                 }
-                 
-                 // add category
-                 self.addToCategory(product.get('pos_categ_id'), product);
-                 self.addToCategory(product.get('pos_categ2_id'), product);
-            }
+            self.addProduct(product);
         });
     },
     

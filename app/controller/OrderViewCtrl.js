@@ -3233,9 +3233,41 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onBarcode: function(barcode) {
+        // check if loading
+        if ( ViewManager.isLoading() ) return;
+        
+        var self = this;
         var product = this.productStore.searchProductByEan(barcode);
         if ( product ) {
-            this.productInput(product);
+            self.productInput(product);
+        } else {
+            ViewManager.startLoading("Suche Product...");
+            Config.getClient()['catch'](function(err) {
+                ViewManager.stopLoading();
+                ViewManager.handleError(err);
+            }).then(function(client) {                
+                // check product from server
+                client.invoke("product.product","fpos_scan",[barcode])['catch'](function(err) {
+                    ViewManager.stopLoading();
+                    ViewManager.handleError(err);
+                }).then(function(newProduct) {
+                    var db = Config.getDB();
+                    db.post(newProduct)['catch'](function(err) {
+                        ViewManager.stopLoading();
+                        ViewManager.handleError(err);
+                    }).then(function(res) {
+                        // read product from db
+                        self.productStore.readProduct(res.id, function(err, product) {
+                            ViewManager.stopLoading();    
+                            if ( err ) {
+                                ViewManager.handleError(err);
+                            } else {
+                                self.productInput(product);
+                            }
+                        });                    
+                    });
+                });            
+            });
         }
     },
     

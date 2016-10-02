@@ -434,6 +434,25 @@ Ext.define('Fpos.Config', {
         return client;
     },
     
+    getClient: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if ( !self.client ) {
+            var client = self.newClient();
+            client.connect()['catch'](function(err) {
+                deferred.reject(err);
+            }).then(function() {
+                self.client = client;
+                deferred.resolve(self.client);
+            });
+        } else {
+            setTimeout(function() {
+                deferred.resolve(self.client); 
+            },0);
+        }
+        return deferred.promise();
+    },
+    
     updateApp: function() {
         if ( typeof(cordova) == 'undefined' || cordova.platformId !== 'android')
             return false;

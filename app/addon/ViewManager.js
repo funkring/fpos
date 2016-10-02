@@ -106,6 +106,16 @@ Ext.define('Ext.form.ViewManager', {
     },
     
     /**
+     * is loading
+     */
+    isLoading: function() {
+        var mask = Ext.Viewport.getMasked();
+        if ( !mask ) return false;
+        if ( mask.isHidden() ) return false;
+        return true;
+    },
+    
+    /**
      * @return true if valid
      */
     validateView: function(view) {

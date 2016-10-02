@@ -296,6 +296,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             return DBUtil.syncWithOdoo(db, client, {
                name: 'fpos',
                resync: typeof(resync) === "boolean" && resync || false,
+               auto: ["product.product"],
                models: [
                    {
                         model: 'res.partner.title',
