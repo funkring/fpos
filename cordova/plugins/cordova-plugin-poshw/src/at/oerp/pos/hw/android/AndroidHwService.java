@@ -11,6 +11,9 @@ import at.oerp.pos.PosHwService;
 
 public class AndroidHwService extends PosHwService {
 
+	BTPrinter printer;
+	boolean   printerFail;
+	
 	public AndroidHwService(Application app) {
 		super(app);
 	}
@@ -39,8 +42,12 @@ public class AndroidHwService extends PosHwService {
 	}
 
 	@Override
-	public PosHwPrinter getPrinter() {
-		return null;
+	public synchronized PosHwPrinter getPrinter() {
+		if ( printer == null && !printerFail ) {
+			printer = BTPrinter.create(this);
+			printerFail = (printer == null); 
+		}
+		return printer;
 	}
 
 	@Override
@@ -52,5 +59,12 @@ public class AndroidHwService extends PosHwService {
 	public boolean openCashDrawer() throws IOException {
 		return false;
 	}
+	
+	public synchronized void close() {
+		if ( printer != null ) {
+			printer.close();
+			printer = null;
+		}		
+	};
 
 }

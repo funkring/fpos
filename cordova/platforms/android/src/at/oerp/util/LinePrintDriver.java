@@ -12,6 +12,11 @@ public interface LinePrintDriver {
 	// Style
 	public final static int STYLE_NONE = 0;
 	public final static int STYLE_BOLD = 1 << 0;
+	public final static int STYLE_DOUBLE_H  = 1 << 1;
+	public final static int STYLE_DOUBLE_W  = 1 << 2;
+	public final static int STYLE_UNDERLINE = 1 << 3;
+	public final static int STYLE_SMALL     = 1 << 4;
+
 	
 	/**
 	 * print text

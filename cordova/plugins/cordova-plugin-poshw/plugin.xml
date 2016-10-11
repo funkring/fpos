@@ -83,6 +83,8 @@
 		<source-file src="src/at/oerp/pos/hw/ts7002/TS7002PosService.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
 		<source-file src="src/at/oerp/pos/hw/ts7002/Printer58mm.java" target-dir="src/at/oerp/pos/hw/ts7002/" />
 		<source-file src="src/at/oerp/pos/hw/android/AndroidHwService.java" target-dir="src/at/oerp/pos/hw/android/" />
+		<source-file src="src/at/oerp/pos/hw/android/BTPrinter.java" target-dir="src/at/oerp/pos/hw/android/" />
+		<source-file src="src/at/oerp/pos/hw/android/BTPrinter80.java" target-dir="src/at/oerp/pos/hw/android/" />
 		<source-file src="src/at/oerp/pos/hw/st808/LedDisplayImpl.java" target-dir="src/at/oerp/pos/hw/st808/" />
 		<source-file src="src/at/oerp/pos/hw/st808/SerialPortAdapter.java" target-dir="src/at/oerp/pos/hw/st808/" />
 		<source-file src="src/at/oerp/pos/hw/st808/Printer58mm.java" target-dir="src/at/oerp/pos/hw/st808/" />
@@ -159,7 +161,7 @@
 		
 		<source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
 		<source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
-
+		
         <config-file target="config.xml" parent="/*">
             <feature name="PosHw">
                 <param name="android-package" value="at.oerp.pos.cordova.PosHwPlugin"/>
@@ -176,6 +178,8 @@
             <uses-permission android:name="android.permission.NFC" />
             <uses-permission android:name="android.permission.WAKE_LOCK" />
             <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+            <uses-permission android:name="android.permission.BLUETOOTH" />
     
 		    <!-- cloudpos permissions -->
 		    <uses-permission android:name="android.permission.CLOUDPOS_PRINTER" />

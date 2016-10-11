@@ -7,43 +7,153 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="at.oerp.demo.poshw.MainActivity" >
+    tools:context="at.oerp.demo.poshw.MainActivity">
 
-    <TextView
-        android:id="@+id/infoView"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.37"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+    <TabHost
+        android:id="@+id/tabHost"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
 
-    <Button
-        android:id="@+id/printButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bondruck" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
 
-    <Button
-        android:id="@+id/displayButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Kundendisplay" />
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
 
-    <Button
-        android:id="@+id/weightButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Wiegung" />
+            </TabWidget>
 
-    <Button
-        android:id="@+id/openButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Öffnen" />
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
+
+                <LinearLayout
+                    android:id="@+id/tabPrint"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                        
+                    <LinearLayout
+	                    android:layout_width="wrap_content"
+	                    android:layout_height="wrap_content"
+	                    android:orientation="vertical" >
+	                    
+	                    <Button
+	                        android:id="@+id/printButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/bonprint" />
+	                    
+	                </LinearLayout>
+	                    
+	                    
+                   <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        
+	                    <Button
+	                        android:id="@+id/openBTButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/openBT" />
+	                    
+	                    <Button
+	                        android:id="@+id/printBTButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/printBT" />
+	                    
+	                     <Button
+	                         android:id="@+id/closeBTButton"
+	                         android:layout_width="wrap_content"
+	                         android:layout_height="wrap_content"
+	                         android:maxWidth="128dp"
+	                         android:minHeight="72dp"
+	                         android:minWidth="128dp"
+	                         android:text="@string/closeBT" />
+	                     
+	               </LinearLayout>
+                 
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tabOther"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
+	                    
+                    <Button
+                        android:id="@+id/weightButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="128dp"
+                        android:minHeight="72dp"
+                        android:minWidth="128dp"
+                        android:text="@string/weighing" />
+
+                    <Button
+                        android:id="@+id/openButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="128dp"
+                        android:minHeight="72dp"
+                        android:minWidth="128dp"
+                        android:text="@string/open" />
+
+                    <Button
+                        android:id="@+id/provisioningButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="128dp"
+                        android:minHeight="72dp"
+                        android:minWidth="128dp"
+                        android:text="@string/provisioning" />
+
+                    <Button
+                        android:id="@+id/displayButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="128dp"
+                           android:minHeight="72dp"
+                           android:minWidth="128dp"
+                        android:text="@string/customer_display" />
+	                    
+
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+
+    <ScrollView
+        android:id="@+id/infoScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"         
+        android:textAppearance="?android:attr/textAppearanceLarge" >
+        
+	    <TextView
+	        android:id="@+id/infoView"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"         
+	        android:textAppearance="?android:attr/textAppearanceLarge" />
+	    
+	</ScrollView>
+
     
-      <Button
-        android:id="@+id/provisioningButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Provisioning" />
 
 </LinearLayout>
