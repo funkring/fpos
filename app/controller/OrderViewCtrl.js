@@ -89,7 +89,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             },
             'button[action=saveOrder]' :  {
                 release: 'onSaveOrder'
-            }     
+            },
+            'button[action=scanQR]' : {
+                release: 'onScanQR'
+            }
         }
     },
     
@@ -426,7 +429,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         return line.get('qty') || 0.0;
     },
     
-    productInput: function(product) {
+    productInput: function(product, price) {
         var self = this;
         if ( self.isEditable() ) {
             
@@ -437,7 +440,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var noGroup = toWeight || profile.iface_nogroup || product.get('pos_nogroup') || false;
             var hideMenu = false;
         
-            if ( !noGroup ) {
+            if ( !noGroup && !price) {
                 self.lineStore.each(function(line) {
                     if ( line.get('product_id') === product.getId() ) {
                         self.setQty(line, self.getQty(line) + 1);
@@ -457,7 +460,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     uom_id : product.get('uom_id'),
                     tax_ids : product.get('taxes_id'),
                     netto : product.get('netto'),
-                    price : product.get('price'),
+                    price : price || product.get('price'),
                     qty : toWeight ? 0.0 : 1.0,
                     subtotal_incl : 0.0,
                     subtotal : 0.0,
@@ -3285,6 +3288,70 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         } else {
             this.barcodeScanner.detectBarcode(e);
         }       
+    },
+    
+    parseBCD: function(result) {
+        var self = this;
+        if ( self.isEditable() ) { 
+            try {
+                if ( !result.cancelled && result.text ) {                    
+                    var lines = result.text.split('\n');
+                    if ( lines.length >= 8 && lines[0] === "BCD" && lines[1] === "001" && lines[2] === "1" && lines[3] === "SCT" ) {
+                        // parse amount
+                        var m = /([0-9.]+)/.exec(lines[7]);
+                        if ( m ) {                        
+                            var amount = parseFloat(m[0]);
+                            var iban = lines[6];
+                            if ( iban ) {
+                                // check reference
+                                if ( lines.length >= 10 ) {
+                                    var ref = lines[9];      
+                                    if ( ref ) self.order.set('ref', ref);
+                                }
+                                
+                                // get profile and company accounts
+                                var profile = Config.getProfile();
+                                var accounts = profile.bank_accounts;
+                                
+                                // get income/expense products
+                                if ( accounts && accounts.indexOf(iban) >= 0 ) {
+                                    // income
+                                    var product_income = self.productStore.getProductById(profile.fpos_income_id);
+                                    if (!product_income) throw {'name':'Einstellung', message:'Kein Produkt für Einzahlung'};
+                                    self.productInput(product_income, amount);
+                                } else {
+                                    // expense
+                                    var product_expense = self.productStore.getProductById(profile.fpos_expense_id);
+                                    if (!product_expense) throw {'name':'Einstellung', message:'Kein Produkt für Auszahlung'};
+                                    self.productInput(product_expense, -amount);
+                                }
+                                
+                            } else {
+                                ViewManager.handlerError({'name':'Format', message:'QR Code hat keinen IBAN'});
+                            }
+                        } else {
+                            throw {'name':'Format', message:'QR Code hat keinen Betrag'};
+                        }
+                                                
+                    } else {
+                        throw {'name':'Format', message:'QR Code wird nicht unterstützt'};
+                    }
+                }
+            } catch ( ex ) {
+                ViewManager.handleError(ex, {name:'Fehler', message:'Ungültiges Format'});
+            }
+        }
+    },
+    
+    onScanQR: function() {
+        var self = this;
+        Config.scanQR(function(err, result) {
+            if ( !err ) {
+                self.parseBCD(result); 
+            } else {
+                ViewManager.handleError(err, {name:'Fehler', message:'Scan konnte nicht ausgeführt werden'});
+            }
+        });
     }
     
 });

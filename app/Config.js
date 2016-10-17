@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.14',
+        version : '4.0.15',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -649,6 +649,57 @@ Ext.define('Fpos.Config', {
             return window.PosHw.openCashDrawer();            
         }
         return false;
-    }
+    },
+    
+    hasQRScanner: function() {
+        /*
+        if ( typeof(cordova) == 'undefined' ) return false;
+        if ( cordova.plugins.barcodeScanner ) return true;
+        return false;
+        */
+        return true;
+    },
+    
+    scanQR: function(callback) {
+        /*
+        setTimeout(function() {
+            callback(null, {
+                text: "BCD\n"+
+                    "001\n"+
+                    "1\n"+
+                    "SCT\n"+
+                    "STSPAT2GXXX\n" +
+                    "Martin Reisenhofer\n"+
+                    "AT532081519700011646\n" +
+                    "EUR10.00\n"+
+                    "\n"+
+                    "AR2323"
+            });
+        }, 0);
+        setTimeout(function() {
+            callback(null, {
+                text: "BCD\n"+
+                    "001\n"+
+                    "1\n"+
+                    "SCT\n"+
+                    "RZSTAT2G403\n" +
+                    "Sabine Höllebauer\n"+
+                    "AT443840300005013701\n" +
+                    "EUR10.00\n"+
+                    "\n"+
+                    "AR1212"
+            });
+        }, 0);*/
+        
+        cordova.plugins.barcodeScanner.scan(function(result) {
+            if (callback) callback(null, result);
+        }, function(err) {
+            if (callback) callback(err);
+        }, {
+            "preferFrontCamera" : true,
+            "prompt" : "QR Code Scan",
+            "formats" : "QR_CODE"            
+        });
+    }    
     
 });

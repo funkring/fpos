@@ -648,6 +648,13 @@ Ext.define('Fpos.controller.MainCtrl', {
                         action: 'printAgain'
                     }                 
                 ];
+            
+          if ( Config.hasQRScanner() ) {
+              items.push({
+                 text: 'Scan',
+                 action: 'scanQR' 
+              });
+          }
           
           this.userMenu =  Ext.create('Ext.Menu', {
                 //scrollable: 'vertical',
@@ -688,9 +695,16 @@ Ext.define('Fpos.controller.MainCtrl', {
                         {
                             text: 'Kassenbericht',
                             action: 'createCashReport'
-                        }                 
+                        }           
                     ];
                     
+              if ( Config.hasQRScanner() ) {
+                  items.push({
+                     text: 'Scan',
+                     action: 'scanQR' 
+                  });
+              }
+              
               if ( navigator.app ) {
                   items.push({
                     text: 'Beenden',
