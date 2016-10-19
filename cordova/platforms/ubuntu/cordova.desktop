@@ -4,4 +4,4 @@ Exec=./cordova-ubuntu www/
 Terminal=false
 Type=Application
 X-Ubuntu-Touch=true
-Icon=www/logo.png
+Icon=www/img/logo.png

@@ -263,7 +263,7 @@ Ext.define('Fpos.Config', {
     
     hasPrinter: function() {
         var hwstatus = this.getHwStatus();
-        return hwstatus.printer && hwstatus.printer.installed; 
+        return hwstatus.printer && hwstatus.printer.installed;        
     },
     
     printHtml: function(html) {
@@ -652,12 +652,8 @@ Ext.define('Fpos.Config', {
     },
     
     hasQRScanner: function() {
-        /*
-        if ( typeof(cordova) == 'undefined' ) return false;
-        if ( cordova.plugins.barcodeScanner ) return true;
-        return false;
-        */
-        return true;
+        var hwstatus = this.getHwStatus();
+        return hwstatus.scanner;
     },
     
     scanQR: function(callback) {
@@ -691,15 +687,13 @@ Ext.define('Fpos.Config', {
             });
         }, 0);*/
         
-        cordova.plugins.barcodeScanner.scan(function(result) {
-            if (callback) callback(null, result);
-        }, function(err) {
-            if (callback) callback(err);
-        }, {
-            "preferFrontCamera" : true,
-            "prompt" : "QR Code Scan",
-            "formats" : "QR_CODE"            
-        });
+        if ( this.hasQRScanner() ) {
+            return window.PosHw.scan(function(result) {
+                if (callback) callback(null, result);
+            }, function(err) {
+                if (callback) callback(err);
+            });
+        }
     }    
     
 });

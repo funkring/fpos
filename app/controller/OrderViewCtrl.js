@@ -3294,9 +3294,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         if ( self.isEditable() ) { 
             try {
-                if ( !result.cancelled && result.text ) {                    
+                if ( !result.canceled && result.text ) {                    
                     var lines = result.text.split('\n');
-                    if ( lines.length >= 8 && lines[0] === "BCD" && lines[1] === "001" && lines[2] === "1" && lines[3] === "SCT" ) {
+                    if ( lines.length >= 8 && lines[0] === "BCD" && lines[1] === "001" && (lines[2] === "1" || lines[2] === "2") && lines[3] === "SCT" ) {
                         // parse amount
                         var m = /([0-9.]+)/.exec(lines[7]);
                         if ( m ) {                        
@@ -3344,10 +3344,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     onScanQR: function() {
+        ViewManager.hideMenus();
         var self = this;
         Config.scanQR(function(err, result) {
             if ( !err ) {
-                self.parseBCD(result); 
+                self.parseBCD(result);                 
             } else {
                 ViewManager.handleError(err, {name:'Fehler', message:'Scan konnte nicht ausgeführt werden'});
             }

@@ -9,10 +9,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.util.Log;
 import at.oerp.pos.PosHwDisplay;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwScale;
+import at.oerp.pos.PosHwScan;
 import at.oerp.pos.PosHwService;
 import at.oerp.pos.WeightResult;
 
@@ -20,13 +23,40 @@ public class PosHwPlugin extends CordovaPlugin {
 	
 	private String TAG = "PosHwPlugin";
 	private PosHwService service;
+	private HashMap<String, PosHwPluginCmd> api;
+	private ActivityCallback activityCallback;
+	
 		
 	abstract static class PosHwPluginCmd {
 		abstract boolean execute(final JSONArray args, final CallbackContext callbackContext) 
 					throws Exception;		
 	}
 	
-	private HashMap<String, PosHwPluginCmd> api;
+	abstract static class ActivityCallback {
+		CallbackContext callbackContext;
+		public ActivityCallback(CallbackContext inCallbackContext) {
+			callbackContext = inCallbackContext;
+		}
+		public void onActivityResult(int resultCode, Intent intent) {
+			
+		}
+	}
+	
+	
+	protected void pushCallback(Class<? extends Activity> inActivityClass, ActivityCallback inCallback) {
+		boolean valid = false; 
+		try {
+			Intent indent = new Intent(cordova.getActivity().getApplicationContext(), inActivityClass);			
+			cordova.setActivityResultCallback(this);
+			activityCallback = inCallback;
+			cordova.startActivityForResult((CordovaPlugin) this, indent, activityCallback.hashCode());
+			valid = true;
+		} finally {
+			if ( !valid ) {
+				activityCallback = null;
+			}
+		}
+	}
 	
 	
 	@Override
@@ -76,6 +106,8 @@ public class PosHwPlugin extends CordovaPlugin {
 							}
 							// check numpad
 							status.put("numpad", service.hasNumpad());
+							// check scanner
+							status.put("scanner",  service.hasScanner());
 
 							// notify status
 							callbackContext.success(status);
@@ -186,6 +218,36 @@ public class PosHwPlugin extends CordovaPlugin {
 						}
 					});
 					
+					api.put("scan", new PosHwPluginCmd() {
+						
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							if ( !service.hasScanner() ) return false;
+
+							// prepare callback
+							pushCallback( service.getScanActivity(), new ActivityCallback(callbackContext) {
+								@Override
+								public void onActivityResult(int resultCode, Intent intent) {
+									try {
+										JSONObject result = new JSONObject();
+										if ( resultCode == Activity.RESULT_OK ) {
+										   result.put("canceled", false);
+										   result.put("text", intent.getStringExtra(PosHwScan.RESULT_TEXT));
+										   result.put("format", intent.getStringExtra(PosHwScan.RESULT_FORMAT));
+										} else {
+										   result.put("canceled", true);
+										}
+										callbackContext.success(result);
+									} catch ( JSONException e) {
+										callbackContext.error(e.getMessage());
+									}								
+								}
+							});
+							
+							return true; 
+						}
+					});
+					
 				}
 			}
 
@@ -206,7 +268,17 @@ public class PosHwPlugin extends CordovaPlugin {
 			
 		} catch ( Throwable e) {
 			// log error
-			Log.e(TAG, e.getMessage());
+			String msg = e.getMessage();
+			if ( msg != null ) {
+				Log.e(TAG, msg);
+			} else {
+				msg = e.getClass().getName();
+				if ( e.getCause() != null ) {
+					msg = e.getCause().getMessage();
+					if ( msg == null ) msg = e.getCause().getClass().getName();
+				}
+				Log.e(TAG, msg);
+			}
 			
 			// throw before return
 			if ( e instanceof JSONException ) {				
@@ -214,7 +286,7 @@ public class PosHwPlugin extends CordovaPlugin {
 			}
 			
 			// return error via callback
-			inCallbackContext.error(e.getMessage());
+			inCallbackContext.error(msg);
 			return true;
 		}
 	}
@@ -223,6 +295,7 @@ public class PosHwPlugin extends CordovaPlugin {
 	@Override
 	public void onStop() {
 		synchronized (this) {
+			activityCallback = null;
 			if( service != null ) {
 				try {
 					service.close();
@@ -235,6 +308,13 @@ public class PosHwPlugin extends CordovaPlugin {
 		}
 	}
 	
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		ActivityCallback callback = activityCallback;
+		if ( callback != null && requestCode == callback.hashCode() ) { 
+			callback.onActivityResult(resultCode, intent);
+		} 
+	}
 	
 	
 }

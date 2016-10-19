@@ -36,5 +36,9 @@ module.exports = {
     
     provisioning: function(successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "provisioning", []);
-    }    
+    },
+    
+    scan: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "scan", []);
+    }  
 };

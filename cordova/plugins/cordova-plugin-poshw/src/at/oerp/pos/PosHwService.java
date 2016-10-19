@@ -2,6 +2,7 @@ package at.oerp.pos;
 
 import java.io.IOException;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.util.Log;
@@ -182,6 +183,21 @@ public abstract class PosHwService {
 			Log.e(TAG, e.getMessage(), e);
 			return false;
 		}
+	}
+	
+
+	/**
+	 * @return the scanner activty
+	 */
+	public Class<? extends Activity> getScanActivity() {
+		return null;
+	}
+	
+	/**
+	 * @return true if scanner activity is available
+	 */
+	public boolean hasScanner() {
+		return getScanActivity() != null;
 	}
 }
 	

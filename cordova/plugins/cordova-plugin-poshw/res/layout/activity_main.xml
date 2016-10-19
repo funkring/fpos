@@ -96,44 +96,64 @@
                     android:id="@+id/tabOther"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical" >
+                    android:orientation="horizontal" >
 	                    
-                    <Button
-                        android:id="@+id/weightButton"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:maxWidth="128dp"
-                        android:minHeight="72dp"
-                        android:minWidth="128dp"
-                        android:text="@string/weighing" />
-
-                    <Button
-                        android:id="@+id/openButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxWidth="128dp"
-                        android:minHeight="72dp"
-                        android:minWidth="128dp"
-                        android:text="@string/open" />
-
-                    <Button
-                        android:id="@+id/provisioningButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxWidth="128dp"
-                        android:minHeight="72dp"
-                        android:minWidth="128dp"
-                        android:text="@string/provisioning" />
-
-                    <Button
-                        android:id="@+id/displayButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxWidth="128dp"
-                           android:minHeight="72dp"
-                           android:minWidth="128dp"
-                        android:text="@string/customer_display" />
+                        android:orientation="vertical" >
+	                    <Button
+	                        android:id="@+id/weightButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/weighing" />
+	
+	                    <Button
+	                        android:id="@+id/openButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/open" />
+	
+	                    <Button
+	                        android:id="@+id/provisioningButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/provisioning" />
 	                    
+                    </LinearLayout>
+                    
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" >
+	                    
+                        <Button
+                            android:id="@+id/displayButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxWidth="128dp"
+                            android:minHeight="72dp"
+                            android:minWidth="128dp"
+                            android:text="@string/customer_display" />
+                        
+	                    <Button
+	                        android:id="@+id/scanButton"
+	                        android:layout_width="wrap_content"
+	                        android:layout_height="wrap_content"
+	                        android:maxWidth="128dp"
+	                        android:minHeight="72dp"
+	                        android:minWidth="128dp"
+	                        android:text="@string/scan" />
+	                </LinearLayout>
 
                 </LinearLayout>
             </FrameLayout>

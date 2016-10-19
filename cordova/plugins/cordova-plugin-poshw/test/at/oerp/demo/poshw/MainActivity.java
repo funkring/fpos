@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.Button;
 import android.widget.TabHost;
 import android.widget.TextView;
 import at.oerp.pos.PosHwDisplay;
+import at.oerp.pos.PosHwScan;
 import at.oerp.pos.PosHwService;
 import at.oerp.pos.R;
 import at.oerp.pos.WeightResult;
@@ -29,6 +31,8 @@ public class MainActivity extends Activity {
 	private ScaleTask scaleTask;
 	private Random random;
 	private BTPrinter btPrinter;
+	
+	private final static int REQUEST_SCAN = 1;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -207,6 +211,27 @@ public class MainActivity extends Activity {
 			}
 		});
 		
+		Button btScanButton = (Button) findViewById(R.id.scanButton);
+		btScanButton.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Class<? extends Activity> activityClass = posHw.getScanActivity();				
+				Intent intent = new Intent(MainActivity.this.getApplicationContext(), activityClass);				
+				startActivityForResult(intent, REQUEST_SCAN);
+				
+			}
+		});
+		
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if ( requestCode == REQUEST_SCAN ) {
+			if ( resultCode == RESULT_OK ) {
+				show(data.getStringExtra(PosHwScan.RESULT_TEXT) + "\n" + data.getStringExtra(PosHwScan.RESULT_TEXT));
+			}
+		}		
 	}
 	
 	protected void handleError(Throwable e) {

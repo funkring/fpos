@@ -2,6 +2,7 @@ package at.oerp.pos.hw.h510;
 
 import java.io.IOException;
 
+import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
 import android.util.Log;
@@ -82,5 +83,9 @@ public class H510PosService extends PosHwService implements CtrlBytes {
 	public boolean hasNumpad() {
 		return true;
 	}
-
+	
+	@Override
+	public Class<? extends Activity> getScanActivity() {
+		return H510ScanActivity.class;
+	}
 }
