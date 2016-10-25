@@ -10,6 +10,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     ],
     config: {
         defaultButtonWidth: 100,
+        defaultCategoryButtonHeight: 58,
         refs: {
             productSearch: '#productSearch',
             categoryDataView: '#categoryDataView',
@@ -43,6 +44,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.productPageCount = 0;
+        this.categoryPageCount = 0;
         this.shown = false;
         //this.cache = {};
         
@@ -158,6 +161,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             }
             self.buttonWidth = preferredX.toString() + "px";
             self.buttonHeight = preferredY.toString() + "px";
+            self.productPageCount = gridX * gridY;
             
             var screenWidth = futil.screenWidth();
             var imageText = '';
@@ -315,6 +319,13 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
        
        // search
        self.productStore.searchProductsByCategory(categoryId, self.searchValue);
+       // check scrolling
+       var scroller = self.getProductDataView().getScrollable().getScroller();
+       if ( !self.productPageCount || self.productStore.getCount() > self.productPageCount ) {
+            if ( scroller.getDisabled() ) scroller.setDisabled(false);
+       } else {
+            if ( !scroller.getDisabled() ) scroller.setDisabled(true);
+       }
        
         /*
        // search params
@@ -434,6 +445,19 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         var hidden = (self.categoryStore.getCount() === 0);
         if ( hidden != self.getCategoryDataView().getHidden() ) {
             self.getCategoryDataView().setHidden(hidden);
+        }
+       
+        if ( !hidden ) {
+            // check category scroller
+            var scroller = self.getCategoryDataView().getScrollable().getScroller();
+            if ( !self.categoryPageCount ) {
+                self.categoryPageCount =  Math.floor(self.getCategoryDataView().element.getHeight() / self.getDefaultCategoryButtonHeight());
+            }
+            if ( !self.categoryPageCount || self.categoryStore.getCount() > self.categoryPageCount ) {
+                if ( scroller.getDisabled() ) scroller.setDisabled(false);
+            } else {
+                if ( !scroller.getDisabled() ) scroller.setDisabled(true);
+            }
         }
        
         // load products

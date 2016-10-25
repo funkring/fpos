@@ -309,7 +309,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // product input event         
         Ext.Viewport.on({
             scope: self,
-            productInput: self.productInput            
+            productInput: self.onProductInput            
         });
         
         // place input
@@ -368,6 +368,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     placeInput: function(place) {
         var self = this;
         self.place = place;
+        ViewManager.startLoading("Lade Tisch..."); 
         self.reloadData(function() {
             if ( self.tempOrder ) {
                 var lines = self.tempOrder.line_ids;
@@ -381,7 +382,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // save
                 self.validateLines(true).then(function() {
                     self.updatePlace(place);
+                    ViewManager.stopLoading();
                 });
+            } else {
+                ViewManager.stopLoading();
             }
         });
     },    
@@ -437,7 +441,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var profile = Config.getProfile();
             
             var toWeight = product.get('to_weight');
-            var noGroup = toWeight || profile.iface_nogroup || product.get('pos_nogroup') || false;
+            var noUnit = product.get('nounit');
+            var noGroup = toWeight || noUnit || profile.iface_nogroup || product.get('pos_nogroup') || false;
             var hideMenu = false;
         
             if ( !noGroup && !price) {
@@ -477,7 +482,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // determine flags
                 var flags = '';
-                if ( product.get('nounit') ) {
+                if ( noUnit ) {
                     flags +="u";
                 }
                 if ( product.get('pos_minus') ) {
@@ -565,6 +570,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 self.scaleInput.startScale();
             }
         }
+    },
+    
+    /** 
+     * handle product input event
+     */
+    onProductInput: function(product) {
+        this.productInput(product);
     },
     
     /**
@@ -828,7 +840,84 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var turnover = 0.0;
             var lines = [];
             var updateLines = false;
-            
+            var profile = Config.getProfile();
+              
+            // ---------------------------------
+            // AUTO GROUP
+            // ---------------------------------
+            /*
+            if ( profile.iface_nogroup && forceSave && profile.iface_place && self.op != '-') {
+                // merge
+                var line, selI, mI, other;
+                var hasSubsection = false;
+                var mergeable = false;
+                
+                for ( selI = self.lineStore.getCount()-1; selI>=0; selI--) {
+                    line = self.lineStore.getAt(selI);
+                    mergeable = true;
+                    
+                    // get product
+                    var product_id = line.get('product_id');
+                    if ( !product_id ) continue;
+
+                    // check product
+                    var product = self.productStore.getProductById(product_id);                    
+                    if ( !product || product.get('pos_nogroup') || product.get('to_weight') ) mergeable = false;
+
+                    // check tag
+                    var tag = line.get('tag');
+                    if ( tag ) mergeable = false;
+                                      
+                    // check flags
+                    var flags = line.get('flags');
+                    if ( flags ) {
+                        // check if it is a subsection
+                        if ( flags.indexOf('2') > -1 ) {
+                            mergeable = false;
+                            hasSubsection = true;
+                            continue;
+                        }
+                        if ( flags.indexOf('1') > -1 ) mergeable = false;
+                        if ( flags.indexOf('d') > -1 ) mergeable = false;
+                        if ( flags.indexOf('u') > -1 ) mergeable = false;
+                    }
+                    // merge if mergable
+                    if ( !hasSubsection && mergeable ) {
+                        var otherHasSubsection = false;
+                        for ( mI = selI-1; mI>=0; mI-- ) {                     
+                            other = self.lineStore.getAt(mI);
+                            tag = other.get('tag');
+                            // cancel on tag
+                            if ( tag ) break;                        
+                            // cancel on section
+                            flags = other.get('flags');                        
+                            if ( flags ) {
+                                if ( flags.indexOf('1') > -1 ) break;
+                                if ( flags.indexOf('2') > -1 ) {    
+                                    otherHasSubsection = true;
+                                    continue;
+                                }
+                            }                        
+                            // MERGE if possible
+                            if ( !otherHasSubsection && other.get('product_id') === line.get('product_id') && other.get('name') == line.get('name') && other.get('price') == line.get('price') ) {
+                                // set new qty
+                                other.set('qty', line.get('qty') + other.get('qty'));
+                                // remove unused
+                                self.lineStore.removeAt(selI);
+                                break;
+                            }                           
+                            
+                            otherHasSubsection = false;
+                        }
+                    }
+                    
+                    hasSubsection = false;
+                }               
+            }*/
+                            
+            // ---------------------------------
+            // VALIDATE
+            // ---------------------------------
             self.lineStore.each(function(line) {                
                 var total_line = self.validateLine(line, tax_group, tax_ids);
                 var tag = line.get('tag');
@@ -944,9 +1033,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     Ext.each(oldLines, function(line) {
                        var newLine = newLinesDict[line._id];
                        if ( !newLine ) {
-                            createDiff(newLine, line);
+                         createDiff(newLine, line);
                        }
-                    });                 
+                    }); 
+                                                        
                 } else {
                     orderLogChanged = true;
                 }
@@ -958,7 +1048,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     var log = {
                         date: date,
                         user_id : Config.getUser()._id,
-                        fpos_user_id : Config.getProfile().user_id,
+                        fpos_user_id : profile.user_id,
                         line_ids : logLines                        
                     };
                     if ( logs ) {
@@ -971,7 +1061,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             // save
             // ( only save if it is dirty, not places are active or force save was passed)            
-            if ( self.order.dirty && (!Config.getProfile().iface_place || forceSave)) {
+            if ( self.order.dirty && (!profile.iface_place || forceSave)) {
                 self.order.save({
                     callback: function() {
                         // send changed event                        
@@ -1266,6 +1356,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( records.length > 0  ) {
                 var record = records[0];
                 var tag = record.get("tag");
+                var flags = record.get("flags");
                 if ( !tag || tag == 'o' ||  tag == 'i' || tag == 'r') {
                     // reset price price
                     if ( self.mode == "€" ) {
@@ -1290,7 +1381,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     } else {
                         // reset quantity
                         if ( self.mode == "*") {
-                            if ( self.getQty(record) === 0.0 ) {
+                            if ( self.getQty(record) === 0.0 || (flags && flags.indexOf('u') > -1) ) {
                                 if ( !tag || tag != 'r' ) {
                                     self.lineStore.remove(record);
                                 } else {
@@ -3314,7 +3405,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 var accounts = profile.bank_accounts;
                                 
                                 // get income/expense products
-                                if ( accounts && accounts.indexOf(iban) >= 0 ) {
+                                if ( accounts && accounts.indexOf(iban) > -1 ) {
                                     // income
                                     var product_income = self.productStore.getProductById(profile.fpos_income_id);
                                     if (!product_income) throw {'name':'Einstellung', message:'Kein Produkt für Einzahlung'};

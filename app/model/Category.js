@@ -12,6 +12,7 @@ Ext.define('Fpos.model.Category', {
                 'pos_color',
                 'pos_unavail',
                 'after_product',
+                'foldable',
                 {name:'selected', persist:false},
                 {name:'parent', persist:false}
                ],

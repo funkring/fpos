@@ -19,6 +19,7 @@ Ext.define('Fpos.store.ProductStore', {
     constructor: function(config) {
         this.resetIndex();    
         this.callParent(arguments);
+        this.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
     },
     
     resetIndex: function() {
@@ -31,6 +32,7 @@ Ext.define('Fpos.store.ProductStore', {
     },
     
     addToCategory: function(categ_id, product) {
+        categ_id = this.categoryStore.getMappedId(categ_id);
         if ( categ_id ) {
              this.showAll = false; 
              var list = this.productByCategoryId[categ_id];
