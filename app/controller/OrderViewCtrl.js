@@ -2308,7 +2308,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '<table width="100%">',
                     '<tr>',
                         '<td colspan="2"><hr/></td>',
-                    '</tr>',                    
+                    '</tr>',
                     '<tr>',
                         '<td width="34%">Datum:</td>',
                         '<td>{date:date("d.m.Y H:i:s")}</td>',
@@ -2888,7 +2888,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 self.updateLineSummary(sumLine, line, ignoreDetail);                             
                             } else if ( line.tag == 'i') {
                                 self.updateLineIOSummary(sumIncome, line, ignoreDetail);
-                                ignoreCashIO -= line.subtotal_incl;
+                                ignoreCashIO += line.subtotal_incl;
                             } else if ( line.tag == 'o') {
                                 self.updateLineIOSummary(sumExpense, line, ignoreDetail);
                                 ignoreCashIO += line.subtotal_incl;
