@@ -147,8 +147,8 @@ Ext.define('Ext.field.ListSelect', {
        this.setSearchValue(searchValue);
        this.searchTask.delay(this.getSearchDelay());
    },
-      
-   search: function() {
+   
+   searchOffline: function() {
        var self = this;
        var storeInst = self.getStore();
        var searchValue = self.getSearchValue();
@@ -165,11 +165,12 @@ Ext.define('Ext.field.ListSelect', {
        };
        
        // build search domain
+       /*
        if ( !Ext.isEmpty(searchValue) && searchValue.length >= 3) {       
            searchValue = searchValue.toLowerCase();
            var expr = "(doc."+searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0,3)) +") >= 0)";
            params.domain = [[expr,'=',true]];
-       }
+       }*/
        
        // search text or not
        if ( !Ext.isEmpty(searchValue) ) {
@@ -182,6 +183,10 @@ Ext.define('Ext.field.ListSelect', {
        
        // load
        storeInst.load(options);
+   },
+      
+   search: function() {
+      this.searchOffline();
    },
    
    firstSearch: function() {

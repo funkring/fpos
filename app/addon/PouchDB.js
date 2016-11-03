@@ -284,6 +284,20 @@ Ext.define('Ext.proxy.PouchDB', {
                 return Ext.isDate(date) ? date : Ext.Date.parse(date, dateFormat);
         }
     },
+       
+    /**
+     * create multible records
+     */
+    createRecords: function(docs, phantom) {
+        var self = this;
+        var records = [];
+        Ext.each(docs, function(doc) {
+            var rec = self.createRecord(doc);
+            if ( phantom ) rec.phantom = true;
+            records.push(rec);
+        });
+        return records;  
+    },
               
     /**
      * @private

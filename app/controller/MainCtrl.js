@@ -283,7 +283,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         }).then(function() {
             // sync
             ViewManager.startLoading("Synchronisiere Daten");
-            
+
+            // build options            
             var options = {};
             if ( Config.getSync() ) {
                 // add filter options if in sync
@@ -292,11 +293,12 @@ Ext.define('Fpos.controller.MainCtrl', {
                     return doc.fdoo__ir_model !== 'fpos.order' || doc.fpos_user_id == fpos_user_id; 
                 };
             }
-            
+
+            // sync            
             return DBUtil.syncWithOdoo(db, client, {
                name: 'fpos',
                resync: typeof(resync) === "boolean" && resync || false,
-               auto: ["product.product"],
+               auto: ["product.product", "res.partner"],
                models: [
                    {
                         model: 'res.partner.title',
@@ -335,29 +337,9 @@ Ext.define('Fpos.controller.MainCtrl', {
                         model: 'fpos.place',
                         readonly: true
                    },
-                   {
-                        model: 'res.partner',
-                        fields: ['name',
-                                 'title',
-                                 'parent_id',
-                                 'parent_name',
-                                 'ref',
-                                 'website',
-                                 'comment',
-                                 'customer',
-                                 'supplier',
-                                 'employee',
-                                 'function',
-                                 'street',
-                                 'street2',
-                                 'zip',
-                                 'city',
-                                 'email',
-                                 'fax',
-                                 'phone',
-                                 'mobile',
-                                 'is_company']
-                   },
+                   
+                   Config.getPartnerModel(),
+                                      
                    {
                        model: 'fpos.order',
                        // nDomain, remove if active is false

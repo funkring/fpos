@@ -694,6 +694,39 @@ Ext.define('Fpos.Config', {
                 if (callback) callback(err);
             });
         }
-    }    
+    },
+    
+    getOnlinePartner: function() {
+        var profile = this.getProfile();
+        return profile && profile.iface_ponline;
+    },
+    
+    getPartnerModel: function() {
+        return {
+            model: 'res.partner',
+            domain: [['available_in_pos','=',true]],
+            ndomain: [['available_in_pos','=',true],['active','=',false]],            
+            fields: ['name',
+                     'title',
+                     'parent_id',
+                     'parent_name',
+                     'ref',
+                     'website',
+                     'comment',
+                     'customer',
+                     'supplier',
+                     'employee',
+                     'function',
+                     'street',
+                     'street2',
+                     'zip',
+                     'city',
+                     'email',
+                     'fax',
+                     'phone',
+                     'mobile',
+                     'is_company']
+        };
+    }
     
 });

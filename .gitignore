@@ -7,4 +7,5 @@ build/
 !.gitignore
 # backup files
 *~
+*.log
 
