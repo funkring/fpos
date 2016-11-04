@@ -2279,8 +2279,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     
     previewPrint: function(html) {
-        var self = this;
-        html = '<div class="PrintReport">' + html + '</div>';       
+        //var self = this;
+        //html = '<div class="PrintReport"><div class="PrintContent">' + html + '</div></div>';
+        Ext.Viewport.fireEvent("printHtml", html);
+        /*       
         if ( !self.reportPanel ) {
             self.reportPanel = Ext.create('Ext.Panel',{
                 hideOnMaskTap: true,
@@ -2297,7 +2299,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         } else {
             self.reportPanel.setHtml(html);
             self.reportPanel.show();
-        }
+        }*/
     },
     
     printPlaceOrder: function(order) {

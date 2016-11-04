@@ -50,7 +50,11 @@ Ext.define('Ext.form.ViewManager', {
         } 
         
         if ( items.saveButton ) {
-             if (saveable) {
+            if (saveable) {
+               //check saveable text
+               var saveableText = this.getViewOption(view, 'saveableText') || 'Speichern';
+               if ( items.saveButton.getText() != saveableText) items.saveButton.setText(saveableText);
+               // show button
                items.saveButton.show();
             } else {
                items.saveButton.hide();

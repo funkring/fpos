@@ -192,6 +192,13 @@ Ext.define('Fpos.controller.MainCtrl', {
             cashStateSilentFinished: self.onSyncTap
         });
         
+        // print html
+        Ext.Viewport.on({
+            scope: self,
+            printHtml: self.printHtml
+        });
+        
+        
         // add key listener
         ViewManager.pushKeyboardListener(self);
               
@@ -718,7 +725,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     }, 
     
     resetBasePanel: function() {
-        ViewManager.setViewOption(this.basePanel, 'showPlace',false);
+        ViewManager.setViewOption(this.basePanel, 'showPlace', false);
         ViewManager.setViewOption(this.basePanel, 'showSaveOrder', false); 
         ViewManager.setViewOption(this.basePanel, 'showLogin', true);
         ViewManager.setViewOption(this.basePanel, 'showUserSwitch', false);
@@ -750,7 +757,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         // set view options
         ViewManager.setViewOption(self.basePanel, 'showLogin', !self.fastUserSwitch);
         ViewManager.setViewOption(self.basePanel, 'showUserSwitch', self.fastUserSwitch);
-        ViewManager.setViewOption(self.basePanel, 'showPlace',false);
+        ViewManager.setViewOption(self.basePanel, 'showPlace', false);
         ViewManager.setViewOption(self.basePanel, 'showSaveOrder', false); 
         ViewManager.setViewOption(self.basePanel, 'menu', self.getMenu()); 
         // notify change        
@@ -1189,5 +1196,71 @@ Ext.define('Fpos.controller.MainCtrl', {
         } else {
             this.getMainMenuButton().setBadgeText('');
         }
+    },
+    
+    printHtml: function(html) {
+        var self = this;
+        var title = 'Druckvorschau';
+        
+        // check if it is an object
+        if (typeof html === 'object') {
+            title = html.title;
+            html = html.html;
+        }
+        
+        if ( !self.printTemplate ) {
+            self.printTemplate = Ext.create('Ext.XTemplate',
+                   '<!doctype html>',
+                   '<html>',
+                       '<head>',
+                            '<meta charset="utf-8">',
+                            '<title>Belegdruck</title>',
+                            '<style>',                                 
+                                'body {["{"]}',
+                                    'font-family: monospace;',              
+                                '{["}"]}',
+                                'p {["{"]}',
+                                    'line-height: 0.6;',
+                                '{["}"]}',
+                            '</style>',
+                       '</head>',
+                       '<body>',
+                            '{html}',
+                       '</body>',                    
+                   '</html>');
+        }
+        
+        var htmlDoc = self.printTemplate.apply({html:html});
+        var printContainer = '<div class="PrintContent">' +
+                                '<iframe id="printFrame" frameborder="0" allowfullscreen>' +
+                                '</iframe>' +
+                             '</div>';
+        
+        self.getMainView().push({
+            xtype: 'panel', 
+            cls: 'PrintReport',            
+            layout: 'vbox',
+            html: printContainer,
+            title: title,
+            saveable: true,
+            saveableText: 'Drucken',
+            saveHandler: function(view) {
+                var f = view.element.down('#printFrame');
+                f.dom.contentWindow.print();
+            },
+            listeners: {
+                painted: function() {
+                    var e = this.element;
+                    var f = e.down('#printFrame');
+                    f.setHeight(e.getHeight());
+                    var contentWindow = f.dom.contentWindow;
+                    var childDoc = contentWindow.document;
+                    childDoc.open();
+                    childDoc.write(htmlDoc);
+                    childDoc.close();
+                }
+            }                     
+        });
     }
+    
 });
