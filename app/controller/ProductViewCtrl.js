@@ -71,7 +71,9 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     },
     
     onPlaceInput: function() {
-        this.loadCategory(null);
+        if ( this.shown ) {
+            this.loadCategory(null);
+        }
     },
     
     productViewInitialize: function() {
@@ -135,7 +137,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
      */  
     productButtonInitialize: function(button) {     
         var self = this;   
-        if ( !self.productButtonTmpl ) {    
+        if ( !self.productButtonTmpl ) {
             var viewWidth = self.getProductDataView().element.getWidth()-6;
             var viewHeight = self.getProductDataView().element.getHeight()-6;
             var defaultWidth = self.getDefaultButtonWidth();
