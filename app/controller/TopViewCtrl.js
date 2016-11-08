@@ -59,9 +59,23 @@ Ext.define('Fpos.controller.TopViewCtrl', {
     },
     
     onTopViewShow: function() {
-        if ( !this.shown ) {
-            this.shown = true;
-            this.loadTop(null);
+        var self = this;
+        if ( !self.shown ) {
+            self.shown = true;
+            self.loadTop(null);
+            
+            // check top scroller
+            if ( !self.getTopDataView().getHidden() ) {
+                var scroller = self.getTopDataView().getScrollable().getScroller();
+                if ( !self.topPageCount ) {
+                    self.topPageCount =  Math.floor(self.getTopDataView().element.getHeight() / self.getDefaultButtonWidth());
+                }
+                if ( !self.topPageCount || self.topStore.getCount() > self.topPageCount ) {
+                    if ( scroller.getDisabled() ) scroller.setDisabled(false);
+                } else {
+                    if ( !scroller.getDisabled() ) scroller.setDisabled(true);
+                }
+            }
         }
     },
     
@@ -113,6 +127,7 @@ Ext.define('Fpos.controller.TopViewCtrl', {
             }
             self.buttonWidth = preferredX.toString() + "px";
             self.buttonHeight = preferredY.toString() + "px";
+            self.placePageCount = gridX * gridY;
             
             var screenWidth = futil.screenWidth();
             if ( self.allTopStore.getCount() > 0 || screenWidth >= 1024) {
@@ -228,6 +243,14 @@ Ext.define('Fpos.controller.TopViewCtrl', {
        
         // load places
         self.placeStore.searchPlacesByTop(topId);
+        
+        // set place scrolling
+        var scroller = self.getPlaceDataView().getScrollable().getScroller();
+        if ( !self.placePageCount || self.placeStore.getCount() > self.placePageCount ) {
+             if ( scroller.getDisabled() ) scroller.setDisabled(false);
+        } else {
+             if ( !scroller.getDisabled() ) scroller.setDisabled(true);
+        }        
     }    
     
 });
