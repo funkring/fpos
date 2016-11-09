@@ -408,6 +408,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 line.set('qty_op', this.op);
             } 
             
+            // get cur qty
+            var qty_cur = line.get('qty');
+                        
             // create next qty
             var qty_next = 0.0;
             if ( this.op == '+') {
@@ -419,6 +422,34 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // update qty diff and qty
             line.set('qty_diff', qty);
             line.set('qty', qty_next);
+            
+            // update subsection, if it isn't already a subsection
+            var flags = line.get("flags");
+            if ( !flags || flags.indexOf('2') < 0  ) {
+                var index = this.lineStore.indexOf(line);
+                if ( index >= 0 ) {
+                    var count = this.lineStore.getCount();
+                    while ( ++index < count ) {
+                        var nextLine = this.lineStore.getAt(index);
+                        // check subsection
+                        flags = nextLine.get("flags");
+                        if ( !flags || flags.indexOf('2') < 0 ) break;
+                        // handle no unit
+                        if (  flags.indexOf('u') >= 0 ) {
+                            if ( qty_next > 0 && !(this.op == '-' && qty_next < qty_prev) ) {
+                                nextLine.set('qty_diff', 1);                            
+                            } else {
+                                nextLine.set('qty_diff', 0);
+                            }
+                        } else {
+                            // handle with unit                    
+                            if ( qty_cur == nextLine.get("qty") ) {
+                                this.setQty(nextLine, qty);
+                            }
+                        }
+                    }
+                }
+            } 
             
         } else {
             // default handling
@@ -845,7 +876,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // ---------------------------------
             // AUTO GROUP
             // ---------------------------------
-            /*
+            
             if ( profile.iface_nogroup && forceSave && profile.iface_place && self.op != '-') {
                 // merge
                 var line, selI, mI, other;
@@ -913,7 +944,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     hasSubsection = false;
                 }               
-            }*/
+            }
                             
             // ---------------------------------
             // VALIDATE
@@ -1344,6 +1375,28 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }  
     },
     
+    deleteLine: function(line) {
+        // update subsection, if it isn't already a subsection
+        var flags = line.get("flags");
+        if ( !flags || flags.indexOf('2') < 0  ) {
+            var index = this.lineStore.indexOf(line);
+            if ( index >= 0 ) {
+                ++index;
+                while ( index < this.lineStore.getCount() ) {
+                    var nextLine = this.lineStore.getAt(index);
+                    // check subsection
+                    flags = nextLine.get("flags");
+                    if ( !flags || flags.indexOf('2') < 0 ) break;
+                    // remove next line
+                    this.lineStore.remove(nextLine); 
+                }
+            }
+        }
+            
+        // remove line
+        this.lineStore.remove(line); 
+    },
+    
     onInputCancelTap: function() {
         if ( !this.isDraft ) return;
     
@@ -1366,7 +1419,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             db.get(product_id).then(function(doc) {
                                 // delete or reset price
                                 if ( record.get('price') === doc.price) {
-                                   self.lineStore.remove(record);
+                                   self.deleteLine(record);
                                 } else {
                                    record.set('price',doc.price);
                                 }
@@ -1383,7 +1436,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         if ( self.mode == "*") {
                             if ( self.getQty(record) === 0.0 || (flags && flags.indexOf('u') > -1) ) {
                                 if ( !tag || tag != 'r' ) {
-                                    self.lineStore.remove(record);
+                                    self.deleteLine(record);                                    
                                 } else {
                                     self.setQty(record, 1.0);
                                 }
@@ -1402,7 +1455,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         self.validateLines();
                     }
                 } else if ( tag == '#' ) {
-                    self.lineStore.remove(record);
+                    self.deleteLine(record);
                     self.validateLines();
                 } 
             }           
