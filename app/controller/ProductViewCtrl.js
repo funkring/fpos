@@ -71,6 +71,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     },
     
     onPlaceInput: function() {
+        // wait until it is,
+        // shown
         if ( this.shown ) {
             this.loadCategory(null);
         }
