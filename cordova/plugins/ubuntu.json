@@ -13,20 +13,23 @@
         "com.borismus.webintent": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-file-transfer": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
-        "cordova-plugin-whitelist": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
         "cordova-plugin-crosswalk-webview": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
         "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-whitelist": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
     "dependent_plugins": {
+        "cordova-plugin-compat": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
         "cordova-plugin-file": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }

@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright 2014 Canonical Ltd.
+ * Copyright 2014-2016 Canonical Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -317,7 +317,8 @@ function checkEnv(ubuntuDir) {
     'qtmultimedia5-dev', 
     'qtpim5-dev', 
     'libqt5sensors5-dev', 
-    'qtsystems5-dev'
+    'qtsystems5-dev',
+    'libconnectivity-qt1-dev'
     ];
 
     deps = deps.concat(additionalDependencies(ubuntuDir));
@@ -344,7 +345,7 @@ function checkEnv(ubuntuDir) {
 
         rl.on('line', function(line) {
             rl.close();
-            if (line !== 'Y' && line !== 'y') {
+            if (line !== 'Y' && line !== 'y' && line.length !== 0) {
                 deferred.reject(new Error());
                 return;
             }
@@ -362,7 +363,7 @@ function checkEnv(ubuntuDir) {
 }
 
 function checkChrootEnv(ubuntuDir, architecture, framework) {
-    var deps = "cmake libicu-dev:ARCH pkg-config qtbase5-dev:ARCH qtchooser qtdeclarative5-dev:ARCH qtfeedback5-dev:ARCH qtlocation5-dev:ARCH qtmultimedia5-dev:ARCH qtpim5-dev:ARCH libqt5sensors5-dev:ARCH qtsystems5-dev:ARCH ";
+    var deps = "cmake libicu-dev:ARCH pkg-config qtbase5-dev:ARCH qtchooser qtdeclarative5-dev:ARCH qtfeedback5-dev:ARCH qtlocation5-dev:ARCH qtmultimedia5-dev:ARCH qtpim5-dev:ARCH libqt5sensors5-dev:ARCH qtsystems5-dev:ARCH libconnectivity-qt1-dev:ARCH ";
     deps += additionalDependencies(ubuntuDir).join(' ');
     deps = deps.replace(/ARCH/g, architecture);
 
@@ -398,7 +399,7 @@ function checkChrootEnv(ubuntuDir, architecture, framework) {
 
         rl.on('line', function(line) {
             rl.close();
-            if (line !== 'Y' && line !== 'y') {
+            if (line !== 'Y' && line !== 'y' && line.length != 0) {
                 deferred.reject(new Error());
                 return;
             }

@@ -24,4 +24,4 @@ var ROOT = path.join(__dirname, '..');
 var shell = require('shelljs');
 var fs    = require('fs');
 
-//throw new Error('unimplemented');
+throw new Error('unimplemented');
