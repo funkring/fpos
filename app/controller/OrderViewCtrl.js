@@ -525,8 +525,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 var pos_sec = product.get('pos_sec');
                 if ( pos_sec  ) {
-                    // section 1 or 2
-                    flags +=pos_sec;
+                    // section 1 or 2, group or additon
+                    flags += pos_sec;
+                    if ( pos_sec == 'g' ) {
+                        // if group, add comment
+                        flags += '1';
+                        values.tag = '#';
+                    } else if ( pos_sec == 'a' ) {
+                        // if addition add section 2
+                        flags += '2';
+                    }
                 }                
                 if ( flags.length > 0) {
                     values.flags = flags;
