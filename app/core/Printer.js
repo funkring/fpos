@@ -13,7 +13,7 @@ Ext.define('Fpos.core.Printer', {
     
     constructor: function(config) {
         this.initConfig(config);
-        this.productStore = Ext.StoreMgr.lookup("ProductStore");        
+        this.productStore = Ext.StoreMgr.lookup("ProductStore");
         this.queue = [];
         this.active = false;
     },
@@ -22,14 +22,14 @@ Ext.define('Fpos.core.Printer', {
         var self = this;
         self.hasCategories = false;
         self.categories = {};
-        if ( profile ) {
+        if ( profile ) {            
             if ( profile.pos_category_ids && profile.pos_category_ids.length > 0) {
-                var categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
+                self.categoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
                 Ext.each(profile.pos_category_ids, function(categoryId) {
                     // enable category
                     self.categories[categoryId] = true;
                     // enable also child categories
-                    categoryStore.eachChild(categoryId, function(childCategory) {
+                    self.categoryStore.eachChild(categoryId, function(childCategory) {
                         self.categories[childCategory.getId()] = true;
                     });
                     // one category found
@@ -44,9 +44,15 @@ Ext.define('Fpos.core.Printer', {
         if ( product ) {
             if ( this.hasCategories ) {
                 var pos_categ_id = product.get('pos_categ_id');
-                if ( !pos_categ_id || !this.categories[pos_categ_id] ) {
-                    return false;
-                }          
+                if ( !pos_categ_id ) return false;
+                
+                // get mapped
+                if ( this.categoryStore ) {
+                    pos_categ_id = this.categoryStore.getMappedId(pos_categ_id);
+                }
+                
+                // check
+                if ( !this.categories[pos_categ_id] ) return false;
             } 
             return true;
         } 
