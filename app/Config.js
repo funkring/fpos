@@ -14,7 +14,7 @@ Ext.define('Fpos.Config', {
         'Fpos.core.HwProxy'
     ],
     config : {       
-        version : '4.0.18',
+        version : '4.0.19',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,

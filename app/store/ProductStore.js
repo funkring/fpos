@@ -1,7 +1,10 @@
 /*global Ext:false*/
 
 Ext.define('Fpos.store.ProductStore', {
-    extend: 'Ext.data.Store',      
+    extend: 'Ext.data.Store',
+    requires: [      
+        'Ext.util.HashMap'
+    ],
     config: {
         model: 'Fpos.model.Product',
         sorters: [
@@ -32,7 +35,6 @@ Ext.define('Fpos.store.ProductStore', {
     },
     
     addToCategory: function(categ_id, product) {
-        categ_id = this.categoryStore.getMappedId(categ_id);
         if ( categ_id ) {
              this.showAll = false; 
              var list = this.productByCategoryId[categ_id];
@@ -62,8 +64,33 @@ Ext.define('Fpos.store.ProductStore', {
             }
             
             // add category
-            this.addToCategory(product.get('pos_categ_id'), product);
-            this.addToCategory(product.get('pos_categ2_id'), product);
+            var categId = this.categoryStore.getMappedId(product.get('pos_categ_id'));
+            this.addToCategory(categId, product);
+            
+            // add category 2
+            var categOtherId = product.get('pos_categ2_id');
+            if ( categOtherId ) {
+                var categOtherMappedId = this.categoryStore.getMappedId(categOtherId);
+                if ( categOtherMappedId != categOtherId ) {
+                    if ( categOtherMappedId ) {
+                        var categ = this.categoryStore.getById(categId);
+                        var categOther = this.categoryStore.getById(categOtherMappedId);
+                        if ( categOther && categ ) {
+                            var categParentId = categ.get('parent_id');
+                            var categOtherParentId = categOther.get('parent_id');
+                            
+                            // check if parentid of category is the same as other parent id 
+                            // ... or mapped id is not the parent of categ parentId
+                            // ... and mapped is not equal to the same category                            
+                            if ( categParentId != categOtherParentId && categOtherMappedId != categParentId && categOtherMappedId != categId) {
+                                this.addToCategory(categOtherMappedId, product);
+                            }
+                        }
+                    }
+                } else {
+                    this.addToCategory(categOtherId, product);
+                }
+            }
         }
     },
     
@@ -121,5 +148,90 @@ Ext.define('Fpos.store.ProductStore', {
                 this.setData(products);
             }
         }
+    },
+    
+    getRateSorted: function(categoryId, limit, ignore) {
+        var self = this;
+        var rateSortedProducts = [];        
+        
+        var ignoreMap = null;
+        if ( ignore) {
+            ignoreMap = Ext.create('Ext.util.HashMap');
+            Ext.each(ignore, function(product) {
+                ignoreMap.replace(product.getId(), true);
+            });
+        }
+        
+        this.categoryStore.eachChild(categoryId, function(category) {
+            var products = self.productByCategoryId[category.getId()];
+            if (products) {
+                Ext.each(products, function(product) {
+                   // only normal products
+                   if ( product.get("pos_sec") ) return;
+
+                   // check ignore map
+                   if ( ignoreMap && ignoreMap.get(product.getId()) ) return;
+                   
+                   // check if full, or to less rated
+                   var rate = product.get('pos_rate');
+                   if ( rateSortedProducts.length >= limit && rateSortedProducts[rateSortedProducts.length-1].get('pos_rate') > rate ) return;
+                   
+                   // insert sorted
+                   var insertNext = null;
+                   for (var i=0; i<rateSortedProducts.length; i++) {
+                       if ( insertNext ) {
+                           var curProduct = rateSortedProducts[i];
+                           rateSortedProducts[i] = insertNext;
+                           insertNext = curProduct;
+                       } else if ( rate > rateSortedProducts[i].get('pos_rate') ) {
+                           insertNext = rateSortedProducts[i];
+                           rateSortedProducts[i] = product;
+                       } else if ( rateSortedProducts[i].getId() == product.getId() ) {
+                           return;
+                       }
+                   } 
+                   
+                   // insert last if there is place
+                   if ( rateSortedProducts.length < limit ) {
+                       if ( !insertNext ) {
+                            rateSortedProducts.push(product);
+                       } else {
+                            rateSortedProducts.push(insertNext);      
+                       }
+                    }
+                });
+            }
+        });
+        
+        return rateSortedProducts;
+    },
+    
+    buildAutoFavourites: function(limit) {
+        var self = this;
+        if ( self.builtAutoFavLimit && self.builtAutoFavLimit < limit ) return;
+        self.builtAutoFavLimit = limit;
+
+        // auto root favourites        
+        var space = limit - self.productQueue.length;
+        if ( space > 0) {
+            Ext.each(self.getRateSorted(null, space, self.productQueue), function(product) {
+                self.productQueue.push(product);
+            });
+        } 
+        
+        // calc child favourites
+        this.categoryStore.eachChild(null, function(category) {
+            var products = self.productByCategoryId[category.getId()];
+            var space = limit;
+            if ( products ) {
+                space = limit - products.length;
+            } 
+            if ( space > 0 ) {
+                Ext.each(self.getRateSorted(category.getId(), space, products), function(product) {
+                    self.addToCategory(category.getId(), product);
+                });
+            }
+        });
+        
     }
 });

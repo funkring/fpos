@@ -5,7 +5,8 @@ Ext.define('Fpos.core.HwProxy', {
     requires: [],
     
     config : {
-        url : 'http://localhost:8045'
+        url : 'http://localhost:8045',
+        timeout: 5000
     },
     
     constructor: function(config) {
@@ -19,7 +20,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() } );
     },
     
     printHtml: function(html, successCallback, errorCallback) {
@@ -30,7 +31,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     },
     
     scaleInit: function(price, tara, successCallback, errorCallback) {
@@ -40,7 +41,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     },
     
     scaleRead: function(successCallback, errorCallback ) {
@@ -50,7 +51,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     },
     
     display: function(lines, successCallback, errorCallback ) {
@@ -60,7 +61,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     },
     
     openCashDrawer: function(successCallback, errorCallback) {
@@ -70,7 +71,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     },
     
     openExternCashDrawer: function(successCallback, errorCallback) {
@@ -90,7 +91,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     },
     
     provisioning: function(successCallback, errorCallback) {
@@ -100,7 +101,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        });
+        }, { timeout: this.getTimeout() });
     }              
     
 });

@@ -31,7 +31,6 @@ Ext.define('Fpos.controller.MainCtrl', {
             loginButton: '#loginButton',
             placeButton: '#placeButton',
             saveOrderButton: '#saveOrderButton',
-            //saveOrderButtonMobile: '#saveOrderButtonMobile',
             userButton1: '#userButton1',
             userButton2: '#userButton2',
             userButton3: '#userButton3',
@@ -114,36 +113,6 @@ Ext.define('Fpos.controller.MainCtrl', {
         this.fastUserSwitch = false;
         
         document.addEventListener("backbutton", this.onBackButton, false);
-        
-        /*
-        var self = this;
-        self.eanDetectTask = Ext.create('Ext.util.DelayedTask', function() {
-            var ean = "";
-            if ( self.eanDetect.length == 14 && self.eanDetect[13] == 13 ) {
-                //build ean
-                Ext.each(self.eanDetect, function(e) {
-                    var keycode = e.keyCode ? e.keyCode : e.which;
-                    if ( keycode >= 48 && keycode <= 57 ) {            
-                        var c = String.fromCharCode(keycode);
-                        ean += c;                        
-                    }
-                });
-            } 
-                       
-            // check if it is ean
-            if ( ean.length != 13 ) {
-                Ext.each(self.eanDetect, function(event) {
-                    // post key
-                    Ext.Viewport.fireEvent("posKey",event); 
-                });
-            } else {
-                // post ean
-                Ext.Viewport.fireEvent("posScan",ean); 
-            }
-            
-            // reset
-            self.eanDetect = [];
-        });*/
     },
     
     mainViewInitialize: function() {

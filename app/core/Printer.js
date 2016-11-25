@@ -7,7 +7,8 @@ Ext.define('Fpos.core.Printer', {
     
     config : {
         profile: null,
-        timeout: 2000,
+        timeout: 5000,
+        retryTimeout: 1000,
         queueSize: 50     
     },
     
@@ -73,46 +74,38 @@ Ext.define('Fpos.core.Printer', {
     /**
      * @private
      */
-    handleNext: function(timeout) {
+    printQueue: function(callback) {
         var self = this;
-        if ( !self.active ) {
+        if ( self.queue.length > 0 && !self.active) {
             self.active = true;
-            setTimeout(function() {
-                self.active = false;
-                self.printQueue(); 
-            }, timeout || 0);            
-        }
-    },
-    
-    /**
-     * @private
-     */
-    retry: function() {
-        this.handleNext(this.getTimeout()*2);
-    },
-    
-    /**
-     * @private
-     */
-    printQueue: function() {
-        var self = this;
-        if ( self.queue.length > 0 ) {
             var html = self.queue[0];
             self.remotePrint(html, function(err) {
+                self.active = false;
                 if (err) {
-                    // on errer queue 
-                    // again, but wait a while
-                    self.retry();
-                } else {
-                    // remove element and print
-                    // again immediatly if there are
-                    // one more element
-                    self.queue.shift();
-                    if ( self.queue.length > 0 ) {
-                        self.handleNext();
+                    // queue next print
+                    setTimeout(function() {
+                        self.printQueue(); 
+                    }, self.getRetryTimeout() );
+                    
+                    // notify error
+                    if (callback) {
+                        var message = err.message || err.name || 'unbekannte Ursache';
+                        callback({name: "Übermittlungsfehler", message: message});
                     }
+                    
+                } else {
+                    // remove current 
+                    self.queue.shift();
+                    // print next
+                    self.printQueue();
+                    
+                    // notify callback
+                    if (callback) callback();
                 }
             });
+        } else {
+            // notify callback
+            if (callback) callback();
         }
     },
     
@@ -125,29 +118,12 @@ Ext.define('Fpos.core.Printer', {
                deferred.resolve();
             },0);        
         } else {
-            // if queue started, print into queue
-            if ( self.queue.length > 0 ) {
-                // enque
-                setTimeout(function() {                    
-                    // check max queue size
-                    if ( self.queue.length > self.getQueueSize() ) {
-                        // reject error
-                        deferred.reject({name: 'queue_full', message: 'Print queue is full!'});
-                    } else {
-                        // handle next 
-                        self.queue.push(html);
-                        self.handleNext();
-                        // finished                    
-                        deferred.resolve();    
-                    }
-                });                
-            } else {
-                // otherwise print directly
-                self.remotePrint(html, function(err) {
+            // check queue
+            if ( self.queue.length < self.getQueueSize() ) {
+                // queue print
+                self.queue.push(html);
+                self.printQueue(function(err) {
                     if ( err ) {
-                        // retry
-                        self.queue.push(html);
-                        self.retry();
                         // reject error                                          
                         deferred.reject(err);
                     } else {
@@ -155,6 +131,9 @@ Ext.define('Fpos.core.Printer', {
                         deferred.resolve();
                     }
                 });
+            } else {
+                // reject error
+                deferred.reject({name: 'queue_full', message: 'Druck Warteschlange ist voll!'});
             }
         }
         return deferred.promise();

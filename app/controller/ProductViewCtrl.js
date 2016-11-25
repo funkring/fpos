@@ -47,6 +47,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.productPageCount = 0;
         this.categoryPageCount = 0;
         this.shown = false;
+        this.autofav = false;
+        this.calcedSizes = false;
         //this.cache = {};
         
         //search task
@@ -133,6 +135,40 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             self.loadCategory(categoryId);
         }
     },
+    
+    calcSizes: function() {
+        var self = this;
+        if ( self.calcedSizes ) return;
+        self.calcedSizes = true;
+        
+        var viewWidth = self.getProductDataView().element.getWidth()-6;
+        var viewHeight = self.getProductDataView().element.getHeight()-6;
+        var defaultWidth = self.getDefaultButtonWidth();
+        var defaultWidthAndMargin = defaultWidth+2;          
+        var gridX = Math.floor(viewWidth / defaultWidthAndMargin);
+        var gridY = Math.floor(viewHeight / defaultWidthAndMargin);
+        var preferredX = defaultWidth;
+        var preferredY = defaultWidth;
+
+        if ( gridX < 2 ) {
+            if ( viewWidth > preferredX ) {
+                preferredX = viewWidth;
+            }
+        } else {
+            preferredX = Math.round(viewWidth / gridX)-3;
+        }
+        if ( gridY < 2) {
+            if ( viewHeight > preferredY ) {
+                preferredY = viewHeight;
+            }
+        } else {
+            preferredY = Math.round(viewHeight / gridY)-3;
+        }
+        self.buttonWidth = preferredX.toString() + "px";
+        self.buttonHeight = preferredY.toString() + "px";
+        self.productPageCount = gridX * gridY;
+        
+    },
       
     /**
      * set product item template
@@ -140,32 +176,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     productButtonInitialize: function(button) {     
         var self = this;   
         if ( !self.productButtonTmpl ) {
-            var viewWidth = self.getProductDataView().element.getWidth()-6;
-            var viewHeight = self.getProductDataView().element.getHeight()-6;
-            var defaultWidth = self.getDefaultButtonWidth();
-            var defaultWidthAndMargin = defaultWidth+2;          
-            var gridX = Math.floor(viewWidth / defaultWidthAndMargin);
-            var gridY = Math.floor(viewHeight / defaultWidthAndMargin);
-            var preferredX = defaultWidth;
-            var preferredY = defaultWidth;
-
-            if ( gridX < 2 ) {
-                if ( viewWidth > preferredX ) {
-                    preferredX = viewWidth;
-                }
-            } else {
-                preferredX = Math.round(viewWidth / gridX)-3;
-            }
-            if ( gridY < 2) {
-                if ( viewHeight > preferredY ) {
-                    preferredY = viewHeight;
-                }
-            } else {
-                preferredY = Math.round(viewHeight / gridY)-3;
-            }
-            self.buttonWidth = preferredX.toString() + "px";
-            self.buttonHeight = preferredY.toString() + "px";
-            self.productPageCount = gridX * gridY;
+            self.calcSizes();
             
             var screenWidth = futil.screenWidth();
             var imageText = '';
@@ -320,9 +331,20 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                 self.getProductSearch().reset();
             }
        }
-       
+    
+       //build auto favourites   
+       // if enabled
+       if ( !self.autofav ) {
+           self.autofav = true;
+           var profile = Config.getProfile();
+           if ( profile && profile.iface_autofav ) {
+                self.calcSizes();
+                self.productStore.buildAutoFavourites(self.productPageCount);
+           }
+       }
        // search
        self.productStore.searchProductsByCategory(categoryId, self.searchValue);
+       
        // check scrolling
        var scroller = self.getProductDataView().getScrollable().getScroller();
        if ( !self.productPageCount || self.productStore.getCount() > self.productPageCount ) {
@@ -330,69 +352,6 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
        } else {
             if ( !scroller.getDisabled() ) scroller.setDisabled(true);
        }
-       
-        /*
-       // search params
-       var params = {
-           limit: Config.getSearchLimit()
-       };
-       
-       // options
-       var options = {
-           params : params
-       };
-       
-        // category        
-        if ( self.categoryId ) {
-            options.params = {
-                domain : [['pos_categ_id','=',categoryId]]
-            };
-        } 
-
-        // build search domain        
-        if ( Ext.isEmpty(self.searchValue) ) {
-            self.searchTask.cancel();
-            if ( self.getProductSearch().getValue() ) {
-                self.getProductSearch().reset();
-            }
-            
-            // query cache
-            var key = self.categoryId || 0;
-            var cached = self.cache[key];
-            if ( cached === undefined ) {
-                //set cache
-                cached = [];
-                self.cache[key] = cached;
-                
-                // cache
-                options.callback = function() {
-                    self.productStore.each(function(rec) {
-                        cached.push(rec); 
-                    });
-                };
-            } else {
-                // set cached
-                self.productStore.setData(cached);
-                return;
-            }
-            
-        } else {
-            // build search token
-            if ( self.searchValue.length >= 3 ) {            
-               var searchStr = JSON.stringify(self.searchValue.substring(0,3).toLowerCase());
-               var expr = "(doc.name && doc.name.toLowerCase().indexOf(" + searchStr +") >= 0)";
-               params.domain = [[expr,'=',true]];           
-            }
-            // add search filter
-            options.filters = [{
-                property: 'name',
-                value: self.searchValue,
-                anyMatch: true
-            }];
-        }
-      
-        // load
-        self.productStore.load(options);     */          
     },
     
     /**
