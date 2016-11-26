@@ -2404,14 +2404,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 '<td>{name}</td>',
                             '<tpl else>',
                                 '<td width="20%">&nbsp;</td>',
-                                '<td>&nbsp;{name} x {[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}</td>',
+                                '<td>&nbsp;{name} x {[this.formatAmount(values)]}</td>',
                             '</tpl>',
                         '<tpl elseif="this.hasFlag(values,\'u\')">',
                             '<td width="20%">&nbsp;</td>',
                             '<td>{name}</td>',
                         '<tpl else>',
                             '<td width="20%" align="right">{[this.formatAmount(values)]}</td>',
-                            '<td>&nbsp;{[this.getUnit(values.uom_id)]} {name}</td>',
+                            '<td>&nbsp;{name}</td>',
                         '</tpl>',
                     '</tr>',                    
                     '<tpl if="notice">',
@@ -2427,11 +2427,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '</tpl>',
                 '</tpl>',
                 '</table>',
-                {
-                    getUnit: function(uom_id) {
-                        var uom = self.unitStore.getById(uom_id);
-                        return uom ? uom.get('name') : '';
-                    },
+                {                    
                     formatText: function(text) {
                         return text ? text.replace(/\n/g,'<br/>') : '';
                     },
