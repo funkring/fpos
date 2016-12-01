@@ -165,12 +165,15 @@ Ext.define('Ext.field.ListSelect', {
        };
        
        // build search domain
-       /*
-       if ( !Ext.isEmpty(searchValue) && searchValue.length >= 3) {       
-           searchValue = searchValue.toLowerCase();
-           var expr = "(doc."+searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf(" + JSON.stringify(searchValue.substring(0,3)) +") >= 0)";
+       if ( !Ext.isEmpty(searchValue) ) {
+           var indexVal = searchValue;
+           if ( indexVal.length > 2) {
+                indexVal = searchValue.substring(0,2);
+           } 
+           indexVal = indexVal.toLowerCase();
+           var expr = "(doc."+searchField + " && " + "doc." + searchField + ".toLowerCase().indexOf('" + indexVal +"') >= 0)";
            params.domain = [[expr,'=',true]];
-       }*/
+       }
        
        // search text or not
        if ( !Ext.isEmpty(searchValue) ) {
