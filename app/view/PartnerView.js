@@ -52,7 +52,12 @@ Ext.define('Fpos.view.PartnerView', {
                         autoComplete: false,
                         autoCorrect: false,
                         autoCapitalize: false
-                    }
+                    },
+                    {
+                        xtype: 'textareafield',
+                        label: 'Bemerkung',
+                        name: 'comment'
+                    }   
                 ]   
             },
             {
@@ -83,10 +88,17 @@ Ext.define('Fpos.view.PartnerView', {
                         label: 'Ort'
                     }
                ] 
-            },
+            }
+            /*
             {
                 xtype: 'fieldset',
                 title: 'Bemerkung',
+                listeners: {
+                    focus: function(comp, e, eopts) {
+                        var ost = comp.element.dom.offsetTop;
+                        this.getParent().getParent().getScrollable().getScroller().scrollTo(0, ost);
+                    }
+                },
                 items: [
                     {
                         xtype: 'textareafield',
@@ -94,7 +106,7 @@ Ext.define('Fpos.view.PartnerView', {
                         name: 'comment'
                     }                
                 ]
-            }            
+            }*/           
         ]       
     }
     
