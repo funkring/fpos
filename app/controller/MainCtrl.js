@@ -5,7 +5,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Ext.ux.Deferred',
         'Fpos.view.Main',
         'Ext.Menu',
-        'Ext.form.ViewManager',        
+        'Ext.form.ViewManager',
+        'Ext.field.SearchList',        
         'Fpos.Config',
         'Fpos.view.ConfigView',
         'Ext.view.NumberInputView',
@@ -167,12 +168,32 @@ Ext.define('Fpos.controller.MainCtrl', {
             printHtml: self.printHtml
         });
         
+        // show partner
+        Ext.Viewport.on({
+            scope: self,
+            pact_partner: self.onShowPartner            
+        });
         
         // add key listener
         ViewManager.pushKeyboardListener(self);
               
         // reset config
         self.resetConfig();
+    },
+    
+    onShowPartner: function() {
+        var self = this;
+        Config.getClient().then(function(client) {
+            self.getMainView().push({
+               xtype: 'search_list',
+               title: 'Partner',
+               store: 'OPartnerStore',
+               formView: 'fpos_partner_form',
+               dataAdd: true 
+            });
+        })['catch'](function(err) {
+            ViewManager.handleError(err);
+        });
     },
     
     onSyncTap: function() {        
@@ -610,13 +631,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                         action: 'printAgain'
                     }                 
                 ];
-            
-          if ( Config.hasQRScanner() ) {
-              items.push({
-                 text: 'Scan',
-                 action: 'scanQR' 
-              });
-          }
           
           this.userMenu =  Ext.create('Ext.Menu', {
                 //scrollable: 'vertical',
@@ -659,14 +673,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                             action: 'createCashReport'
                         }           
                     ];
-                    
-              if ( Config.hasQRScanner() ) {
-                  items.push({
-                     text: 'Scan',
-                     action: 'scanQR' 
-                  });
-              }
-              
+                            
               if ( navigator.app ) {
                   items.push({
                     text: 'Beenden',

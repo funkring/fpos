@@ -83,6 +83,17 @@ Ext.define('Fpos.view.PartnerView', {
                         label: 'Ort'
                     }
                ] 
+            },
+            {
+                xtype: 'fieldset',
+                title: 'Bemerkung',
+                items: [
+                    {
+                        xtype: 'textareafield',
+                        label: 'Bemerkung',
+                        name: 'comment'
+                    }                
+                ]
             }            
         ]       
     }

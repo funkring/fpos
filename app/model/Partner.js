@@ -10,11 +10,12 @@ Ext.define('Fpos.model.Partner', {
                 'mobile',
                 'phone',
                 'street',
-                'sreet2',
+                'street2',
                 'zip', 
                 'city',
                 'fax',
-                'customer'
+                'customer',
+                'comment'
                 ],        
        identifier: 'uuid',
        proxy: {           

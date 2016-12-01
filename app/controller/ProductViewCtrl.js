@@ -180,13 +180,13 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             
             var screenWidth = futil.screenWidth();
             var imageText = '';
-            var productPrice = '<span class="ProductPrice">{[futil.formatFloat(values.price)]} / {[this.getUnit(values.uom_id)]}</span>'; 
+            var productPrice = '<tpl if="price"><span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]}</span></tpl>'; 
              
             if ( self.allCategoryStore.getCount() > 0 || screenWidth >= 1024) {
                 self.productButtonCls = 'ProductButton';
                 
                 if ( self.smallButton ) {
-                    productPrice = '<span class="ProductPrice">{[futil.formatFloat(values.price)]}</span>';
+                    productPrice = '<tpl if="price"><span class="ProductPrice">{[futil.formatFloat(values.price)]}</span></tpl>';
                 } else {
                     imageText = '<div class="ProductText">{pos_name}</div>';
                 }      
@@ -208,12 +208,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                             '{pos_name}',
                           '</div>',
                           productPrice,
-                      '</tpl>',{
-                          getUnit: function(uom_id) {
-                            var uom = self.unitStore.getById(uom_id);
-                            return uom && uom.get('name') || '';
-                          }
-                      });
+                      '</tpl>'
+                      );
             } else {     
                 self.productButtonCls = 'ProductButtonNoCat';  
                 if ( !self.smallButton ) {
@@ -232,13 +228,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                          '</div>',
                      '</tpl>',
                  '</div>', 
-                 '<span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]} / {[this.getUnit(values.uom_id)]}</span>',                  
-                 {
-                      getUnit: function(uom_id) {
-                        var uom = self.unitStore.getById(uom_id);
-                        return uom && uom.get('name') || '';
-                      }
-                 });
+                 '<tpl if="price"><span class="ProductPrice">{[futil.formatFloat(values.price)]} {[Config.getCurrency()]}</span></tpl>'                
+                 );
             }
         }
         

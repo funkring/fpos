@@ -39,7 +39,8 @@ Ext.define('Fpos.model.Product', {
                 'pos_fav',
                 'pos_sec',
                 'pos_cm',
-                'pos_rate'
+                'pos_rate',
+                'pos_action'
                 ],
        identifier: 'uuid',
        proxy: {

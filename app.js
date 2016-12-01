@@ -32,7 +32,8 @@ Ext.application({
         'Partner',
         'PosPayment',
         'Top',
-        'Place'
+        'Place',
+        'OPartner'
     ],
         
     stores: [
@@ -47,7 +48,8 @@ Ext.application({
         'PartnerStore',
         'PosPaymentStore',
         'TopStore',
-        'PlaceStore'
+        'PlaceStore',
+        'OPartnerStore'
     ],
     
     controllers: [

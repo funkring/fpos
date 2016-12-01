@@ -23,9 +23,10 @@ Ext.Loader.addClassPathMappings({
   "Ext.Element-traversal": "touch/src/dom/Element.traversal.js",
   "Ext.TapLabel": "app/addon/TapLabel.js",
   "Ext.client": "app/addon",
-  "Ext.cmd": "../../../.local/opt/Sencha/Cmd/6.0.2.14/plugins/src",
   "Ext.core.DomQuery": "touch/src/dom/Query.js",
   "Ext.data.ModelUtil": "app/addon/ModelUtil.js",
+  "Ext.data.proxy.Odoo": "app/addon/OdooProxy.js",
+  "Ext.data.reader.JsonOdoo": "app/addon/OdooProxy.js",
   "Ext.data.reader.PouchDB": "app/addon/PouchDB.js",
   "Ext.device.Purchases.Product": "touch/src/device/purchases/Sencha.js",
   "Ext.device.filesystem.DirectoryEntry": "touch/src/device/filesystem/Sencha.js",
@@ -40,6 +41,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.draw.engine.SvgContext.Gradient": "touch/src/draw/engine/SvgContext.js",
   "Ext.field.ListSelect": "app/addon/ListSelect.js",
   "Ext.field.PatternText": "app/addon/PatternText.js",
+  "Ext.field.SearchList": "app/addon/SearchList.js",
   "Ext.form": "app/addon",
   "Ext.form.FieldSet": "touch/src/form/FieldSet.js",
   "Ext.form.Panel": "touch/src/form/Panel.js",
@@ -49,7 +51,8 @@ Ext.Loader.addClassPathMappings({
   "Ext.ux.Deferred": "app/addon/Deferred.js",
   "Ext.ux.Promise": "app/addon/Promise.js",
   "Ext.view": "app/addon",
-  "Fpos": "app"
+  "Fpos": "app",
+  "Override.data.proxy.Odoo": "app/Config.js"
 });
 
 Ext.ClassManager.addNameAlternateMappings({
@@ -265,6 +268,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.data.proxy.Memory": [
     "Ext.data.MemoryProxy"
   ],
+  "Ext.data.proxy.Odoo": [],
   "Ext.data.proxy.Proxy": [
     "Ext.data.DataProxy",
     "Ext.data.Proxy"
@@ -290,6 +294,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.data.reader.Json": [
     "Ext.data.JsonReader"
   ],
+  "Ext.data.reader.JsonOdoo": [],
   "Ext.data.reader.PouchDB": [
     "Ext.data.PouchDBReader"
   ],
@@ -580,6 +585,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.field.Search": [
     "Ext.form.Search"
   ],
+  "Ext.field.SearchList": [],
   "Ext.field.Select": [
     "Ext.form.Select"
   ],
@@ -667,6 +673,17 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.wrapper.BoxDock": [],
   "Ext.layout.wrapper.Dock": [],
   "Ext.layout.wrapper.Inner": [],
+  "Ext.log.Base": [],
+  "Ext.log.Logger": [],
+  "Ext.log.filter.Filter": [],
+  "Ext.log.filter.Priority": [],
+  "Ext.log.formatter.Default": [],
+  "Ext.log.formatter.Formatter": [],
+  "Ext.log.formatter.Identity": [],
+  "Ext.log.writer.Console": [],
+  "Ext.log.writer.DocumentTitle": [],
+  "Ext.log.writer.Remote": [],
+  "Ext.log.writer.Writer": [],
   "Ext.mixin.Bindable": [],
   "Ext.mixin.Filterable": [],
   "Ext.mixin.Mixin": [],
@@ -818,6 +835,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.core.Printer": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
+  "Fpos.model.OPartner": [],
   "Fpos.model.Partner": [],
   "Fpos.model.Place": [],
   "Fpos.model.PosLine": [],
@@ -830,6 +848,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.store.AllCategoryStore": [],
   "Fpos.store.AllTopStore": [],
   "Fpos.store.CategoryStore": [],
+  "Fpos.store.OPartnerStore": [],
   "Fpos.store.PartnerStore": [],
   "Fpos.store.PlaceStore": [],
   "Fpos.store.PosLineStore": [],
@@ -859,7 +878,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.ScaleView": [],
   "Fpos.view.TestView": [],
   "Fpos.view.TopItem": [],
-  "Fpos.view.TopView": []
+  "Fpos.view.TopView": [],
+  "Override.data.proxy.Odoo": []
 });
 
 Ext.ClassManager.addNameAliasMappings({
@@ -1196,6 +1216,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.data.proxy.Memory": [
     "proxy.memory"
   ],
+  "Ext.data.proxy.Odoo": [
+    "proxy.odoo"
+  ],
   "Ext.data.proxy.Proxy": [
     "proxy.proxy"
   ],
@@ -1217,6 +1240,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Ext.data.reader.Json": [
     "reader.json"
+  ],
+  "Ext.data.reader.JsonOdoo": [
+    "reader.odoo"
   ],
   "Ext.data.reader.PouchDB": [
     "reader.pouchdb"
@@ -1536,6 +1562,9 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.field.Search": [
     "widget.searchfield"
   ],
+  "Ext.field.SearchList": [
+    "widget.search_list"
+  ],
   "Ext.field.Select": [
     "widget.selectfield"
   ],
@@ -1679,6 +1708,17 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.layout.wrapper.BoxDock": [],
   "Ext.layout.wrapper.Dock": [],
   "Ext.layout.wrapper.Inner": [],
+  "Ext.log.Base": [],
+  "Ext.log.Logger": [],
+  "Ext.log.filter.Filter": [],
+  "Ext.log.filter.Priority": [],
+  "Ext.log.formatter.Default": [],
+  "Ext.log.formatter.Formatter": [],
+  "Ext.log.formatter.Identity": [],
+  "Ext.log.writer.Console": [],
+  "Ext.log.writer.DocumentTitle": [],
+  "Ext.log.writer.Remote": [],
+  "Ext.log.writer.Writer": [],
   "Ext.mixin.Bindable": [],
   "Ext.mixin.Filterable": [],
   "Ext.mixin.Mixin": [],
@@ -1846,6 +1886,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.core.Printer": [],
   "Fpos.model.AccountTax": [],
   "Fpos.model.Category": [],
+  "Fpos.model.OPartner": [],
   "Fpos.model.Partner": [],
   "Fpos.model.Place": [],
   "Fpos.model.PosLine": [],
@@ -1858,6 +1899,7 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.store.AllCategoryStore": [],
   "Fpos.store.AllTopStore": [],
   "Fpos.store.CategoryStore": [],
+  "Fpos.store.OPartnerStore": [],
   "Fpos.store.PartnerStore": [],
   "Fpos.store.PlaceStore": [],
   "Fpos.store.PosLineStore": [],
@@ -1931,7 +1973,8 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Fpos.view.TopView": [
     "widget.fpos_top"
-  ]
+  ],
+  "Override.data.proxy.Odoo": []
 });
 
 

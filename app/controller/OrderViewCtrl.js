@@ -348,6 +348,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
            orderLogChanged: self.onOrderChanged 
         });
         
+        // scan
+        Ext.Viewport.on({
+            scope: self,
+            pact_scan: self.onScanQR
+        });
+        
         // reload data
         self.reloadData();
     },
@@ -466,7 +472,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     productInput: function(product, price) {
         var self = this;
-        if ( self.isEditable() ) {
+        
+        // handle product action
+        var action = product.get('pos_action');
+        if ( action ) {
+            Ext.Viewport.fireEvent(action, product);
+        } else if ( self.isEditable() ) {
             
             var changedLine = null;
             var profile = Config.getProfile();

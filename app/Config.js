@@ -5,16 +5,18 @@ Ext.define('Fpos.Config', {
     alternateClassName: 'Config',
     requires: [
         'Ext.proxy.PouchDBUtil',
+        'Ext.data.proxy.Odoo',       
         'Ext.store.LogStore',
         'Ext.client.OdooClient',
         'Ext.ux.Deferred',
         'Ext.util.Format',
         'Ext.form.ViewManager',
         'Fpos.core.Printer',
-        'Fpos.core.HwProxy'
+        'Fpos.core.HwProxy',        
+        'Fpos.model.OPartner'
     ],
     config : {       
-        version : '4.0.20',
+        version : '4.0.21',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -442,6 +444,15 @@ Ext.define('Fpos.Config', {
             client.connect()['catch'](function(err) {
                 deferred.reject(err);
             }).then(function() {
+            
+                // override client function
+                Ext.define('Override.data.proxy.Odoo', {
+                    override: 'Ext.data.proxy.Odoo',
+                    getClient: function() {
+                        return self.client.getClient();
+                    }
+                });
+                
                 self.client = client;
                 deferred.resolve(self.client);
             });
@@ -727,6 +738,5 @@ Ext.define('Fpos.Config', {
                      'mobile',
                      'is_company']
         };
-    }
-    
+    }  
 });
