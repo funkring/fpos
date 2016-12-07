@@ -20,7 +20,7 @@ Ext.define("Fpos.view.ProductItem", {
             var color = record.get('pos_color');
             var cls = 'ProductButton';
             if ( color ) {
-                if ( color !== 'white' && color !== 'yellow') {
+                if ( !color.startsWith("light") && color !== 'white' && color !== 'yellow') {
                     cls = 'ProductButtonDark';
                 }
                 ui = 'posInputButton-'+color;

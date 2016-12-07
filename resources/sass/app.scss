@@ -23,6 +23,26 @@ $fpos-navy: #003380;
 $fpos-fuchsia: #ff55dd;
 $fpos-purple: #a80087;
 $fpos-orange: #ff7f2a;
+$fpos-darkbrown: #784421;    // 120,68,33
+$fpos-brown: #aa4400;        // 170,68,0
+$fpos-lightbrown: #ffb380;   // 255,179,128
+$fpos-lightred: #e9afaf;     // 233,175,175
+$fpos-lightyellow: #ffeeaa;  // 255,238,170
+$fpos-lightgreen: #eeffaa;   // 238,255,170
+$fpos-lightblue: #aaccff;    // 170,204,255
+$fpos-lightestblue: #d5e5ff;   // 213,229,255
+$fpos-lightteal: #aaeeff;    // 170,238,255
+$fpos-lightestteal: #d5f6ff; // 213,246,255
+$fpos-darkestbrown: #552200; // 85,34,0
+$fpos-darkestred: #550000;   // 85,0,0
+$fpos-lightestyellow: #fdf7e0; // 253,247,224
+$fpos-lightestgreen: #f6ffd5;  // 246,255,213
+$fpos-lightestred: #f3e0e0; // 243,224,224
+$fpos-lightestgrey: #ededed; // 237,237,237
+$fpos-darkestgrey: #3f3f3f; // 63,63,63
+$fpos-schoko: #483737; // 72,55,55
+$fpos-lightgold: #ffd700; // 255,215,0
+$fpos-lightestgold: #fff09e; // 255,240,158 
 
 $form-field-label-bg-color : #dcdce6;
 
@@ -135,6 +155,28 @@ $form-field-label-bg-color : #dcdce6;
 @include sencha-button-ui('posInputButton-navy', $fpos-navy, 'matt');
 @include sencha-button-ui('posInputButton-fuchsia', $fpos-fuchsia, 'matt');
 @include sencha-button-ui('posInputButton-purple', $fpos-purple, 'matt');
+
+@include sencha-button-ui('posInputButton-darkbrown', $fpos-darkbrown, 'matt');
+@include sencha-button-ui('posInputButton-brown', $fpos-brown, 'matt');
+@include sencha-button-ui('posInputButton-lightbrown', $fpos-lightbrown, 'matt');
+@include sencha-button-ui('posInputButton-lightred', $fpos-lightred, 'matt');
+@include sencha-button-ui('posInputButton-lightyellow', $fpos-lightyellow, 'matt');
+@include sencha-button-ui('posInputButton-lightgreen', $fpos-lightgreen, 'matt');
+@include sencha-button-ui('posInputButton-lightblue', $fpos-lightblue, 'matt');
+@include sencha-button-ui('posInputButton-lightestblue', $fpos-lightestblue, 'matt');
+@include sencha-button-ui('posInputButton-lightteal', $fpos-lightteal, 'matt');
+@include sencha-button-ui('posInputButton-lightestteal', $fpos-lightestteal, 'matt');
+@include sencha-button-ui('posInputButton-darkestbrown', $fpos-darkestbrown, 'matt');
+@include sencha-button-ui('posInputButton-darkestred', $fpos-darkestred, 'matt');
+@include sencha-button-ui('posInputButton-lightestyellow', $fpos-lightestyellow, 'matt');
+@include sencha-button-ui('posInputButton-lightestgreen', $fpos-lightestgreen, 'matt');
+@include sencha-button-ui('posInputButton-lightestred', $fpos-lightestred, 'matt');
+@include sencha-button-ui('posInputButton-lightestgrey', $fpos-lightestgrey, 'matt');
+@include sencha-button-ui('posInputButton-darkestgrey', $fpos-darkestgrey, 'matt');
+@include sencha-button-ui('posInputButton-schoko', $fpos-schoko, 'matt');
+@include sencha-button-ui('posInputButton-lightgold', $fpos-lightgold, 'matt');
+@include sencha-button-ui('posInputButton-lightestgold', $fpos-lightestgold, 'matt');
+
 
 .PosInputButton {
     margin: 1px;
