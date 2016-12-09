@@ -631,6 +631,22 @@ Ext.define('Fpos.controller.MainCtrl', {
                         action: 'printAgain'
                     }                 
                 ];
+                
+          // special options
+          var profile = Config.getProfile();
+          if ( profile ) {
+              // no balance, delete first menu entry
+              if ( profile.iface_user_nobalance ) {
+                    items.shift();
+              }
+              // add menu print own sales
+              if ( profile.iface_user_printsales ) {
+                    items.push({
+                            text: 'Meine Verkäufe',
+                            action: 'createCashUserReport'
+                    });
+              }               
+          }
           
           this.userMenu =  Ext.create('Ext.Menu', {
                 //scrollable: 'vertical',

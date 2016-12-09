@@ -2349,7 +2349,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     previewPrint: function(html) {
         //var self = this;
         //html = '<div class="PrintReport"><div class="PrintContent">' + html + '</div></div>';
-        Ext.Viewport.fireEvent("printHtml", html);
+        setTimeout(function() {
+            Ext.Viewport.fireEvent("printHtml", html);    
+        }, 0);
+        
         /*       
         if ( !self.reportPanel ) {
             self.reportPanel = Ext.create('Ext.Panel',{
@@ -2961,18 +2964,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             }
                         });
                         
-                        //payment and taxes
-                        if ( !user ) {
-                            // calc taxes
-                            Ext.each(order.tax_ids, function(tax) {
-                                self.updateTaxSummary(sumTax, tax);
-                            });
-                            
-                            // calc payment
-                            Ext.each(order.payment_ids, function(payment) {
-                                self.updatePaymentSummary(sumPayment, payment, ignoreCashIO);
-                            });
-                        }
+                        // calc taxes
+                        Ext.each(order.tax_ids, function(tax) {
+                            self.updateTaxSummary(sumTax, tax);
+                        });
+                        
+                        // calc payment
+                        Ext.each(order.payment_ids, function(payment) {
+                            self.updatePaymentSummary(sumPayment, payment, ignoreCashIO);
+                        });
                     }              
                 });
                 
