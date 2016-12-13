@@ -34,7 +34,10 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=resetDistDB]' : {
                 release: 'resetDistDB'
-            }
+            },
+            'button[action=testPayworks]' : {
+                release: 'testPayworks'
+            },
         }
     },
     
@@ -188,6 +191,31 @@ Ext.define('Fpos.controller.TestCtrl', {
                 });        
             }
         });
+    },
+    
+    testPayworks: function() {
+        var self = this;
+        if ( !window.Payworks ) {
+            self.getTestLabel().setHtml('Payworks Iface not available!');
+        } else {
+            window.Payworks.init({
+                integrator: 'OERP',
+                mode: 'TEST',
+                appName: 'MCASHIER'
+            }, function() {
+               window.Payworks.payment({
+                   amount: 11.0,
+                   subject: 'Payment 2001',
+                   customId: '2001'
+               }, function(res) {
+                   self.getTestLabel().setHtml(res);
+               }, function(err) {
+                   self.getTestLabel().setHtml(err);
+               });
+            }, function(err) {
+                 self.getTestLabel().setHtml(err);
+            });
+        }
     }
     
 });
