@@ -715,7 +715,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     // save order
-    onSaveOrder: function() {
+    saveOrder: function(logout) {
         var self = this;
         if ( !self.isEditable() ) return;
         
@@ -761,12 +761,23 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // save order            
             self.validateLines(true, Config.hasPrinters() && place)['catch'](function(err) {
                 ViewManager.handleError(err, {name:'Fehler', message:'Bestellung konnte nicht boniert werden'});
-            }).then(function(){
-                // show places
-                Ext.Viewport.fireEvent("showPlace");
-                self.updatePlace(place);                                
+            }).then(function(){                
+                if ( logout ) {
+                    // logout
+                    Ext.Viewport.fireEvent("logout");
+                } else {
+                    // show places
+                    Ext.Viewport.fireEvent("showPlace");                                           
+                }
+                // update place
+                self.updatePlace(place);
             });       
         }
+    },
+    
+    // save order
+    onSaveOrder: function() {
+        this.saveOrder();
     },
     
     // print place order
@@ -3397,6 +3408,22 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( ViewManager.isLoading() ) return;
         
         var self = this;
+        
+        // check waiter code
+        var profile = Config.getProfile();
+        if ( profile.iface_waiterkey ) {
+            if ( profile.iface_place && barcode == Config.getLogoutCode() ) {
+                // save order
+                self.saveOrder(true);
+                return;
+            } else if ( barcode.length > 13 ) {
+                // notify new waiter
+                Ext.Viewport.fireEvent('waiterKey', barcode);
+                return;    
+            }
+        }            
+        
+        // check product code
         var product = this.productStore.searchProductByEan(barcode);
         if ( product ) {
             self.productInput(product);

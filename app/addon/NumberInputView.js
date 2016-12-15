@@ -570,8 +570,7 @@ Ext.define('Ext.view.NumberInputView', {
         }
     },
     
-    onKeyDown: function(e) {
-        var keycode = e.keyCode ? e.keyCode : e.which;
+    onKeyCode: function(keycode) {
         if ( keycode >= 48 && keycode <= 57 ) {
             var c = String.fromCharCode(keycode);
             this.addChar(c);
@@ -580,6 +579,11 @@ Ext.define('Ext.view.NumberInputView', {
         } else if ( keycode == 27 ) {
             this.clearInput();
         }
+    },
+    
+    onKeyDown: function(e) {
+        var keycode = e.keyCode ? e.keyCode : e.which;
+        this.onKeyCode(keycode);
     }
 });
 

@@ -37,7 +37,7 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testPayworks]' : {
                 release: 'testPayworks'
-            },
+            }
         }
     },
     

@@ -40,6 +40,7 @@ Ext.define('Fpos.Config', {
         sync: false,
         syncState: 'idle',
         syncHandlers: null,
+        logoutCode: '0000000',
         journalById: {}
     },
     
