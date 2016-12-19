@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '4.0.24',
+        version : '4.0.25',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
