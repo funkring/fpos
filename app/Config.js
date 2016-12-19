@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '4.0.25',
+        version : '4.0.26',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -40,6 +40,7 @@ Ext.define('Fpos.Config', {
         sync: false,
         syncState: 'idle',
         syncHandlers: null,
+        logoutCode: '0000000',
         journalById: {}
     },
     

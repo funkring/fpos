@@ -150,6 +150,13 @@ Ext.define('Fpos.controller.MainCtrl', {
             showPlace: self.showPlace
         });  
         
+        // logout
+        Ext.Viewport.on({
+            scope: self,
+            logout: self.logout
+        });  
+        
+        
         // sync state
         Ext.Viewport.on({
             scope: self,
@@ -166,6 +173,12 @@ Ext.define('Fpos.controller.MainCtrl', {
         Ext.Viewport.on({
             scope: self,
             printHtml: self.printHtml
+        });
+        
+        // waiter key
+        Ext.Viewport.on({
+            scope: self,
+            waiterKey: self.onWaiterKey
         });
         
         // show partner
@@ -774,12 +787,15 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     getMenu: function() {
         var user = Config.getUser();
-        if ( user.pos_role === 'admin') {
-            return this.getAdminMenu();
-        } else if ( user.pos_role === 'manager' ) {
-            return this.getManagerMenu();
-        } 
-        return this.getUserMenu();
+        if ( user ) {
+            if ( user.pos_role === 'admin') {
+                return this.getAdminMenu();
+            } else if ( user.pos_role === 'manager' ) {
+                return this.getManagerMenu();
+            }
+            return this.getUserMenu(); 
+        }
+        return null;        
     },
     
     openPos: function() {
@@ -810,10 +826,10 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // places
         if ( profile.iface_place ) {
-            if ( !self.topPanel ) {
+            if ( !self.topPanel ) {                            
                 self.topPanel = Ext.create("Fpos.view.TopView");
-                self.basePanel.add(self.topPanel);                
-            }
+                self.basePanel.add(self.topPanel);
+            } 
         }        
         
         // pos panel
@@ -953,6 +969,8 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     // basic item change
     mainActiveItemChange: function(view, newCard) {
+        if ( view.getActiveItem() != newCard ) return;
+        
         var self = this;
             
         // show login
@@ -1092,15 +1110,34 @@ Ext.define('Fpos.controller.MainCtrl', {
                     maxlen: 4,
                     minlen: 4,
                     emptyValue: "----",
-                    title : title
+                    title : title         
                 };
                 
+           
             if ( Config.hasNumpad() ) {
                 pinInputConfig.showButtons = false;
                 pinInputConfig.width = "300px";
             }
             
             self.pinInput = Ext.create('Ext.view.NumberInputView', pinInputConfig);
+            
+            // check waiter key
+            if ( profile.iface_waiterkey ) {
+                           
+                // enable scanner
+                if ( !self.waiterKeyScanner ) {
+                    self.waiterKeyScanner = Ext.create('Ext.util.BarcodeScanner', {
+                        keyListener : function(keycode) { self.onKeyCode(keycode); },
+                        barcodeListener : function(code) { self.onWaiterCode(code); }
+                    });
+                }                
+                
+                // forward key event
+                self.pinInput.onKeyDown = function(e) {
+                    self.onKeyDown(e);   
+                };               
+            }
+                
                 
             // add handler
             self.pinInput.setHandler(function(view, pin) {
@@ -1166,20 +1203,37 @@ Ext.define('Fpos.controller.MainCtrl', {
        }
     },
     
+    onKeyCode: function(code) {    
+        if ( this.pinInput && this.pinInput.visible ) {
+            this.pinInput.onKeyCode(code);
+        }  
+    },
+    
     onKeyDown: function(e) {
         var self = this;
         var mainView = self.getMainView();
         
         // check if is active
         if ( Ext.Viewport.getActiveItem() == mainView && mainView.getActiveItem() == self.basePanel && self.basePanel.getActiveItem() == self.posPanel ) {
-            // scan
-            if ( e.keyCode == 229 ) {
-                self.onShowProductMenu();
-            } else {
-                // otherwise            
-                Ext.Viewport.fireEvent("posKey", e);
+            // forward scan
+            if ( self.basePanel.getActiveItem() == self.posPanel ) {
+                // scan
+                if ( e.keyCode == 229 ) {
+                    if ( !ViewManager.isLoading() ) {
+                        self.onShowProductMenu();
+                    }
+                } else {
+                    // otherwise            
+                    Ext.Viewport.fireEvent("posKey", e);
+                }           
+            } 
+        }
+        // check for waiter key 
+        else if ( self.waiterKeyScanner ) {
+            if ( self.basePanel.getActiveItem() == self.topPanel || ( self.pinInput && self.pinInput.visible ) ) {
+                self.waiterKeyScanner.detectBarcode(e);
             }
-        }        
+        }   
     },
     
     onSyncState: function(state) {
@@ -1187,6 +1241,64 @@ Ext.define('Fpos.controller.MainCtrl', {
             this.getMainMenuButton().setBadgeText('1');
         } else {
             this.getMainMenuButton().setBadgeText('');
+        }
+    },
+        
+    onWaiterKey: function(code) { 
+        var self = this;
+        var profile = Config.getProfile();
+        var loginUser = null;
+        
+        // search user
+        Ext.each(profile.user_ids, function(user) {
+            if ( user.code == code ) {
+                loginUser = user;
+                return false;    
+            }
+             
+        });
+        
+        if ( loginUser ) {
+            // switch user
+            self.switchUser(loginUser);
+               
+            // hide login
+            if ( self.pinInput ) {            
+                if ( self.pinInput.visible) self.pinInput.hide();            
+            }   
+            
+            // openpos
+            self.openPos();        
+        } else {
+            ViewManager.handleError({
+                name: 'unknown_key',
+                message: 'Schlüssel ' + code + ' ist nicht hinterlegt'
+            });
+        }
+    },
+    
+    logout: function() {
+        var self = this;
+        if ( !self.pinInput.visible ) {
+            if ( Config.getProfile().iface_place ) {
+                self.showPlace();           
+            }
+            
+            // show login
+            setTimeout(function() {
+                self.showLogin();
+            },0); 
+        }
+    },
+        
+    onWaiterCode: function(code) {
+        if ( ViewManager.isLoading() ) return;
+        if ( code ) {
+            if ( code == Config.getLogoutCode() ) {
+                this.logout();
+            } else if ( code.length > 13 ) {
+                Ext.Viewport.fireEvent('waiterKey', code);
+            }         
         }
     },
     
