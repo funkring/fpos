@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="at.oerp.Fpos" version="4.0.24" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="at.oerp.Fpos" version="4.0.25" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Fpos</name>
     <description>
         Fpos is a free Point of Sale app with Odoo Sync
@@ -18,6 +18,9 @@
     <allow-intent href="geo:*" />
     <platform name="android">
         <allow-intent href="market:*" />
+        <preference name="android-minSdkVersion" value="17" />
+        <preference name="android-compileSdkVersion" value="25" />
+        <preference name="android-targetSdkVersion" value="25" />
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />
@@ -27,9 +30,4 @@
     <platform name="ubuntu">
         <preference name="Fullscreen" value="true" />
     </platform>
-    <preference name="xwalkVersion" value="20+" />
-    <preference name="xwalkCommandLine" value="--disable-pull-to-refresh-effect" />
-    <preference name="xwalkMode" value="embedded" />
-    <preference name="xwalkMultipleApk" value="true" />
-    <preference name="android-minSdkVersion" value="16" />
 </widget>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-payworks"
+        version="1.0.0">
+
+    <name>Payworks Plugin</name>
+    <description>
+        Support payment with payworks device              
+    </description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,pos,payworks</keywords>
+    <repo>https://github.com/funkring/cordova-plugin-payworks</repo>
+    <issue>https://github.com/funkring/cordova-plugin-payworks/issues</issue>
+    
+    <engines>
+        <engine name="cordova-android" version=">=4"/>
+    </engines>
+    
+    <!--  declarate js files/api -->
+    <asset src="cordova/www/Payworks.js" target="js/Payworks.js"/>
+    
+    <!-- register entry point -->
+    <js-module src="cordova/www/Payworks.js" name="Payworks">
+        <clobbers target="Payworks" />
+    </js-module>
+    
+    <!-- android -->
+    <platform name="android">
+        <!-- framework src="com.android.support:support-v4:+" /-->
+        <source-file src="cordova/android/src/at/oerp/payworks/cordova/Payworks.java" target-dir="src/at/oerp/payworks/cordova/" />
+
+        <framework src="plugin.gradle" custom="true" type="gradleReference" />
+		
+		<!--  config -->
+		
+        <config-file target="config.xml" parent="/*">
+            <feature name="Payworks">
+                <param name="android-package" value="at.oerp.payworks.cordova.Payworks"/>
+            </feature>            
+        </config-file>
+        
+        
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <!-- general -->
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+            <uses-permission android:name="android.permission.BATTERY_STATS" />
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.NFC" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+            <uses-permission android:name="android.permission.BLUETOOTH" />
+        </config-file>
+        
+        
+    </platform>
+</plugin>

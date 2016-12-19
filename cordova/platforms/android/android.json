@@ -33,27 +33,27 @@
                             "count": 1
                         },
                         {
-                            "xml": "<preference default=\"20+\" name=\"xwalkVersion\" />",
+                            "xml": "<preference name=\"xwalkVersion\" value=\"22+\" />",
                             "count": 1
                         },
                         {
-                            "xml": "<preference default=\"xwalk_core_library_canary:17+\" name=\"xwalkLiteVersion\" />",
+                            "xml": "<preference name=\"xwalkLiteVersion\" value=\"xwalk_core_library_canary:17+\" />",
                             "count": 1
                         },
                         {
-                            "xml": "<preference default=\"--disable-pull-to-refresh-effect\" name=\"xwalkCommandLine\" />",
+                            "xml": "<preference name=\"xwalkCommandLine\" value=\"--disable-pull-to-refresh-effect\" />",
                             "count": 1
                         },
                         {
-                            "xml": "<preference default=\"embedded\" name=\"xwalkMode\" />",
+                            "xml": "<preference name=\"xwalkMode\" value=\"embedded\" />",
                             "count": 1
                         },
                         {
-                            "xml": "<preference default=\"true\" name=\"xwalkMultipleApk\" />",
+                            "xml": "<preference name=\"xwalkMultipleApk\" value=\"true\" />",
                             "count": 1
                         },
                         {
-                            "xml": "<preference default=\"16\" name=\"android-minSdkVersion\" />",
+                            "xml": "<preference name=\"android-minSdkVersion\" value=\"16\" />",
                             "count": 1
                         }
                     ]
@@ -64,47 +64,47 @@
                     "/*": [
                         {
                             "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.BATTERY_STATS\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CAMERA\" />",
                             "count": 2
                         },
                         {
+                            "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
+                            "count": 2
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />",
+                            "count": 2
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\" />",
+                            "count": 2
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.BATTERY_STATS\" />",
+                            "count": 2
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.CAMERA\" />",
+                            "count": 3
+                        },
+                        {
                             "xml": "<uses-permission android:name=\"android.permission.NFC\" />",
-                            "count": 1
+                            "count": 2
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.WAKE_LOCK\" />",
-                            "count": 1
+                            "count": 2
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.INTERNET\" />",
-                            "count": 1
+                            "count": 2
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.BLUETOOTH_ADMIN\" />",
-                            "count": 1
+                            "count": 2
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.BLUETOOTH\" />",
-                            "count": 1
+                            "count": 2
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PRINTER\" />",
@@ -211,6 +211,10 @@
                         {
                             "xml": "<feature name=\"PosHw\"><param name=\"android-package\" value=\"at.oerp.pos.cordova.PosHwPlugin\" /></feature>",
                             "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"Payworks\"><param name=\"android-package\" value=\"at.oerp.payworks.cordova.Payworks\" /></feature>",
+                            "count": 1
                         }
                     ]
                 }
@@ -234,9 +238,17 @@
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
         "cordova-plugin-crosswalk-webview": {
+            "XWALK_VERSION": "22+",
+            "XWALK_LITEVERSION": "xwalk_core_library_canary:17+",
+            "XWALK_COMMANDLINE": "--disable-pull-to-refresh-effect",
+            "XWALK_MODE": "embedded",
+            "XWALK_MULTIPLEAPK": "true",
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
         "cordova-plugin-poshw": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
+        "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
@@ -454,10 +466,19 @@
             ]
         },
         {
-            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
             "id": "cordova-plugin-poshw.PosHw",
+            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+            "pluginId": "cordova-plugin-poshw",
             "clobbers": [
                 "PosHw"
+            ]
+        },
+        {
+            "id": "cordova-plugin-payworks.Payworks",
+            "file": "plugins/cordova-plugin-payworks/cordova/www/Payworks.js",
+            "pluginId": "cordova-plugin-payworks",
+            "clobbers": [
+                "Payworks"
             ]
         }
     ],
@@ -467,7 +488,8 @@
         "cordova-plugin-file": "4.1.1",
         "cordova-plugin-file-transfer": "1.5.0",
         "com.borismus.webintent": "1.0.0",
-        "cordova-plugin-crosswalk-webview": "2.0.0",
-        "cordova-plugin-poshw": "1.0.5"
+        "cordova-plugin-crosswalk-webview": "2.2.0",
+        "cordova-plugin-poshw": "1.0.5",
+        "cordova-plugin-payworks": "1.0.0"
     }
 }

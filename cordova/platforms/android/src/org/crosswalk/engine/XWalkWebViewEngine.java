@@ -27,6 +27,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
+import android.webkit.ValueCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -173,6 +174,7 @@ public class XWalkWebViewEngine implements CordovaWebViewEngine {
                 XWalkWebViewEngine.this.cordova.getActivity().runOnUiThread(r);
             }
         }));
+        nativeToJsMessageQueue.addBridgeMode(new NativeToJsMessageQueue.EvalBridgeMode(this, cordova));
         bridge = new CordovaBridge(pluginManager, nativeToJsMessageQueue);
     }
 
@@ -300,6 +302,16 @@ public class XWalkWebViewEngine implements CordovaWebViewEngine {
             return;
         }
         webView.load(url, null);
+    }
+
+    /**
+     * This API is used in Cordova-Android 6.0.0 override from
+     *
+     * CordovaWebViewEngine.java
+     * @since Cordova 6.0
+     */
+    public void evaluateJavascript(String js, ValueCallback<String> callback) {
+        webView.evaluateJavascript(js, callback);
     }
 
     public boolean isXWalkReady() {

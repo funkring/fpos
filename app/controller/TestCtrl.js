@@ -38,6 +38,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             'button[action=testPayworks]' : {
                 release: 'testPayworks'
             },
+            'button[action=testPayworksInit]' : {
+                release: 'testPayworksInit'
+            }
         }
     },
     
@@ -53,7 +56,7 @@ Ext.define('Fpos.controller.TestCtrl', {
             self.getTestLabel().setHtml(res);
         }, 
         function(err) {
-            self.getTestLabel().setHtml(err);
+            self.objectInfo(err);
         });
     },
     
@@ -68,7 +71,7 @@ Ext.define('Fpos.controller.TestCtrl', {
             self.getTestLabel().setHtml(res || '');
         }, 
         function(err) {
-            self.getTestLabel().setHtml(err);
+            self.objectInfo(err);
         });  
     },
     
@@ -79,7 +82,7 @@ Ext.define('Fpos.controller.TestCtrl', {
             self.getTestLabel().setHtml("OK!");
         }, 
         function(err) {
-            self.getTestLabel().setHtml(err);
+            self.objectInfo(err);
         });  
     },
     
@@ -90,7 +93,7 @@ Ext.define('Fpos.controller.TestCtrl', {
             self.getTestLabel().setHtml("OK!");
         }, 
         function(err) {
-            self.getTestLabel().setHtml(err);
+            self.objectInfo(err);
         });  
     },
     
@@ -119,7 +122,7 @@ Ext.define('Fpos.controller.TestCtrl', {
                 db.destroy().then(function() {
                     window.location.reload();
                 })['catch'](function(err) {
-                    self.getTestLabel().setHtml(err);
+                    self.objectInfo(err);
                 });
             }
         });
@@ -139,7 +142,7 @@ Ext.define('Fpos.controller.TestCtrl', {
                             self.getTestLabel().setHtml(dist.name + " deleted!");
                         })['catch'](function(err) {
                             if  (err) {
-                                self.getTestLabel().setHtml(err);
+                                self.objectInfo(err);                                
                             } else {
                                 self.getTestLabel().setHtml(dist.name + " unable to delete!");
                             }
@@ -185,7 +188,7 @@ Ext.define('Fpos.controller.TestCtrl', {
                                     
                             });
                         } else {
-                            self.getTestLabel().setHtml(err);
+                            self.objectInfo(err);
                         }
                     });
                 });        
@@ -193,27 +196,53 @@ Ext.define('Fpos.controller.TestCtrl', {
         });
     },
     
+    textInfo: function(info) {
+        if (info) this.getTestLabel().setHtml('<pre>'+info+'</pre>');
+    },
+    
+    objectInfo: function(obj) {
+        if ( obj ) this.textInfo(JSON.stringify(obj, null, 4));  
+    },
+    
     testPayworks: function() {
         var self = this;
         if ( !window.Payworks ) {
-            self.getTestLabel().setHtml('Payworks Iface not available!');
+            self.textInfo('Payworks Iface not available!');
         } else {
             window.Payworks.init({
                 integrator: 'OERP',
                 mode: 'TEST',
                 appName: 'MCASHIER'
-            }, function() {
+            }, function(res) {
+               self.objectInfo(res);
                window.Payworks.payment({
                    amount: 11.0,
                    subject: 'Payment 2001',
                    customId: '2001'
                }, function(res) {
-                   self.getTestLabel().setHtml(res);
+                   self.objectInfo(res);
                }, function(err) {
-                   self.getTestLabel().setHtml(err);
+                   self.objectInfo(err);                   
                });
             }, function(err) {
-                 self.getTestLabel().setHtml(err);
+                 self.objectInfo(err);                 
+            });
+        }
+    },
+    
+    testPayworksInit: function() {
+       var self = this;
+        if ( !window.Payworks ) {
+            self.textInfo('Payworks Iface not available!');
+        } else {
+            window.Payworks.init({
+                integrator: 'OERP',
+                mode: 'TEST',
+                appName: 'MCASHIER'
+            }, function(res) {
+                self.objectInfo(res);
+            }, function(err) {
+                 self.objectInfo(err);                 
             });
         }
     }

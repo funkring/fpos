@@ -212,10 +212,19 @@ module.exports = [
         ]
     },
     {
-        "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
         "id": "cordova-plugin-poshw.PosHw",
+        "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+        "pluginId": "cordova-plugin-poshw",
         "clobbers": [
             "PosHw"
+        ]
+    },
+    {
+        "id": "cordova-plugin-payworks.Payworks",
+        "file": "plugins/cordova-plugin-payworks/cordova/www/Payworks.js",
+        "pluginId": "cordova-plugin-payworks",
+        "clobbers": [
+            "Payworks"
         ]
     }
 ];
@@ -227,8 +236,9 @@ module.exports.metadata =
     "cordova-plugin-file": "4.1.1",
     "cordova-plugin-file-transfer": "1.5.0",
     "com.borismus.webintent": "1.0.0",
-    "cordova-plugin-crosswalk-webview": "2.0.0",
-    "cordova-plugin-poshw": "1.0.5"
+    "cordova-plugin-crosswalk-webview": "2.2.0",
+    "cordova-plugin-poshw": "1.0.5",
+    "cordova-plugin-payworks": "1.0.0"
 };
 // BOTTOM OF METADATA
 });

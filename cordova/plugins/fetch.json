@@ -49,14 +49,6 @@
         "is_top_level": true,
         "variables": {}
     },
-    "cordova-plugin-crosswalk-webview": {
-        "source": {
-            "type": "registry",
-            "id": "cordova-plugin-crosswalk-webview"
-        },
-        "is_top_level": true,
-        "variables": {}
-    },
     "cordova-plugin-compat": {
         "source": {
             "type": "registry",
@@ -65,10 +57,26 @@
         "is_top_level": false,
         "variables": {}
     },
+    "cordova-plugin-crosswalk-webview": {
+        "source": {
+            "type": "registry",
+            "id": "cordova-plugin-crosswalk-webview@2.2.0"
+        },
+        "is_top_level": true,
+        "variables": {}
+    },
     "cordova-plugin-poshw": {
         "source": {
             "type": "local",
-            "path": "../../cordova-plugin-poshw"
+            "path": "/home/oerp/Work/android/cordova-plugin-poshw"
+        },
+        "is_top_level": true,
+        "variables": {}
+    },
+    "cordova-plugin-payworks": {
+        "source": {
+            "type": "local",
+            "path": "/home/oerp/Work/android/cordova-plugin-payworks"
         },
         "is_top_level": true,
         "variables": {}
