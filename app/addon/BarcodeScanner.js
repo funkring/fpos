@@ -5,7 +5,8 @@ Ext.define('Ext.util.BarcodeScanner', {
     
     config: {
         keyListener: null,
-        barcodeListener: null        
+        barcodeListener: null,
+        delay: 80
     },
     
     constructor: function(cfg) {
@@ -18,6 +19,7 @@ Ext.define('Ext.util.BarcodeScanner', {
             self.cancelBarcode();
         });
         
+        self.delay = self.getDelay();      
         return self;
     },
     
@@ -28,7 +30,7 @@ Ext.define('Ext.util.BarcodeScanner', {
             if ( keycode >= 48 && keycode <= 70  ) {
                 // add number    
                 this.keyCodes.push(keycode);
-                this.forwardKeyTask.delay(80);
+                this.forwardKeyTask.delay(this.delay);
             } else if ( keycode == 13 && this.keyCodes.length > 0) {
                 // finish barcode
                 this.finishBarcode();

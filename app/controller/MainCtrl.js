@@ -1118,8 +1118,9 @@ Ext.define('Fpos.controller.MainCtrl', {
                 // enable scanner
                 if ( !self.waiterKeyScanner ) {
                     self.waiterKeyScanner = Ext.create('Ext.util.BarcodeScanner', {
-                        'keyListener' : function(keycode) { self.onKeyCode(keycode); },
-                        'barcodeListener' : function(code) { self.onWaiterCode(code); }
+                        delay: 160,
+                        keyListener : function(keycode) { self.onKeyCode(keycode); },
+                        barcodeListener : function(code) { self.onWaiterCode(code); }
                     });
                 }                
                 
