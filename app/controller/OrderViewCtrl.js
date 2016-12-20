@@ -3292,6 +3292,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     self.updatePlace(place, 0.0);
                 });
                 createReport();
+            })['catch'](function(err) {          
+               ViewManager.stopLoading();
+               ViewManager.handleError(err,{
+                    name: "Kassenbericht Fehler",
+                    message: "Leere Verkäufe konnten nicht gelöscht werden"
+               });
             });
         } else {
             // NORMAL REPORT
