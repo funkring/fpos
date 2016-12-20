@@ -7,12 +7,13 @@ Ext.define('Fpos.model.Category', {
    config: {
        fields: ['name',                 
                 'parent_id',
+                'link_id',
                 'sequence',
                 'pos_main',
                 'pos_color',
                 'pos_unavail',
                 'after_product',
-                'foldable',
+                'foldable',                
                 {name:'selected', persist:false},
                 {name:'parent', persist:false}
                ],

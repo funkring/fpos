@@ -119,6 +119,7 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
     },
     
     tapSelectCategory: function(button) {
+        var category; 
         var self = this;
         var categoryId = button.categoryId || null;
         if ( categoryId === self.categoryId ) {
@@ -126,12 +127,19 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                 self.loadCategory(null);
             } else {
                 // if category load parent
-                var category = self.allCategoryStore.getById(categoryId);
+                category = self.allCategoryStore.getById(categoryId);
                 if ( category ) {
                     self.loadCategory(category.get('parent_id'));
                 }
             }
         } else {
+            category = self.allCategoryStore.getById(categoryId);
+            if ( category ) {
+                var linkedId = category.get('link_id');
+                if ( linkedId ) {
+                    categoryId = linkedId;
+                }
+            }
             self.loadCategory(categoryId);
         }
     },
