@@ -7,11 +7,12 @@ Ext.define('Fpos.view.Main', {
         
     ],
     config: {
+        defaultBackButtonText: 'Zurück',
         layout: {
             type: 'card',
-            animation: false
+            animation: false            
         },
-        navigationBar: {
+        navigationBar: {            
             items: [
                 {
                     xtype: 'button',
