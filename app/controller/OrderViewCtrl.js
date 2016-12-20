@@ -189,14 +189,28 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '<div class="PosOrderLineName">',
                             '{name}',
                         '</div>',
+                        '<tpl if="group_id">',
+                            '<div class="PosOrderLineTag">',
+                                '<span class="PosOrderLineGroup">',
+                                '{[this.getGroup(values.group_id)]}',
+                                '</span>',
+                            '</div>',
+                        '</tpl>',
                         '<div class="PosOrderLinePrice">',
                              '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
                         '</div>',
                     '<tpl else>',
                         '<div class="PosOrderLineDescription">',
-                            '<div class="PosOrderLineName">',
+                            '<div class="PosOrderLineName">',                                
                                 '{name}',
                             '</div>',                   
+                            '<tpl if="group_id">',
+                                '<div class="PosOrderLineTag">',
+                                    '<span class="PosOrderLineGroup">',
+                                    '{[this.getGroup(values.group_id)]}',
+                                    '</span>',
+                                '</div>',
+                            '</tpl>',
                             '<div class="PosOrderLineAmount">',
                                 '<tpl if="qty_op == \'+\' && values.qty_diff && values.qty_diff != values.qty">',
                                     '<b>',
@@ -242,6 +256,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     getUnit: function(uom_id) {
                         var uom = self.unitStore.getById(uom_id);
                         return uom && uom.get('name') || '';
+                    },
+                    
+                    getGroup: function(group_id)  {
+                        var product = self.productStore.getProductById(group_id);
+                        return product && product.get('name') || '';
                     },
                     
                     formatAmount: function(values, qty)  {
@@ -908,11 +927,57 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // ---------------------------------
             
             if ( profile.iface_nogroup && forceSave && profile.iface_place && self.op != '-') {
-                // merge
-                var line, selI, mI, other;
+                // vars
+                var line, selI, mI, other, flags;
+                var group_id = null;
+                var addprice = 0.0;
+                var name = '';
                 var hasSubsection = false;
                 var mergeable = false;
                 
+                // merge groups
+                for ( selI = 0; selI<self.lineStore.getCount(); selI++) {
+                    line = self.lineStore.getAt(selI);
+                    flags = line.get('flags');
+                    if ( flags ) {
+                        if ( flags.indexOf('g') > -1 ) {
+                            group_id = line.get('product_id');
+                            if ( group_id ) self.lineStore.removeAt(selI--);
+                            continue;
+                        } else if ( flags.indexOf('1') > -1 ) {
+                            group_id = null;
+                            continue;
+                        } else if ( flags.indexOf('2') > -1 || flags.indexOf('d') > -1 ) {
+                            continue;
+                        }
+                    } 
+                    
+                    // set group id
+                    if ( group_id ) {
+                        line.set('group_id', group_id);
+                    }
+                }
+                
+                // merge additions
+                for ( selI = self.lineStore.getCount()-1; selI>=0; selI--) {
+                    line = self.lineStore.getAt(selI);
+                    flags = line.get('flags');
+                    if ( flags && flags.indexOf('a') > -1) {
+                        name = line.get('name') + ' ' + name;
+                        addprice += line.get('price');
+                        self.lineStore.removeAt(selI);
+                    } else if ( name.length > 0 ) {
+                        if ( !flags || !(flags.indexOf('1') > -1 || flags.indexOf('2') > -1 || flags.indexOf('d') > -1) ) {
+                            // add addition
+                            line.set('name', line.get('name') + ' ' + name);
+                            line.set('price', self.round(line.get('price') + addprice));
+                        }                        
+                        name = '';
+                        addprice = 0.0;
+                    }
+                }
+            
+                // merge                
                 for ( selI = self.lineStore.getCount()-1; selI>=0; selI--) {
                     line = self.lineStore.getAt(selI);
                     mergeable = true;
@@ -930,7 +995,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     if ( tag ) mergeable = false;
                                       
                     // check flags
-                    var flags = line.get('flags');
+                    flags = line.get('flags');
                     if ( flags ) {
                         // check if it is a subsection
                         if ( flags.indexOf('2') > -1 ) {
@@ -960,7 +1025,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 }
                             }                        
                             // MERGE if possible
-                            if ( !otherHasSubsection && other.get('product_id') === line.get('product_id') && other.get('name') == line.get('name') && other.get('price') == line.get('price') ) {
+                            if ( !otherHasSubsection && other.get('product_id') === line.get('product_id') && other.get('name') == line.get('name') && other.get('price') == line.get('price') && other.get('group_id') == line.get('group_id') ) {
                                 // set new qty
                                 other.set('qty', line.get('qty') + other.get('qty'));
                                 // remove unused
@@ -1055,7 +1120,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 uom_id: get('uom_id'),
                                 name: get('name'),
                                 notice: get('notice'),
-                                tag: get('tag'),
+                                tag: get('tag'),                                
                                 qty : qty
                             };
                             
@@ -1071,6 +1136,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             copy('a_dec');
                             copy('p_pre');
                             copy('p_dec');
+                            copy('group_id');
                             
                             logLines.push(logEntry);
                         }
@@ -2510,8 +2576,41 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             data.date = futil.strToDate(lastLog.date);
         }
         
+        // sort lines
+        var sortedLines = data.lines.slice();
+        sortedLines.sort(function(a,b) {
+            var res = self.productStore.compareProduct(a.group_id, b.group_id);
+            if ( res === 0 ) {
+                res = self.productStore.compareProduct(a.product_id, b.product_id);
+                if ( res === 0 ) {
+                    res = a.name.localeCompare(b.name);
+                }
+            }
+            return res;
+        });
+        
+        // add groups
+        var lines = [];
+        var group = null;
+        Ext.each(sortedLines, function(line) {
+            if ( line.group_id && (!group || line.group_id != group.getId()) ) {
+                group = self.productStore.getProductById(line.group_id);
+                if ( group ) { 
+                    lines.push({
+                        product_id: line.group_id,
+                        name: group.get('name'),
+                        notice: '',
+                        tag: '#',
+                        flags: '1',                          
+                        qty : 1.0
+                    });    
+                                       
+                }
+            } 
+            lines.push(line);
+        });
+        
         // print/show
-        var lines = data.lines;
         Ext.each(Config.getPrinters(), function(printer) {
             var filtered = [];
             Ext.each(lines, function(line) {

@@ -8,6 +8,7 @@ Ext.define('Fpos.model.PosLine', {
        identifier: 'uuid',
        fields: ['name',
                 'product_id',
+                'group_id',
                 'uom_id',
                 'tax_ids',
                 'price',

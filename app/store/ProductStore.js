@@ -117,6 +117,18 @@ Ext.define('Fpos.store.ProductStore', {
         return this.productById[productId];
     },
     
+    compareProduct: function(a_id, b_id) {
+      if ( !a_id && b_id ) return -1;
+      if ( a_id && !b_id ) return 1;
+      if ( a_id == b_id ) return 0;
+      var product_a = this.getProductById(a_id);
+      var product_b = this.getProductById(b_id);
+      if ( !product_a && product_b ) return -1;
+      if ( product_a && !product_b ) return 1;
+      if ( !product_a && !product_b) return 0;
+      return (product_a.get('sequence') || 0) - (product_b.get('sequence') || 0);
+    },
+    
     searchProductByEan: function(ean) {
         return this.productByEan[ean];
     },    

@@ -474,6 +474,19 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 .PosOrderLineAmount {
 }
 
+.PosOrderLineTag {
+    margin-bottom: 3px;
+}
+
+.PosOrderLineGroup {
+   font-size: 12px;
+   line-height: 13px;
+   color: $fpos-white !important; 
+   background-color: $fpos-input-grey !important;
+   padding: 2px;
+   border-radius: 2px;
+}
+
 .PosOrderLineDiscount {
 }
 
