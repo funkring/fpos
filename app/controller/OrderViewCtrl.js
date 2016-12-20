@@ -2586,26 +2586,42 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var change = 0.0;
         var total = self.order.get('amount_total');
         var rest = total;
-        self.paymentStore.each(function(data) {
+        var cashPaymentData = null;
+        
+        var calcPayment = function(data) {
             var payment = data.get('payment');
             var journal = data.get('journal');
             var curRest = rest;
             
             //calc
             if ( payment >= rest && total >= 0 ) {
-                change += (payment-rest);
+                change += self.round(payment-rest);
                 rest = 0;
             } else {
-                rest -= payment;
+                rest = self.round(rest-payment);
             }
             
             // add payment
             payment_ids.push({
                 journal_id : journal._id,
-                amount : curRest - rest,
+                amount : self.round(curRest - rest),
                 payment : payment
             });
+        };
+        
+        // calc other than cash
+        self.paymentStore.each(function(data) {
+            var journal = data.get('journal');
+            if ( journal.type !== 'cash') {
+                calcPayment(data);
+            } else {
+                cashPaymentData = data;
+            }
         });
+        // calc cash
+        if ( cashPaymentData ) {
+            calcPayment(cashPaymentData);
+        }
         
         // update label
         var html = self.summaryTemplate.apply({
