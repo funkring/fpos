@@ -3368,36 +3368,59 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
 
         // CHECK FINISH
         if ( finish )  {
-            // DELETE DRAFT
-            var resetPlaces = [];            
-            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
-               var bulkUpdate = [];
-               Ext.each(res.rows, function(row) {
-                     // check if place are to reset
-                     if ( profile.iface_place ) {                       
-                       var place = self.placeStore.getPlaceById(row.doc.place_id);
-                       if ( place ) {
-                            resetPlaces.push(place);
-                       } 
-                     } 
-                     // mark deleted                        
-                     row.doc._deleted = true;
-                     bulkUpdate.push(row.doc);
-               });
-               return db.bulkDocs(bulkUpdate);
-            }).then(function(res) {
-                // reset places
-                Ext.each(resetPlaces, function(place) {
-                    self.updatePlace(place, 0.0);
-                });
+            if ( profile.iface_place && profile.parent_user_id ) {
+                /*
+                // TRANSFER DRAFT
+                DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft'],['fpos_user_id','=',profile.user_id]], {include_docs: true}).then(function(res) {
+                   var bulkUpdate = [];
+                   Ext.each(res.rows, function(row) {                        
+                         // transfer user                        
+                         row.doc.fpos_user_id = profile.parent_user_id;
+                         bulkUpdate.push(row.doc);
+                   });
+                   return db.bulkDocs(bulkUpdate);
+                }).then(function(res) {                   
+                    createReport();
+                })['catch'](function(err) {          
+                   ViewManager.stopLoading();
+                   ViewManager.handleError(err,{
+                        name: "Kassenbericht Fehler",
+                        message: "Verkäufe konnten nicht zum Hauptbenutzer verschoben werden"
+                   });
+                });*/   
                 createReport();
-            })['catch'](function(err) {          
-               ViewManager.stopLoading();
-               ViewManager.handleError(err,{
-                    name: "Kassenbericht Fehler",
-                    message: "Leere Verkäufe konnten nicht gelöscht werden"
-               });
-            });
+            } else {
+                // DELETE DRAFT
+                var resetPlaces = [];            
+                DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
+                   var bulkUpdate = [];
+                   Ext.each(res.rows, function(row) {
+                         // check if place are to reset
+                         if ( profile.iface_place ) {                       
+                           var place = self.placeStore.getPlaceById(row.doc.place_id);
+                           if ( place ) {
+                                resetPlaces.push(place);
+                           } 
+                         } 
+                         // mark deleted                        
+                         row.doc._deleted = true;
+                         bulkUpdate.push(row.doc);
+                   });
+                   return db.bulkDocs(bulkUpdate);
+                }).then(function(res) {
+                    // reset places
+                    Ext.each(resetPlaces, function(place) {
+                        self.updatePlace(place, 0.0);
+                    });
+                    createReport();
+                })['catch'](function(err) {          
+                   ViewManager.stopLoading();
+                   ViewManager.handleError(err,{
+                        name: "Kassenbericht Fehler",
+                        message: "Leere Verkäufe konnten nicht gelöscht werden"
+                   });
+                });
+            }
         } else {
             // NORMAL REPORT
             createReport();
@@ -3442,7 +3465,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         };
         
         // finish
-        if ( Config.getProfile().iface_place ) {
+        var profile = Config.getProfile();
+        if ( profile.iface_place && !profile.parent_user_id ) {
             Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
                 if ( buttonId == 'yes' ) {          
                     createSilent();
@@ -3458,7 +3482,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         ViewManager.hideMenus();      
         
         // finish 
-        if ( Config.getProfile().iface_place ) {
+        var profile = Config.getProfile();
+        if ( Config.getProfile().iface_place && !profile.parent_user_id ) {
             Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
                 if ( buttonId == 'yes' ) {          
                    self.createCashReport(null, false, true);
