@@ -52,7 +52,6 @@ Ext.Loader.addClassPathMappings({
   "Ext.ux.Promise": "app/addon/Promise.js",
   "Ext.view": "app/addon",
   "Fpos": "app",
-  "Override.Ext.MessageBox": "app/Config.js",
   "Override.data.proxy.Odoo": "app/Config.js"
 });
 
@@ -880,7 +879,6 @@ Ext.ClassManager.addNameAlternateMappings({
   "Fpos.view.TestView": [],
   "Fpos.view.TopItem": [],
   "Fpos.view.TopView": [],
-  "Override.Ext.MessageBox": [],
   "Override.data.proxy.Odoo": []
 });
 
@@ -1976,7 +1974,6 @@ Ext.ClassManager.addNameAliasMappings({
   "Fpos.view.TopView": [
     "widget.fpos_top"
   ],
-  "Override.Ext.MessageBox": [],
   "Override.data.proxy.Odoo": []
 });
 
