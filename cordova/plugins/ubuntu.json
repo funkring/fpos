@@ -19,13 +19,13 @@
         "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-payworks": {
+        "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
         "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-whitelist": {
+        "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
