@@ -677,7 +677,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                  if ( Config.getProfile().iface_place ) {
                                     Ext.Viewport.fireEvent("showPlace");
                                  } else {
-                                     self.nextOrder();
+                                    self.nextOrder();
                                  }                                     
                             } else {
                                 self.reloadData();
