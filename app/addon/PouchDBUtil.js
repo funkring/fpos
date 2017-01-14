@@ -418,7 +418,7 @@ Ext.define('Ext.proxy.PouchDBUtil',{
                             }).then(function(couchdb_config) {
 
                                 // sync again with couchdb                            
-                                db.sync(target_url)
+                                db.sync(target_url, options)
                                     ['catch'](function(err) {
                                         deferred.reject(err); 
                                     }).then(function(sync_res) {

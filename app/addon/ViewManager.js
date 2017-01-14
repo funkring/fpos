@@ -325,7 +325,7 @@ Ext.define('Ext.form.ViewManager', {
             });
     },
     
-    handleError: function(err, alternativeError, forward) {
+    handleError: function(err, alternativeError, forward, callback) {
         if ( !err || !err.name || !err.message) {
             if ( err && err.data && err.data.name && err.data.message ) {
                 err = err.data;
@@ -338,7 +338,7 @@ Ext.define('Ext.form.ViewManager', {
                 message : err
             };
         }
-        Ext.Msg.alert(err.name, err.message);
+        Ext.Msg.alert(err.name, err.message, callback);
         if (forward) throw err;
     },
     

@@ -322,7 +322,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // reload event
         Ext.Viewport.on({
             scope: self,
-            reloadData: self.fullDataReload            
+            reloadData: self.onFullDataReload            
         });
 
         // product input event         
@@ -492,6 +492,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     productInput: function(product, price) {
         var self = this;
         
+        // prevent input while loading
+        if ( ViewManager.isLoading() ) return;
+        
         // handle product action
         var action = product.get('pos_action');
         if ( action ) {
@@ -641,6 +644,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    /**
+     * handle full data relaod
+     */
+    onFullDataReload: function() {
+      this.fullDataReload();  
+    },
+    
     /** 
      * handle product input event
      */
@@ -657,32 +667,39 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( info.change && info.change.docs ) {
                 Ext.each(info.change.docs, function(doc) {
                     if ( doc.fdoo__ir_model == 'fpos.order' ) {
-                        // check if it is a place                        
-                        if ( doc.place_id ) {
-                            // set the new place amount
-                            var place = self.placeStore.getPlaceById(doc.place_id);        
-                            if ( place ) {
-                                if ( doc._deleted ) {
-                                    self.updatePlace(place, 0.0);
-                                } else {
-                                    self.updatePlace(place, doc.amount_total, doc.user_id);
+                        // check out of sync
+                        if ( doc.sv > Config.getSyncVersion() ) {
+                            // restart if out of sync
+                            Config.restart();
+                        } else {                        
+                    
+                            // check if it is a place                        
+                            if ( doc.place_id ) {
+                                // set the new place amount
+                                var place = self.placeStore.getPlaceById(doc.place_id);        
+                                if ( place ) {
+                                    if ( doc._deleted ) {
+                                        self.updatePlace(place, 0.0);
+                                    } else {
+                                        self.updatePlace(place, doc.amount_total, doc.user_id);
+                                    }
                                 }
                             }
+                            
+                            // reload data if data is the same
+                            // as current selected            
+                            if ( self.order && self.order.getId() == doc._id ) {
+                                if ( doc._deleted ) {
+                                     if ( Config.getProfile().iface_place ) {
+                                        Ext.Viewport.fireEvent("showPlace");
+                                     } else {
+                                        self.nextOrder();
+                                     }                                     
+                                } else {
+                                    self.reloadData();
+                                }    
+                            } 
                         }
-                        
-                        // reload data if data is the same
-                        // as current selected            
-                        if ( self.order && self.order.getId() == doc._id ) {
-                            if ( doc._deleted ) {
-                                 if ( Config.getProfile().iface_place ) {
-                                    Ext.Viewport.fireEvent("showPlace");
-                                 } else {
-                                    self.nextOrder();
-                                 }                                     
-                            } else {
-                                self.reloadData();
-                            }    
-                        } 
                     }
                 });
             }     
@@ -1261,6 +1278,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
          order.fdoo__ir_model = 'fpos.order';
          order.fpos_user_id = Config.getProfile().user_id;
          order.user_id = Config.getUser()._id;
+         order.sv = Config.getSyncVersion();
          order.state = 'draft';
          order.date = date;
          order.tax_ids = [];
@@ -1985,6 +2003,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         self.turnover = self.order.get('turnover');
                         self.cpos = self.order.get('cpos');
                         self.lastDate = self.order.get('date');
+                        // update pos closed state
+                        Config.setPosClosed(self.order.get('tag') == 's');
                     };
                   
                     if ( Config.getSync() && place_id ) {
@@ -2456,29 +2476,29 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var profile = Config.getProfile();
             self.printPlaceTemplate = Ext.create('Ext.XTemplate',
                 '<table width="100%">',
-                    '<tr style="font-size: large;">',
+                    '<tr {[this.fontStyle(values,"large")]}>',
                         '<td colspan="2"><hr/></td>',
                     '</tr>',
-                    '<tr style="font-size: medium;">',
+                    '<tr {[this.fontStyle(values,"medium")]}>',
                         '<td width="34%">Datum:</td>',
                         '<td>{date:date("d.m.Y H:i:s")}</td>',
                     '</tr>',
-                    '<tr style="font-size: medium;">',
+                    '<tr {[this.fontStyle(values,"medium")]}>',
                         '<td width="34%">Kasse:</td>',
                         '<td>{[Config.getProfile().name]}</td>',
                     '</tr>',
-                    '<tr style="font-size: medium;">',
+                    '<tr {[this.fontStyle(values,"medium")]}>',
                         '<td width="34%">Bediener:</td>',
                         '<td>{[Config.getUser().name]}</td>',
                     '</tr>',
-                    '<tr style="font-size: large;">',
+                    '<tr {[this.fontStyle(values,"large")]}>',
                         '<td colspan="2"><hr/></td>',
                     '</tr>',
-                    '<tr style="font-size: large;">',
+                    '<tr {[this.fontStyle(values,"large")]}>',
                         '<td width="34%">Platz:</td>',
                         '<td>{place}</td>',
                     '</tr>',
-                    '<tr style="font-size: large;">',
+                    '<tr {[this.fontStyle(values,"large")]}>',
                         '<td colspan="2"><hr/></td>',
                     '</tr>',
                 '</table>',
@@ -2489,7 +2509,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             '<td colspan="2"><hr/></td>',
                         '</tr>',
                     '</tpl>',                    
-                    '<tr style="font-size: large;">',                        
+                    '<tr {[this.fontStyle(parent,"large")]}>',                        
                         '<tpl if="this.hasTag(values,\'#\')">',
                             '<td colspan="3">{name}</td>',
                         '<tpl elseif="this.hasFlag(values,\'u\')">',
@@ -2503,7 +2523,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '</tpl>',
                     '</tr>',                    
                     '<tpl if="notice">',
-                        '<tr style="font-size: medium;">',
+                        '<tr {[this.fontStyle(parent,"medium")]}>',
                             '<td width="15%"></td>',
                             '<td width="1%"></td>',
                             '<td>{[this.formatText(values.notice)]}</td>',
@@ -2547,7 +2567,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         } else {
                             return values.flags.indexOf(flag) > -1;
                         }
-                    }             
+                    },
+                    fontStyle: function(values, style) {
+                        if ( values.font_size == 'small') return '';
+                        return 'style="font-size: '+ style + ';"';
+                    }                             
                 }                
             );
         }
@@ -2564,7 +2588,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             o: order,
             lines: order.line_ids,
             date: futil.strToDate(order.date),
-            place: place && place.get('name') || ''
+            place: place && place.get('name') || '',
+            font_size: 'standard'
         };
         
         // check log ids
@@ -2617,7 +2642,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }  
             });
             
+            // set data
             data.lines = filtered;
+            data.font_size = printer.getProfile().font_size;
+            
             if ( filtered.length > 0 ) { 
                 var html = self.printPlaceTemplate.apply(data);
                 
@@ -3370,26 +3398,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
 
         // CHECK FINISH
         if ( finish )  {
-            if ( profile.iface_place && profile.parent_user_id ) {
-                /*
-                // TRANSFER DRAFT
-                DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft'],['fpos_user_id','=',profile.user_id]], {include_docs: true}).then(function(res) {
-                   var bulkUpdate = [];
-                   Ext.each(res.rows, function(row) {                        
-                         // transfer user                        
-                         row.doc.fpos_user_id = profile.parent_user_id;
-                         bulkUpdate.push(row.doc);
-                   });
-                   return db.bulkDocs(bulkUpdate);
-                }).then(function(res) {                   
-                    createReport();
-                })['catch'](function(err) {          
-                   ViewManager.stopLoading();
-                   ViewManager.handleError(err,{
-                        name: "Kassenbericht Fehler",
-                        message: "Verkäufe konnten nicht zum Hauptbenutzer verschoben werden"
-                   });
-                });*/   
+            if ( profile.iface_place && profile.parent_user_id ) {               
                 createReport();
             } else {
                 // DELETE DRAFT
@@ -3429,73 +3438,109 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
-    onCreateCashStateSilent: function() {
+    prepareCashStateSilent: function() {
         var self = this;
-        ViewManager.hideMenus();        
-         
-        var createSilent = function() {
-            self.createCashReport(null, false, true, function() {
-                var place_id = self.order.get('place_id');
-                if ( !self.postActive && self.isDraft() && (!self.isPayment() || self.validatePayment()) && !place_id ) {
-                    // CHECK THAT 
-                    // ONLY CALLED ONCE
-                    ViewManager.startLoading("Buchen...");
+        self.createCashReport(null, false, true, function() {
+        var place_id = self.order.get('place_id');
+            if ( !self.postActive && self.isDraft() && (!self.isPayment() || self.validatePayment()) && !place_id ) {
+                // CHECK THAT 
+                // ONLY CALLED ONCE
+                ViewManager.startLoading("Buchen...");
+                
+                // post active
+                self.postActive = true;
+                var reload = false;
+               
+                // post
+                self.postOrder()['catch'](function(err) {
+                    // post finished
+                    self.postActive = false;
                     
-                    // post active
-                    self.postActive = true;
-                    var reload = false;
-                   
-                    // post
-                    self.postOrder()['catch'](function(err) {
-                        // post finished
-                        self.postActive = false;
-                        
-                        // stop loading after error
-                        ViewManager.stopLoading();
-                        ViewManager.handleError(err,{
-                            name: "Buchungsfehler",
-                            message: "Verkauf konnte nicht gebucht werden"
-                        }, true);
-                    }).then(function(postedOrder) {
-                        // post finished
-                        self.postActive = false;
-                        ViewManager.stopLoading();
-                        Ext.Viewport.fireEvent("cashStateSilentFinished");
-                    });
-                }
-            });
-        };
-        
-        // finish
-        var profile = Config.getProfile();
-        if ( profile.iface_place && !profile.parent_user_id ) {
-            Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
-                if ( buttonId == 'yes' ) {          
-                    createSilent();
-                }
-            });        
-        } else {
-            createSilent();
-        }
+                    // stop loading after error
+                    ViewManager.stopLoading();
+                    ViewManager.handleError(err,{
+                        name: "Abschluss",
+                        message: "Verkauf konnte nicht gebucht werden"
+                    }, true);
+                }).then(function(postedOrder) {
+                    // post finished
+                    self.postActive = false;
+                    ViewManager.stopLoading();
+                    Ext.Viewport.fireEvent("cashStateSilentFinished");
+                });
+            } else {
+                 ViewManager.handleError({
+                    name: "Abschluss",
+                    message: "Kassenabschluss konnte nicht vorbereitet werden"
+                 });
+            }
+        });
     },
     
-    onCreateCashState: function() {
+    prepareCashState: function(silent) {
         var self = this;        
         ViewManager.hideMenus();      
+        
+        // create cash state, silent or normal
+        var createCashState = function() {
+            if ( silent ) {
+                self.prepareCashStateSilent();
+            } else {
+                self.createCashReport(null, false, true);
+            }
+        };
         
         // finish 
         var profile = Config.getProfile();
         if ( Config.getProfile().iface_place && !profile.parent_user_id ) {
-            Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
-                if ( buttonId == 'yes' ) {          
-                   self.createCashReport(null, false, true);
+            
+            ViewManager.startLoading("Suche nach offenen Bonierungen");   
+            var db = Config.getDB();
+                    
+            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
+                
+                ViewManager.stopLoading();
+                
+                var hasOrder = false;
+                Ext.each(res.rows, function(row) {
+                   if ( row.doc.state == 'draft' && row.doc.line_ids && row.doc.line_ids.length > 0 ) {
+                       hasOrder = true;
+                       return false;
+                   } 
+                });
+                
+                if ( hasOrder ) {
+                    Ext.Msg.confirm('Abschluss','Wollen sie die Kasse abschließen und alle offenen Bonierungen löschen?', function(buttonId) {
+                        if ( buttonId == 'yes' ) {          
+                           createCashState();
+                        } else {
+                           Ext.Viewport.fireEvent("showPlace");    
+                        }
+                    });
                 } else {
-                   Ext.Viewport.fireEvent("showPlace");    
+                    createCashState();
                 }
-            });        
+                
+            })['catch'](function(err) {          
+               ViewManager.stopLoading();
+               ViewManager.handleError(err,{
+                    name: "Abschluss",
+                    message: "Suche nach Bonierungen fehlgeschlagen"
+               });
+            });
+        
+           
         } else {
-            this.createCashReport(null, false, true);
+           createCashState();
         }
+    },    
+    
+    onCreateCashStateSilent: function() {
+       this.prepareCashState(true);        
+    },
+            
+    onCreateCashState: function() {
+       this.prepareCashState(false);
     },
         
     onCashReport: function() {

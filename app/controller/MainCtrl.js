@@ -32,6 +32,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             loginButton: '#loginButton',
             placeButton: '#placeButton',
             saveOrderButton: '#saveOrderButton',
+            saveOrderButtonMobile: '#saveOrderButtonMobile',
             userButton1: '#userButton1',
             userButton2: '#userButton2',
             userButton3: '#userButton3',
@@ -253,6 +254,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         var db = Config.getDB();
         var client = null;
         var profile_rev = null;
+        var profile_doc = null;
+        var fullResync = false;
         var sync_err = null;
         
         // reload config        
@@ -274,9 +277,10 @@ Ext.define('Fpos.controller.MainCtrl', {
                throw sync_err;
             // no profile        
         }).then(function() {
-            // load profile
+            // load profile           
             ViewManager.startLoading("Lade Profil");
-            return client.invoke('pos.config','get_profile');
+            var action = (resync && 'reset') || (Config.getPosClosed() && 'inc') || '';
+            return client.invoke('pos.config','get_profile',[], {action:action});
         }).then(function(profile) {
             if (!profile) {
                 throw {
@@ -289,18 +293,27 @@ Ext.define('Fpos.controller.MainCtrl', {
             if (profile_rev) {
                 profile._rev = profile_rev;                
             }            
+
+            // add sync marker
+            profile.resync = true;     
+            profile_doc = profile;   
             return db.put(profile);
-        }).then(function() {
+        }).then(function(res) {
+            // update revision
+            if ( res.rev ) {
+                profile_rev = res.rev;
+                profile_doc._rev = profile_rev;
+            }
+            
             // sync
             ViewManager.startLoading("Synchronisiere Daten");
 
             // build options            
             var options = {};
-            if ( Config.getSync() ) {
+            if ( profile_doc.iface_place ) {
                 // add filter options if in sync
-                var fpos_user_id = Config.getProfile().user_id;
                 options.filter = function(doc) {
-                    return doc.fdoo__ir_model !== 'fpos.order' || doc.fpos_user_id == fpos_user_id; 
+                    return doc.fdoo__ir_model !== 'fpos.order' || doc.state !== 'draft'; 
                 };
             }
 
@@ -358,143 +371,187 @@ Ext.define('Fpos.controller.MainCtrl', {
                ] 
             }, options);
         }).then(function() {
-            ViewManager.stopLoading(); 
-            //self.resetConfig();
-            // full reset
-            window.location.reload();
+            // reset sync marker 
+            // if no fullsync should be done
+            profile_doc.resync = profile_doc.fpos_sync_clean && profile_doc.fpos_sync_count && profile_doc.fpos_sync_count >= profile_doc.fpos_sync_clean;
+            return db.put(profile_doc);
+        }).then(function() {
+            // FULL RESET
+            Config.restart();
         })['catch'](function(err) {
+        
             ViewManager.stopLoading();
             ViewManager.handleError(err,{
                 name: "Unerwarteter Fehler", 
                 message: "Synchronisation konnte nicht durchgeführt werden"
             }, true);
+            
             self.resetConfig();
+            
         });
     },
-    
+            
     loadConfig: function() {        
         var self = this;
         var db = Config.getDB();
         
-        // load config
         try {
-            // cleanup views
-            ViewManager.startLoading('Optimiere Views');
-            return db.viewCleanup().then(function(res) {
-                // optimize db
-                ViewManager.startLoading('Optimiere Datenbank');
-                return db.compact();
-            }).then(function(res) {
-                ViewManager.startLoading('Lade Konfiguration');
-                // load config                
-                return db.get('_local/config');
-            }).then(function(config) {
+            // load config       
+            ViewManager.startLoading('Lade Konfiguration');
+            db.get('_local/config').then(function(config) {
                 ViewManager.startLoading('Lade Profil');
                 // set config
                 Config.setSettings(config);
-                // load profile
+                // load profile              
                 return db.get('_local/profile');
-            }).then(function(profile) {
+            }).then(function(profile) {               
                 ViewManager.startLoading('Lade Daten');
+
                 // set profile                
                 Config.setProfile(profile);
+                
+                // check resync
+                if ( profile.resync ) {
+                    throw {
+                        name: 'resync',
+                        message: 'Neu- Synchronisation ist erforderlich'                        
+                    };
+                }
                   
-                // reload                
-                // load category
-                self.categoryStore.load({
-                    callback: function() {
-                    
-                        // build category index
-                        self.categoryStore.buildIndex();
-                        
-                        // load tops
-                        self.topStore.load({
-                            callback: function() {
+                // compact database
+                ViewManager.startLoading('Optimiere Datenbank');
+                return db.compact().then(function(res) {
+                    // optimize db
+                    ViewManager.startLoading('Optimiere Views');                    
+                    return db.viewCleanup();
+                }).then(function(res) {                   
+                    // load data
+                    ViewManager.startLoading('Lade Daten');
+                    // load category
+                    self.categoryStore.load({
+                        callback: function() {
+                            // build category index
+                            self.categoryStore.buildIndex();
                             
-                                // load tax
-                                self.taxStore.load({
-                                    callback: function() {
-                                    
-                                        // load product units
-                                        self.unitStore.load({
-                                            callback: function() {
-                                                
-                                                // load products
-                                                self.productStore.load({
-                                                    callback: function() {
-                                                        ViewManager.startLoading('Erstelle Index');
-                                                        try {
-                                                            // build index
-                                                            self.productStore.buildIndex();
-                                                            
-                                                            // load places
-                                                            self.placeStore.load({
-                                                                callback: function() {
-                                                                    try {
-                                                                    
-                                                                        // build index
-                                                                        self.placeStore.buildIndex();
+                            // load tops
+                            self.topStore.load({
+                                callback: function() {
+                                
+                                    // load tax
+                                    self.taxStore.load({
+                                        callback: function() {
+                                        
+                                            // load product units
+                                            self.unitStore.load({
+                                                callback: function() {
+                                                    
+                                                    // load products
+                                                    self.productStore.load({
+                                                        callback: function() {
+                                                            ViewManager.startLoading('Erstelle Index');
+                                                            try {
+                                                                // build index
+                                                                self.productStore.buildIndex();
+                                                                
+                                                                // load places
+                                                                self.placeStore.load({
+                                                                    callback: function() {
+                                                                        try {
                                                                         
-                                                                        // define finish of load
-                                                                        var finishLoad = function() {
-                                                                            // fire reload
-                                                                            Ext.Viewport.fireEvent("reloadData");
-                                                                            // ... and show login
-                                                                            self.showLogin();   
-                                                                        };
-                                                                        
-                                                                        // try setup sync
-                                                                        Config.setupRemote()['catch'](function(err) {
+                                                                            // build index
+                                                                            self.placeStore.buildIndex();
+                                                                            
+                                                                            // finish load                                                                           
+                                                                            ViewManager.stopLoading();
+                                                                            self.showLogin();  
+    
+                                                                        } catch (err) {
                                                                             ViewManager.stopLoading();
                                                                             ViewManager.handleError(err,{
                                                                                     name: "Ausnahmefehler beim Laden", 
-                                                                                    message: "Es konnte keine Verbindung zum Verteiler hergestellt werden"
+                                                                                    message: "Daten konnte nicht geladen werden"
                                                                             });
-                                                                            finishLoad();
-                                                                        }).then(function() {
-                                                                            // stop loading
-                                                                            ViewManager.stopLoading();
-                                                                            finishLoad();
-                                                                        });
-
-                                                                    } catch (err) {
-                                                                        ViewManager.stopLoading();
-                                                                        ViewManager.handleError(err,{
-                                                                                name: "Ausnahmefehler beim Laden", 
-                                                                                message: "Daten konnte nicht geladen werden"
-                                                                        });
+                                                                        }
                                                                     }
-                                                                }
-                                                            });     
-                                                        } catch (err) {
-                                                            ViewManager.stopLoading();
-                                                            ViewManager.handleError(err,{
-                                                                    name: "Ausnahmefehler beim Laden", 
-                                                                    message: "Produkte konnten nicht geladen werden"
-                                                            });
-                                                        }                                                        
-                                                    }
-                                                    
-                                                });
-                                                                      
-                                            }
-                                        });                                        
-                                    }
-                                });  
-                            } 
+                                                                });     
+                                                            } catch (err) {
+                                                                ViewManager.stopLoading();
+                                                                ViewManager.handleError(err,{
+                                                                        name: "Ausnahmefehler beim Laden", 
+                                                                        message: "Produkte konnten nicht geladen werden"
+                                                                });
+                                                            }                                                        
+                                                        }
+                                                        
+                                                    });
+                                                                          
+                                                }
+                                            });                                        
+                                        }
+                                    });  
+                                } 
+                            });
+                        }
+                    });
+                });         
+            })['catch'](function(error) {
+                if ( error.name == 'resync' ) {
+                    ViewManager.startLoading('Datenbank zurücksetzen');
+                    
+                    var resetDB = function() {
+                        ViewManager.startLoading('Datenbank zurücksetzen');            
+                        Config.resetDB()['catch'](function(err) {
+                            ViewManager.stopLoading();
+                            ViewManager.handleError(error,{
+                                name: "Zurücksetzen fehlgeschlagen", 
+                                message: "Datenbank zurücksetzen fehlgeschlagen"
+                            });                           
+                        }).then(function(res) {
+                            return self.sync(true)['catch'](function(err) {
+                                ViewManager.stopLoading();
+                                self.editConfig();
+                                setTimeout(function() {
+                                    ViewManager.handleError(error,{
+                                        name: "Synchronisation fehlgeschlagen", 
+                                        message: "Überprüfen sie die Zugangsdaten"
+                                    });
+                                },0);                            
+                            });
+                        });
+                    };
+                    
+                    // check if remote dbs should also have a
+                    // reset
+                    var profile = Config.getProfile();
+                    if ( profile && !profile.parent_user_id && Config.getSync() ) {
+                        // rebuild sync
+                        Config.resetDist().then(function() {
+                            return Config.setupRemoteDatabases().then(resetDB, function(err) {                                
+                                ViewManager.stopLoading();
+                                ViewManager.handleError(err, {name: 'Fehler', message: 'Verteiler konnte nicht initialisiert werden'}, false, function() {
+                                     resetDB();
+                                });
+                            });
+                        }, function(err) {
+                            ViewManager.stopLoading();
+                            ViewManager.handleError(err, {name: 'Fehler', message: 'Verteiler konnte nicht zurückgesetzt werden'}, false, function() {
+                                 resetDB();
+                            });
+                        });
+                    } else {
+                        resetDB();
+                    }
+                    
+                } else {
+                    ViewManager.stopLoading();
+                    if ( error.name === 'not_found') {
+                        self.editConfig();   
+                    } else {
+                        ViewManager.handleError(error,{
+                            name: "Fehler beim Laden", 
+                            message: "Konfiguration konnte nicht geladen werden"
                         });
                     }
-                });         
-            })
-            ['catch'](function (error) {
-                ViewManager.stopLoading();
-                if ( error.name === 'not_found') {
-                    self.editConfig();   
-                } else {
-                    ViewManager.handleError(error,{
-                        name: "Fehler beim Laden", 
-                        message: "Konfiguration konnte nicht geladen werden"
-                    }, true);
                 }
             }); 
         } catch (err) {
@@ -502,7 +559,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             ViewManager.handleError(err,{
                     name: "Ausnahmefehler beim Laden", 
                     message: "Konfiguration konnte nicht geladen werden"
-            }, true);
+            });
         }
     },
          
@@ -741,7 +798,13 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     placeInput: function(place) {
         var self = this;
-        self.getPlaceButton().setText(place.get('complete_name'));
+        
+        if ( self.smallPlaceName ) {
+            self.getPlaceButton().setText(place.get('name'));
+        } else {
+            self.getPlaceButton().setText(place.get('complete_name'));
+        }
+        
         self.basePanel.setActiveItem(2);                
         // set view options
         ViewManager.setViewOption(self.basePanel, 'showLogin', false);
@@ -799,10 +862,109 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     openPos: function() {
-        // init vars
-        var i;
         var self = this;
         var profile = Config.getProfile();
+        
+        // init remote
+        if ( !self.remoteLoaded ) {
+            self.remoteLoaded = true;
+            
+            var setupPos = function() {                
+                setTimeout(function() {
+                    ViewManager.stopLoading();
+                    self.openPos();                    
+                }, 0);  
+            };
+            
+            var setupRemoteError = function(err) {
+                // cancel sync on error
+                Config.cancelSync();
+                self.remoteLoaded = false;
+                ViewManager.stopLoading();
+                ViewManager.handleError(err,{
+                        name: "Ausnahmefehler beim Laden", 
+                        message: "Es konnte keine Verbindung zum Verteiler hergestellt werden"
+                });
+                // show login on error                
+                self.showLogin();    
+            };
+            
+            var setupRemote = function() {
+                var remoteDatabases = Config.getRemoteDatabases();
+                if ( remoteDatabases.length > 0 ) {                    
+                
+                    ViewManager.startLoading("Lade Verbindungen");
+                    Config.setupRemoteLinks(remoteDatabases, true).then(function() {
+                        
+                        // get sync version
+                        var syncVersion  = Config.getSyncVersion();
+                        var db = Config.getDB();
+                        
+                        // clean up database
+                        // delete draft order before this version
+
+                        DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
+                           var bulkUpdate = [];
+                           Ext.each(res.rows, function(row) {
+                               if ( !row.doc.sv || row.doc.sv < syncVersion ) {
+                                   // mark deleted                        
+                                   row.doc._deleted = true;
+                                   bulkUpdate.push(row.doc);
+                               }
+                           });
+                           return db.bulkDocs(bulkUpdate);
+                        }).then(function(res) {
+                            if ( Config.getSyncVersion() > profile.fpos_sync_version ) {
+                                ViewManager.stopLoading();
+                                Ext.Msg.confirm('Alte Daten','Auf dem Gerät sind alte Daten, soll der neue Datenstand geholt werden?', function(buttonId) {
+                                    if ( buttonId == 'yes' ) {
+                                        // sync again
+                                        self.sync(true)['catch'](setupRemoteError);
+                                    } else {
+                                        // start normal
+                                        Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
+                                    }        
+                                });
+                            } else {
+                                // start normal
+                                Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
+                            }
+                        })['catch'](function(err) {          
+                            // error
+                            ViewManager.stopLoading();
+                            Ext.Msg.confirm('Alte Daten','Alte Verkäufe konnten nicht gelöscht werden, soll der neue Datenstand geholt werden?', function(buttonId) {
+                                 if ( buttonId == 'yes' ) {
+                                     // sync again
+                                     self.sync(true)['catch'](setupRemoteError);
+                                 } else {
+                                     // start normal
+                                     Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
+                                 }        
+                             });
+                        });                        
+                        
+                    }, setupRemoteError);
+                } else {
+                    setupPos();
+                }
+            };
+            
+            var setupProxy = function() {
+                ViewManager.startLoading("Lade Proxy");
+                Config.setupProxy().then(setupRemote, function(err) {
+                     ViewManager.stopLoading();
+                     Ext.Msg.alert(err.name || 'Proxy', err.message || 'Kein Verbindung zum Proxy', function() {
+                         setupRemote();
+                     });
+                });
+            };
+            
+            // setup proxy
+            setupProxy();
+        }
+    
+        // init vars
+        var i;     
         
         // init users
         var currentUser = Config.getUser();
@@ -868,18 +1030,17 @@ Ext.define('Fpos.controller.MainCtrl', {
                 });
                 
                 // listener only if places
-                /*
-                var productMenuListeners = {};
+                var productMenuListeners = {};                
                 if ( profile.iface_place ) {
                     productMenuListeners.hiddenchange = function(menu) {
                         self.getSaveOrderButtonMobile().setHidden(menu.getHidden());
                     }; 
-                }*/
+                }
                 
                 // set left menu                
                 var productMenu =  Ext.create('Ext.Menu', {
                         cls: 'ProductMenu',
-                        //listeners: productMenuListeners,
+                        listeners: productMenuListeners,
                         items: [
                             {                                
                                 xtype: 'fpos_product_small',
@@ -893,6 +1054,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                      side: "left",
                      reveal: true
                 });
+                
+                self.smallPlaceName = true;
                  
             } else {                       
                 keyboardLayout = 'fpos_order_input';
@@ -1064,9 +1227,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     return db.put(newValues);
                 },
                 savedHandler: function() {                    
-                    return self.sync(true).then(function(err) {
-                        self.loadConfig();  
-                    })['catch'](function(err) {
+                    return self.sync(true)['catch'](function(err) {
                         self.editConfig();
                     });
                 }
@@ -1076,7 +1237,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             self.getMainView().push(configForm);
         };
         
-        return db.get('_local/config').then( function(doc) {
+        return db.get('_local/config').then(function(doc) {
             load(doc);
         })['catch'](function (error) {
             load({});
@@ -1196,7 +1357,10 @@ Ext.define('Fpos.controller.MainCtrl', {
        var menu = Ext.Viewport.getMenus().left;
        if ( menu ) { 
            if ( menu.isHidden() ) {
-                Ext.Viewport.showMenu("left");
+                // prevent showing if loading
+                if ( !ViewManager.isLoading() ) {
+                    Ext.Viewport.showMenu("left");
+                }
            } else {
                 Ext.Viewport.hideMenu("left");
            }
@@ -1219,9 +1383,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             if ( self.basePanel.getActiveItem() == self.posPanel ) {
                 // scan
                 if ( e.keyCode == 229 ) {
-                    if ( !ViewManager.isLoading() ) {
-                        self.onShowProductMenu();
-                    }
+                    self.onShowProductMenu();
                 } else {
                     // otherwise            
                     Ext.Viewport.fireEvent("posKey", e);

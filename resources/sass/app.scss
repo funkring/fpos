@@ -136,6 +136,7 @@ $form-field-label-bg-color : #dcdce6;
 @include sencha-button-ui('posInputButtonBlack', $fpos-input-dark, 'matt');
 @include sencha-button-ui('posInputButtonGray', $fpos-input-grey, 'matt');
 @include sencha-button-ui('posInputButtonGreen', $fpos-lime, 'matt');
+@include sencha-button-ui('posInputButtonGreenBevel', $fpos-lime, 'bevel');
 @include sencha-button-ui('posInputButtonOrange', $fpos-orange, 'matt');
 @include sencha-button-ui('posInputButtonWhite', $fpos-white, 'matt');
 

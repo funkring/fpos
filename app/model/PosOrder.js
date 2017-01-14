@@ -9,6 +9,7 @@ Ext.define('Fpos.model.PosOrder', {
                 'user_id',
                 'partner_id', 
                 'date',
+                'sv',
                 'seq',
                 'name',
                 'ref',                

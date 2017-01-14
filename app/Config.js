@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '4.0.30',
+        version : '4.0.31',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -39,9 +39,11 @@ Ext.define('Fpos.Config', {
         cashJournal: null,
         sync: false,
         syncState: 'idle',
+        syncVersion: 0,
         syncHandlers: null,
         logoutCode: '0000000',
-        journalById: {}
+        journalById: {},
+        posClosed: false
     },
     
     constructor: function(config) {
@@ -86,46 +88,78 @@ Ext.define('Fpos.Config', {
         Ext.Viewport.fireEvent('syncState', syncState);
     },
     
-    addSync: function(syncHandlers, dest) {
-        var deferred = Ext.create('Ext.ux.Deferred');
-        var self = this;
-        
-        // check dest        
-        if ( !dest ) {
-            setTimeout(function() {
-                deferred.reject();
-            },0);
-            return deferred.promise();
-        }
-        
-        // init databses
-        var destDB = new PouchDB(dest);
-        var db = self.getDB();
-        
-        // init filter
-        var filterVersion = 'fpos_v3_1';
+    getSyncFilter: function() {
+        var filterVersion = 'fpos_v4_1';
         var filterId = '_design/' + filterVersion;  
         var filterName =  filterVersion + "/dist";
-        var filter = {
-            _id: filterId,
-            filters: {
-                dist: function(doc) {
-                    return (doc.fdoo__ir_model == 'fpos.order' && doc.state == 'draft' && doc.place_id);
-                }.toString()
-            }                
+        var version = this.getSyncVersion();
+        return {
+            name: filterName,  
+            filter : {
+                _id: filterId,
+                version: version,       
+                filters: {
+                    dist: function(doc) {
+                        return (doc.fdoo__ir_model == 'fpos.order' && doc.state == 'draft' && doc.place_id && doc.sv >= '$sync_version');
+                    }.toString().replace('$sync_version', version)
+                }
+            }
         };
+    },
+    
+    addLocalSyncFilter: function() {
+     
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        var data = self.getSyncFilter();
+        var db = self.getDB();
+        
+         // check local
+        db.get(data.filter._id).then(function(res) {
+            // check for local filter update
+            if ( !res.version || res.version < data.filter.version) {            
+                data.filter._rev = res._rev;                      
+                db.put(data.filter).then(function(res) {
+                    deferred.resolve();
+                })['catch'](function(err) {
+                    deferred.reject(err);
+                });
+            } else {                
+                deferred.resolve();
+            } 
+        })['catch'](function(err) {
+            if ( err.name == 'not_found' ) {
+                db.put(data.filter).then(function(res) {
+                   deferred.resolve();
+                })['catch'](function(err) {
+                   deferred.reject(err);        
+                });
+            } else {
+                deferred.reject(err);
+            }
+        });
+        
+        return deferred.promise();
+    },
+    
+    addSync: function(syncHandlers, destDB, test, setupOnly) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        var db = self.getDB();
+        var version = self.getSyncVersion();
+        var data = self.getSyncFilter();
         
         // start sync
         var createSync = function() {
             var sync = PouchDB.sync(self.getDatabaseName(), destDB, {
                 live: true,
                 retry: true, 
-                filter: filterName
+                filter: data.name
             }).on('change', function(info) {
                 Ext.Viewport.fireEvent('syncChange', info);
                 self.notifySyncState('change');  
             }).on('error', function(err) {
-                self.notifySyncState('error');  
+                self.notifySyncState('error');
             }).on('paused', function(err) {
                if ( err ) {
                  self.notifySyncState('error');  
@@ -135,47 +169,43 @@ Ext.define('Fpos.Config', {
             }).on('active', function() {
                self.notifySyncState('active');
             }).on('complete', function() {
-                self.notifySyncState('complete');
+               self.notifySyncState('complete');
             }).on('denied', function() {
                self.notifySyncState('error');
             });
             
             syncHandlers.push(sync);
-            deferred.resolve(sync);   
+            deferred.resolve();   
         };      
         
         // check remote filter
-        var checkRemoteFilter = function() {           
-            destDB.get(filterId).then(function(res) {
+        destDB.get(data.filter._id).then(function(res) {                
+            if ( test ) {
+                deferred.resolve(res);
+            } else if ( setupOnly ) {
+                deferred.resolve();
+            } else {
                 createSync();
-            })['catch'](function(err) {
-                if ( err.name == 'not_found' ) {
-                    destDB.put(filter).then(function(res) {
-                        createSync();  
+            }
+        })['catch'](function(err) {
+            if ( err.name == 'not_found' ) {
+                if ( test ) {
+                    deferred.resolve(null);
+                } else {
+                    destDB.put(data.filter).then(function(res) {
+                        if ( setupOnly ) {
+                            deferred.resolve();
+                        } else {
+                            createSync();
+                        }                          
                     })['catch'](function(err) {
                         deferred.reject(err);
                     });                
-                } else {
-                    deferred.reject(err);
                 }
-            });
-        };
-
-        // check local filter        
-        db.get(filterId).then(function(res) {
-            checkRemoteFilter(); 
-        })['catch'](function(err) {
-            if ( err.name == 'not_found' ) {
-                db.put(filter).then(function(res) {
-                   checkRemoteFilter(); 
-                })['catch'](function(err) {
-                   deferred.reject(err);            
-                });
             } else {
                 deferred.reject(err);
             }
-        });
-        
+        });        
         return deferred.promise();
     },
     
@@ -189,62 +219,141 @@ Ext.define('Fpos.Config', {
         }
     },
     
-    /**
-     * setup remote connections
-     */ 
-    setupRemote: function() {
+    getRemoteDatabases: function() {
+        // create destination databases
+        var destDatabases = [];
+        // only create databases
+        // if sync is active
+        if ( this.getSync() ) {   
+            var profile = this.getProfile(); 
+            if ( !Ext.isEmpty(profile.fpos_dist_ids)  ) {            
+                Ext.each(profile.fpos_dist_ids, function(dest) {            
+                    if (dest.name) destDatabases.push(new PouchDB(dest.name));
+                });
+            }
+        }
+        return destDatabases;
+    },
+        
+    setupRemoteLinks: function(destDatabases, test, setupOnly) {
+        // vars
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         var profile = self.getProfile();
         
-        // cancel sync
+         // cancel sync
         self.cancelSync();
-         
-        // create sync (if sync is configured)
-        var setupSync = function() { 
-            if ( !profile || Ext.isEmpty(profile.fpos_dist_ids) ) {            
-                self.setSync(false);
-                setTimeout(function() {
-                    deferred.resolve();
-                },0);             
-            } else {        
+        
+        if ( destDatabases.length === 0 ) {
+            setTimeout(function() {
+                deferred.resolve();
+            },0);             
+        } else {        
+            
+            // create/start handlers            
+            self.syncHandlers = [];
+
+            var nodeCount = 0;
+            var nodeErr = null;
+            var syncVersion = 0;
+            
+            var procNotify = function(err, res) {
+                nodeCount++;                                
+                if ( err ) {
+                    if ( !nodeErr ) nodeErr = err;
+                } 
+                // determine lowest version
+                else if ( test ) {                    
+                    if ( res && res.version && (!syncVersion || res.version < syncVersion) ) {
+                        syncVersion = res.version;
+                    }
+                }
                 
-                // create/start handlers
-                self.setSync(true);       
-                self.syncHandlers = [];
-                
-                var procCount = 0;
-                var procNotify = function(err) {
-                    procCount++;
-                    if ( procCount >= profile.fpos_dist_ids.length ) {
-                        if ( self.syncHandlers.length === 0 ) {
+                if ( nodeCount >= destDatabases.length ) {
+                    if ( test ) {
+                        // set lowest version, if there is one
+                        if ( syncVersion ) {
+                            self.setSyncVersion(syncVersion);
+                        }
+                        deferred.resolve();
+                    } else {
+                        if ( nodeErr ) {
                             self.notifySyncState('error');
-                            deferred.reject(err);
-                        } else {
+                            deferred.reject(nodeErr);
+                        } else {                                            
                             deferred.resolve();
                         }
                     }
-                };
+                }
+            };
                 
-                Ext.each(profile.fpos_dist_ids, function(dest) {
-                    self.addSync(self.syncHandlers, dest.name)
-                            ['catch'](procNotify).then(procNotify);
-                           
-                    
+             
+            if ( test ) {
+                // add remote links
+                Ext.each(destDatabases, function(destDB) {
+                    self.addSync(self.syncHandlers, destDB, test, setupOnly).then(function(res) {
+                        procNotify(null, res);
+                    }, function(err) {
+                        procNotify(err, null);
+                    });
                 });
+            } else {
+                // add localfilter     
+                self.addLocalSyncFilter().then(function() {
+                    // add remote links
+                    Ext.each(destDatabases, function(destDB) {
+                        self.addSync(self.syncHandlers, destDB, test, setupOnly).then(function(res) {
+                            procNotify(null, res);
+                        }, function(err) {
+                            procNotify(err, null);
+                        });
+                    });
+                }, function(err) {
+                    deferred.reject(err);
+                });           
                 
             }
-        };
-
+            
+        }
+        
+        return deferred.promise();
+    },
+    
+    /**
+     * setup remote databases
+     */
+    setupRemoteDatabases: function() {      
+        var self = this;
+        var destDatabases = self.getRemoteDatabases();
+        if ( destDatabases.length > 0) {
+            return self.setupRemoteLinks(destDatabases, false, true);
+        } else {
+            var deferred = Ext.create('Ext.ux.Deferred');
+            setTimeout(function() {
+                deferred.resolve();
+            }, 0);
+            return deferred.promise();
+        }
+    },
+    
+    /**
+     * setup remote connections
+     */ 
+    setupProxy: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var profile = self.getProfile();
+              
         // check hwproxy        
         if ( profile.iface_print_via_proxy ) {
             var proxyUrl = 'http://localhost:8045';
             var proxy = Ext.create('Fpos.core.HwProxy', { url: profile.proxy_ip || 'http://localhost:8045' });
             proxy.getStatus(function(hwstatus) {
-                // setup sync
+                // setup proxy
                 window.PosHw = proxy;
-                self.setHwStatus(hwstatus);                
-                setupSync();
+                self.setHwStatus(hwstatus);
+                // finished  
+                deferred.resolve();              
             }, function(err) {
                 // error
                 self.setHwStatus({ err : err });
@@ -252,8 +361,9 @@ Ext.define('Fpos.Config', {
             });    
         
         } else {
-            // setup without hwproxy
-            setupSync();
+            setTimeout(function() {
+                deferred.resolve();
+            },0);
         }
 
         return deferred.promise();
@@ -371,10 +481,14 @@ Ext.define('Fpos.Config', {
       
     updateProfile: function(profile) {
         var self = this;
-        var users = {};        
+        var users = {};      
+        var sync = false;  
         if (profile) {
-            var journalById = self.getJournalById();
+            // set sync version
+            self.setSyncVersion(profile.fpos_sync_version || 0);
+            
             // set cash journal
+            var journalById = self.getJournalById();            
             Ext.each(profile.journal_ids, function(journal) {
                 journalById[journal._id] = journal;
                 if ( journal.type == 'cash') {
@@ -386,7 +500,12 @@ Ext.define('Fpos.Config', {
             Ext.each(profile.user_ids, function(user) {
                 users[user._id] = user; 
             });
+            
+            // enable sync
+            sync = (profile.fpos_dist_ids && profile.fpos_dist_ids.length > 0);
+            
         }       
+        self.setSync(sync);
         self.setUsers(users);
     },
     
@@ -739,5 +858,89 @@ Ext.define('Fpos.Config', {
                      'mobile',
                      'is_company']
         };
-    }  
+    },
+    
+    resetDist: function() {        
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        
+        var destDatabases = self.getRemoteDatabases();
+        if ( destDatabases.length > 0 ) {
+            
+            var procCount = 0;
+            var procErr = null;          
+            var procNotify = function(err) {              
+                procCount++;
+                if (!procErr && err) procErr = err; 
+                if ( procCount >= destDatabases.length ) {
+                    if ( procErr ) {
+                        deferred.reject(procErr);
+                    } else {                        
+                        deferred.resolve();
+                    }
+                }
+            };
+            
+            Ext.each(destDatabases, function(distDB) {                                
+                distDB.destroy().then(function() {                    
+                    procNotify();
+                })['catch'](function(err) {
+                    procNotify(err);                    
+                });
+            });
+            
+        } else {
+            setTimeout(function() {
+                deferred.resolve();
+            }, 0);
+        }
+        
+        return deferred.promise();
+    },
+    
+    resetDB: function() {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        var name = self.getDatabaseName();
+        var db = self.getDB();
+        var client = self.newClient();
+        var settings = self.getSettings();
+        
+        // try connect
+        client.connect()['catch'](function(err) {
+            deferred.reject(err);
+        }).then(function(res) {
+            // reset database
+            DBUtil.resetDB(name, function(err) {
+                if ( !err ) {
+                    // get new db
+                    db = self.getDB();
+                    // post config
+                    delete settings._rev;             
+                    db.post(settings)['catch'](function(err) {
+                        deferred.reject(err);  
+                    }).then(function(res) {
+                        // reset odoo database and reload
+                        DBUtil.resetOdoo(db, client, name)['catch'](function(err) {
+                            deferred.reject(err);
+                        }).then(function(res) {
+                            deferred.resolve(res);
+                        });
+                    });
+                } else {
+                   deferred.reject(err);
+                }
+            });
+        });        
+        
+        return deferred.promise();
+    },
+    
+    restart: function() {
+        this.cancelSync();
+        setTimeout(function() {
+            window.location.reload();   
+        }, 1000);
+    } 
+    
 });

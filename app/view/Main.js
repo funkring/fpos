@@ -112,16 +112,16 @@ Ext.define('Fpos.view.Main', {
                     ui: 'back',
                     hidden: true                    
                 },
-                /*
                 {
                     xtype: 'button',
                     text: 'Bonieren',
                     id: 'saveOrderButtonMobile', 
-                    ui: 'forward',    
+                    //ui: 'action',
+                    ui: 'posInputButtonGreenBevel',    
                     align: 'left',
                     action: 'saveOrder',
                     hidden: true 
-                },*/
+                },
                 {
                     xtype: 'button',
                     iconCls: 'list',
@@ -134,7 +134,8 @@ Ext.define('Fpos.view.Main', {
                     xtype: 'button',
                     id: 'saveOrderButton',
                     text: 'Bonieren',   
-                    ui: 'forward',    
+                    //ui: 'action',
+                    ui: 'posInputButtonGreenBevel',    
                     align: 'right',
                     action: 'saveOrder',
                     hidden: true                

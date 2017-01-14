@@ -9,7 +9,7 @@ Ext.define('Fpos.core.Printer', {
         profile: null,
         timeout: 5000,
         retryTimeout: 1000,
-        queueSize: 50     
+        queueSize: 50
     },
     
     constructor: function(config) {

@@ -22,44 +22,14 @@ Ext.define('Fpos.controller.AdminCtrl', {
         Ext.Msg.confirm('Zurücksetzung','Wollen sie wirklich alle Daten zurücksetzen?', function(buttonId) {
             if ( buttonId == 'yes' && !Config.getUser() ) {          
                 
-                var name = "fpos";
-                var db = Config.getDB();
-                var client = Config.newClient();
-                var settings = Config.getSettings();
-                
                 ViewManager.startLoading('Datenbank zurücksetzen');
-                var handleError = function(err) {
+                Config.resetDB()['catch'](function(err) {
                     ViewManager.stopLoading();
                     ViewManager.handleError(err);
-                };
-                
-                // try connect
-                client.connect()['catch'](function(err) {
-                    handleError(err);
                 }).then(function(res) {
-                    // reset database
-                    DBUtil.resetDB(name, function(err) {
-                        if ( !err ) {
-                            // get new db
-                            db = Config.getDB();
-                            // post config
-                            delete settings._rev;             
-                            db.post(settings)['catch'](function(err) {
-                                handleError(err);  
-                            }).then(function(res) {
-                                // reset odoo database and reload
-                                DBUtil.resetOdoo(db, client, name)['catch'](function(err) {
-                                    handleError(err);
-                                }).then(function(res) {
-                                    ViewManager.stopLoading();
-                                    window.location.reload();    
-                                });
-                            });
-                        } else {
-                           handleError(err);
-                        }
-                    });
-                });        
+                    Config.restart();   
+                });
+               
             }
         });
     }
