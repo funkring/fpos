@@ -44,6 +44,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
         this.categoryStore = Ext.StoreMgr.lookup("CategoryStore");
         this.allCategoryStore = Ext.StoreMgr.lookup("AllCategoryStore");
         this.unitStore = Ext.StoreMgr.lookup("ProductUnitStore");
+        this.lastCategoryId = null;
+        this.selCategoryId = null;
         this.productPageCount = 0;
         this.categoryPageCount = 0;
         this.shown = false;
@@ -98,6 +100,8 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
             reloadData: function() {
                 self.shown = false;
                 self.productButtonTmpl = null;
+                self.lastCategoryId = null;
+                self.selCategoryId = null;
                 self.loadCategory(null);
             }
         });     
@@ -269,27 +273,32 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                             // load root
                             this.loadCategory(null);
                         } else {
-                            var parent_id = category.get('parent_id');
-                            if  ( afterProduct == 'parent' ) {
-                                // load parent                           
-                                this.loadCategory(parent_id);
-                            } else if ( afterProduct == 'main' ) {
-                                // search next main category
-                                var main_id = null;
-                                while ( parent_id && !main_id) {
-                                    var parent = this.allCategoryStore.getById(parent_id);
-                                    if ( parent ) {
-                                        if ( parent.get('pos_main') ) {
-                                            main_id = parent.getId();                                        
-                                        }        
-                                        parent_id = parent.get('parent_id');
-                                    } else {
-                                        parent_id = null;
-                                    }                                
-                                }                            
-                                // load main
-                                this.loadCategory(main_id);
-                            } 
+                            if ( afterProduct == 'back' ) {
+                                this.loadCategory(this.lastCategory);
+                            } else {
+                            
+                                var parent_id = category.get('parent_id');
+                                if  ( afterProduct == 'parent' ) {
+                                    // load parent                           
+                                    this.loadCategory(parent_id);
+                                } else if ( afterProduct == 'main' ) {
+                                    // search next main category
+                                    var main_id = null;
+                                    while ( parent_id && !main_id) {
+                                        var parent = this.allCategoryStore.getById(parent_id);
+                                        if ( parent ) {
+                                            if ( parent.get('pos_main') ) {
+                                                main_id = parent.getId();                                        
+                                            }        
+                                            parent_id = parent.get('parent_id');
+                                        } else {
+                                            parent_id = null;
+                                        }                                
+                                    }                            
+                                    // load main
+                                    this.loadCategory(main_id);
+                                } 
+                            }
                         }
                         
                     }
@@ -421,6 +430,10 @@ Ext.define('Fpos.controller.ProductViewCtrl', {
                 if ( !scroller.getDisabled() ) scroller.setDisabled(true);
             }
         }
+       
+        // select category
+        this.lastCategory = this.selCategoryId;
+        this.selCategoryId = categoryId;
        
         // load products
         if( !hidden ) {
