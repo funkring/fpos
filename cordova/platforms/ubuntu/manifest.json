@@ -1,1 +1,1 @@
-{"name":"at.oerp.Fpos","version":"4.0.30","title":"Fpos","hooks":{"cordova":{"desktop":"cordova.desktop","apparmor":"apparmor.json"}},"maintainer":"oerp.at <info@oerp.at>","description":"Fpos is a free Point of Sale app with Odoo Sync"}
+{"name":"at.oerp.Fpos","version":"4.0.31","title":"Fpos","hooks":{"cordova":{"desktop":"cordova.desktop","apparmor":"apparmor.json"}},"maintainer":"oerp.at <info@oerp.at>","description":"Fpos is a free Point of Sale app with Odoo Sync"}
