@@ -55,6 +55,7 @@ Ext.define('Fpos.core.HwProxy', {
     },
     
     display: function(lines, successCallback, errorCallback ) {
+        if ( typeof lines === 'string' ) lines = [lines];
         openerplib.json_rpc(this.getUrl(), "display", {lines: lines}, function(err, res) {
             if (err) {
                 if (errorCallback) errorCallback(err);

@@ -1239,7 +1239,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // when new order (only in place mode)
         if ( Config.getProfile().iface_place ) {
             self.getPosDisplay().setRecord(null);
-            self.getStateDisplay().setRecord(null);        
+            self.getStateDisplay().setRecord(null);
+            // reset hardware display  
+            self.display();
         }
         
         // reset view
@@ -1249,7 +1251,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // set record        
         self.getPosDisplay().setRecord(order);
         self.getStateDisplay().setRecord(order);
-        self.getOrderItemList().deselectAll(true);
+        self.getOrderItemList().deselectAll(true);          
         
         // get lines
         var lines = null;
@@ -2316,7 +2318,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 '</tr>',
                             '</tpl>',
                         '</tpl>',                          
-                        '<tpl if="notice">',
+                        '<tpl if="notice && !Config.getProfile().iface_place">',
                             '<tr>',
                                 '<td width="5%">&nbsp;</td>',
                                 '<td colspan="2"><hr/></td>',                    
