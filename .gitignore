@@ -1,6 +1,7 @@
 # sphinx build directories
 _build/
 build/
+bin/
 
 # dotfiles
 .*
@@ -8,4 +9,3 @@ build/
 # backup files
 *~
 *.log
-
