@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">PosServiceTest</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="bonprint">Bondruck</string>
+    <string name="weighing">Wiegung</string>
+    <string name="open">Öffnen</string>
+    <string name="provisioning">Provisioning</string>
+    <string name="customer_display">Display</string>
+    <string name="openBT">Open BT</string>
+    <string name="printBT">Print BT</string>
+    <string name="closeBT">Close BT</string>
+    <string name="scan">Scan</string>
+
+</resources>

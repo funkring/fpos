@@ -1,0 +1,3 @@
+[submodule "cordova/src/cordova-plugin-payworks"]
+	path = cordova/src/cordova-plugin-payworks
+	url = developer@git.funkring.net:/git/cordova-plugin-payworks
