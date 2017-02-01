@@ -12,5 +12,6 @@ bin/
 
 # ignore libs directories
 cordova/platforms/android/assets/www/lib/
+cordova/platforms/ubuntu/www/lib
 cordova/www/lib/
 
