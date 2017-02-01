@@ -27,10 +27,10 @@
             "XWALK_MULTIPLEAPK": "true",
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-payworks": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },

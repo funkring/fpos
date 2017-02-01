@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '4.0.33',
+        version : '4.0.34',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -31,9 +31,10 @@ Ext.define('Fpos.Config', {
         currency: "€",
         admin: false,
         decimals: 2,
-        wallpaperUrl: "http://downloads.oerp.at/oerp_android_wallpaper_",
+        wallpaperUrlPrefix: "http://downloads.oerp.at/oerp_android_wallpaper_",
         apkUrl: "http://downloads.oerp.at/fpos_4.apk",
         downloadUrl: "http://downloads.oerp.at",
+        provUrl: "http://downloads.oerp.at/fpos.json",
         qtyDecimals: 3,
         hwStatus: { err: null },
         cashJournal: null,
@@ -584,111 +585,195 @@ Ext.define('Fpos.Config', {
         return deferred.promise();
     },
     
+    loadProv: function() {
+        var self = this;
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var req = new XMLHttpRequest();        
+        
+        req.open("GET", this.getProvUrl(), true);
+        req.responseType = "json";
+        
+        req.onload = function() {
+            var status = req.status;
+            if ( status == 200 ) {                
+                var provData = req.response;
+                
+                // config
+                var prov =  {
+                    wallpaperUrlPrefix: self.getWallpaperUrlPrefix(),
+                    apkUrl: self.getApkUrl(),
+                    downloadUrl: self.getDownloadUrl()
+                };
+                
+                // override properties
+                var overrideProperties = function(data) {                    
+                    if ( data ) {                        
+                        Ext.each(["wallpaperUrlPrefix",
+                                  "wallpaperUrl",
+                                  "apkUrl",
+                                  "downloadUrl"], function(prop) {
+                           if ( data[prop] ) prov[prop] = data[prop]; 
+                        });
+                        return true;
+                    }
+                    return false;                    
+                };
+                
+                // override
+                overrideProperties(provData);
+                
+                // check model specific
+                var hwStatus = self.getHwStatus();
+                if ( hwStatus ) {
+                    var manufacturerData = null;
+                    
+                    // override manufacturer specific data 
+                    if ( hwStatus.manufacturer ) {
+                        manufacturerData = provData[hwStatus.manufacturer];
+                        overrideProperties(manufacturerData);                        
+                    }
+                    
+                    // override model specific data
+                    if ( hwStatus.model ) {
+                        overrideProperties(provData[hwStatus.model]);   
+                        
+                        // override manufacturer specific 
+                        // model data
+                        if ( manufacturerData ) {
+                            overrideProperties(manufacturerData[hwStatus.model]);
+                        }        
+                    }
+                    
+                    
+                }
+                
+                deferred.resolve(prov);
+            } else {
+                deferred.reject(status);
+            }
+        };
+        
+        req.send();
+        return deferred.promise();
+    },    
+    
     updateApp: function() {
         if ( typeof(cordova) == 'undefined' || cordova.platformId !== 'android')
             return false;
-            
+       
         var self = this;
-        var apkUrl = self.getApkUrl();
-        var defaultError =  {
-           name : "Download fehlgeschlagen!",
-           message: "Datei " + apkUrl + " konnte nicht geladen werden"
-        };
+        self.loadProv().then(function(prov) {
         
-        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
-           fileSystem.root.getFile('download/fpos.apk', {
-               create: true,
-               exclusive: false
-           }, function(fileEntry) {
-               
-               var localPath = fileEntry.toURL();
-               var fileTransfer = new FileTransfer();
-               
-               ViewManager.startLoading("Download...");
-               
-               fileTransfer.download(apkUrl, localPath, function(entry) {
-                       window.plugins.webintent.startActivity({ 
-                           action: window.plugins.webintent.ACTION_VIEW,
-                           url:  'file://' + entry.toURL(),
-                           type: 'application/vnd.android.package-archive'
-                       },
-                       function() {
-                           ViewManager.stopLoading();
-                       },
-                       function(err) {
-                           ViewManager.stopLoading();
-                           ViewManager.handleError(err, defaultError);
-                       }
-                    );                  
-                }, function(err) {
-                    ViewManager.stopLoading();
-                    ViewManager.handleError(err, defaultError);
-                });
-           }, function(err) {
-               ViewManager.stopLoading();
-               ViewManager.handleError(err, defaultError);
-           });
+            var defaultError =  {
+               name : "Download fehlgeschlagen!",
+               message: "Datei " + prov.apkUrl + " konnte nicht geladen werden"
+            };
+            
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+               fileSystem.root.getFile('download/fpos.apk', {
+                   create: true,
+                   exclusive: false
+               }, function(fileEntry) {
+                   
+                   var localPath = fileEntry.toURL();
+                   var fileTransfer = new FileTransfer();
+                   
+                   ViewManager.startLoading("Download...");
+                   
+                   fileTransfer.download(prov.apkUrl, localPath, function(entry) {
+                           window.plugins.webintent.startActivity({ 
+                               action: window.plugins.webintent.ACTION_VIEW,
+                               url:  'file://' + entry.toURL(),
+                               type: 'application/vnd.android.package-archive'
+                           },
+                           function() {
+                               ViewManager.stopLoading();
+                           },
+                           function(err) {
+                               ViewManager.stopLoading();
+                               ViewManager.handleError(err, defaultError);
+                           }
+                        );                  
+                    }, function(err) {
+                        ViewManager.stopLoading();
+                        ViewManager.handleError(err, defaultError);
+                    });
+               }, function(err) {
+                   ViewManager.stopLoading();
+                   ViewManager.handleError(err, defaultError);
+               });
+            }, function(err) {
+                ViewManager.stopLoading();
+                ViewManager.handleError(err, defaultError);
+            });
         }, function(err) {
             ViewManager.stopLoading();
-            ViewManager.handleError(err, defaultError);
+            ViewManager.handleError(err, {"name":"provisioning",
+                                          "message": "Provisioning konnte nicht geladen werden"});
         });
         
         return true;        
     },
     
-    downloadApk: function(apkFile) {
+    downloadApk: function(apkFile, prov) {
         if ( typeof(cordova) == 'undefined' || cordova.platformId !== 'android')
             return false;
             
         var self = this;
-        var apkUrl = self.getDownloadUrl() + '/' + apkFile;
-        var defaultError =  {
-           name : "Download fehlgeschlagen!",
-           message: "Datei " + apkUrl + " konnte nicht geladen werden"
-        };
         
-        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
-           fileSystem.root.getFile('download/' + apkFile, {
-               create: true,
-               exclusive: false
-           }, function(fileEntry) {
-               
-               var localPath = fileEntry.toURL();
-               var fileTransfer = new FileTransfer();
-               
-               ViewManager.startLoading("Download...");
-               
-               fileTransfer.download(apkUrl, localPath, function(entry) {
-                       window.plugins.webintent.startActivity({ 
-                           action: window.plugins.webintent.ACTION_VIEW,
-                           url:  'file://' + entry.toURL(),
-                           type: 'application/vnd.android.package-archive'
-                       },
-                       function() {
-                           ViewManager.stopLoading();
-                       },
-                       function(err) {
-                           ViewManager.stopLoading();
-                           ViewManager.handleError(err, defaultError);
-                       }
-                    );                  
-                }, function(err) {
-                    ViewManager.stopLoading();
-                    ViewManager.handleError(err, defaultError);
-                });
-           }, function(err) {
-               ViewManager.stopLoading();
-               ViewManager.handleError(err, defaultError);
-           });
+        self.loadProv().then(function(prov) {
+            var apkUrl = prov.downloadUrl + '/' + apkFile;
+            var defaultError =  {
+               name : "Download fehlgeschlagen!",
+               message: "Datei " + apkUrl + " konnte nicht geladen werden"
+            };
+            
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem) {
+               fileSystem.root.getFile('download/' + apkFile, {
+                   create: true,
+                   exclusive: false
+               }, function(fileEntry) {
+                   
+                   var localPath = fileEntry.toURL();
+                   var fileTransfer = new FileTransfer();
+                   
+                   ViewManager.startLoading("Download...");
+                   
+                   fileTransfer.download(apkUrl, localPath, function(entry) {
+                           window.plugins.webintent.startActivity({ 
+                               action: window.plugins.webintent.ACTION_VIEW,
+                               url:  'file://' + entry.toURL(),
+                               type: 'application/vnd.android.package-archive'
+                           },
+                           function() {
+                               ViewManager.stopLoading();
+                           },
+                           function(err) {
+                               ViewManager.stopLoading();
+                               ViewManager.handleError(err, defaultError);
+                           }
+                        );                  
+                    }, function(err) {
+                        ViewManager.stopLoading();
+                        ViewManager.handleError(err, defaultError);
+                    });
+               }, function(err) {
+                   ViewManager.stopLoading();
+                   ViewManager.handleError(err, defaultError);
+               });
+            }, function(err) {
+                ViewManager.stopLoading();
+                ViewManager.handleError(err, defaultError);
+            });
         }, function(err) {
             ViewManager.stopLoading();
-            ViewManager.handleError(err, defaultError);
+            ViewManager.handleError(err, {"name":"provisioning",
+                                          "message": "Provisioning konnte nicht geladen werden"});
         });
-        
         return true;        
     },
     
-    provisioning: function() {
+    provisioning: function(prov) {
         if ( !wallpaper )
             return;
             
@@ -699,17 +784,27 @@ Ext.define('Fpos.Config', {
             
         // background provisioning
         var self = this;
-        var wallpaperUrl = self.getWallpaperUrl();
-        wallpaperUrl += futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + ".png";
+        self.loadProv().then(function(prov) {
         
-        wallpaper.setImage(wallpaperUrl, "oerp-wallpaper-android", "FposImages", 
-            function() {},
-            function(err) {
-                ViewManager.handleError(err, {
-                    name: 'Fehler',
-                    message: 'Hintergrund kann nicht gesetzt werden'
+            // build url            
+            var wallpaperUrl = prov.wallpaperUrl;
+            if ( !wallpaperUrl) {
+                wallpaperUrl = prov.wallpaperUrlPrefix + futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + ".png";
+            }
+            
+            // set wallpaper
+            wallpaper.setImage(wallpaperUrl, "oerp-wallpaper-android", "FposImages", 
+                function() {},
+                function(err) {
+                    ViewManager.handleError(err, {
+                        name: 'Fehler',
+                        message: 'Hintergrund kann nicht gesetzt werden'
+                    });
                 });
-            });
+        }, function(err) {
+            ViewManager.handleError(err, {"name":"provisioning",
+                                          "message": "Provisioning konnte nicht geladen werden"});
+        });
     },
     
     queryLastOrder: function() {

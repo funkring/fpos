@@ -87,6 +87,13 @@ Ext.define('Fpos.view.TestView', {
                         action: 'testPayworksInit',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
+                     },
+                     {
+                         xtype: 'button',
+                         text: 'Test Prov',
+                         action: 'testProvisioning',
+                         ui: 'posInputButtonBlack',
+                         cls: 'TestButton'
                      }
                 ]                 
             },            

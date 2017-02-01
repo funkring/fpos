@@ -209,11 +209,11 @@
                 "parents": {
                     "/*": [
                         {
-                            "xml": "<feature name=\"PosHw\"><param name=\"android-package\" value=\"at.oerp.pos.cordova.PosHwPlugin\" /></feature>",
+                            "xml": "<feature name=\"Payworks\"><param name=\"android-package\" value=\"at.oerp.payworks.cordova.Payworks\" /></feature>",
                             "count": 1
                         },
                         {
-                            "xml": "<feature name=\"Payworks\"><param name=\"android-package\" value=\"at.oerp.payworks.cordova.Payworks\" /></feature>",
+                            "xml": "<feature name=\"PosHw\"><param name=\"android-package\" value=\"at.oerp.pos.cordova.PosHwPlugin\" /></feature>",
                             "count": 1
                         }
                     ]
@@ -245,10 +245,10 @@
             "XWALK_MULTIPLEAPK": "true",
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-payworks": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
@@ -466,19 +466,19 @@
             ]
         },
         {
-            "id": "cordova-plugin-poshw.PosHw",
-            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
-            "pluginId": "cordova-plugin-poshw",
-            "clobbers": [
-                "PosHw"
-            ]
-        },
-        {
             "id": "cordova-plugin-payworks.Payworks",
             "file": "plugins/cordova-plugin-payworks/cordova/www/Payworks.js",
             "pluginId": "cordova-plugin-payworks",
             "clobbers": [
                 "Payworks"
+            ]
+        },
+        {
+            "id": "cordova-plugin-poshw.PosHw",
+            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+            "pluginId": "cordova-plugin-poshw",
+            "clobbers": [
+                "PosHw"
             ]
         }
     ],
@@ -489,7 +489,7 @@
         "cordova-plugin-file-transfer": "1.5.0",
         "com.borismus.webintent": "1.0.0",
         "cordova-plugin-crosswalk-webview": "2.2.0",
-        "cordova-plugin-poshw": "1.0.5",
-        "cordova-plugin-payworks": "1.0.0"
+        "cordova-plugin-payworks": "1.0.0",
+        "cordova-plugin-poshw": "1.0.5"
     }
 }

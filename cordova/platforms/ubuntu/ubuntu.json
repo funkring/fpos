@@ -28,10 +28,10 @@
         "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-poshw": {
+        "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "cordova-plugin-payworks": {
+        "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
     },
@@ -242,19 +242,19 @@
             ]
         },
         {
-            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
-            "id": "cordova-plugin-poshw.PosHw",
-            "pluginId": "cordova-plugin-poshw",
-            "clobbers": [
-                "PosHw"
-            ]
-        },
-        {
             "file": "plugins/cordova-plugin-payworks/cordova/www/Payworks.js",
             "id": "cordova-plugin-payworks.Payworks",
             "pluginId": "cordova-plugin-payworks",
             "clobbers": [
                 "Payworks"
+            ]
+        },
+        {
+            "file": "plugins/cordova-plugin-poshw/cordova/www/PosHw.js",
+            "id": "cordova-plugin-poshw.PosHw",
+            "pluginId": "cordova-plugin-poshw",
+            "clobbers": [
+                "PosHw"
             ]
         }
     ],
@@ -266,7 +266,7 @@
         "cordova-plugin-file": "4.1.1",
         "cordova-plugin-file-transfer": "1.5.0",
         "cordova-plugin-whitelist": "1.2.0",
-        "cordova-plugin-poshw": "1.0.5",
-        "cordova-plugin-payworks": "1.0.0"
+        "cordova-plugin-payworks": "1.0.0",
+        "cordova-plugin-poshw": "1.0.5"
     }
 }

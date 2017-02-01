@@ -40,6 +40,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testPayworksInit]' : {
                 release: 'testPayworksInit'
+            },
+            'button[action=testProvisioning]' : {
+                release: 'testProvisioning'
             }
         }
     },
@@ -99,11 +102,25 @@ Ext.define('Fpos.controller.TestCtrl', {
     
     testInfo : function() {
         var self = this;
+        
         self.beforeTest();
         var db = Config.getDB();
-        db.info().then(function(info) {            
+        var hwStatusInfo = "";
+        
+        var hwstatus = Config.getHwStatus();
+        if (hwstatus) {
+            if ( hwstatus.manufacturer ) {
+                hwStatusInfo = hwStatusInfo + "Manufacturer: " + hwstatus.manufacturer + "\n";
+            }
+            if ( hwstatus.model ) {
+                hwStatusInfo = hwStatusInfo + "Model: " + hwstatus.model + "\n";
+            }
+        } 
+        
+        db.info().then(function(info) {
            self.getTestLabel().setHtml(            
             "<pre>" +
+            hwStatusInfo +
             "Screen Resolution: " + futil.screenWidth().toString() + "x" + futil.screenHeight().toString() + "\n" +
             "Physical Resolution: " + futil.physicalScreenWidth().toString() + "x" + futil.physicalScreenHeight().toString() + "\n" +
             JSON.stringify(info, null, 2) +
@@ -245,6 +262,15 @@ Ext.define('Fpos.controller.TestCtrl', {
                  self.objectInfo(err);                 
             });
         }
+    },
+    
+    testProvisioning: function() {
+        var self = this;
+        Config.loadProv().then(function(prov) {
+            self.objectInfo(prov);
+        }, function(err) {
+            self.objectInfo(err);
+        });
     }
     
 });
