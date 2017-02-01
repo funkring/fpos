@@ -11,13 +11,13 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.util.Log;
 import at.oerp.pos.PosHwDisplay;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwScale;
 import at.oerp.pos.PosHwScan;
 import at.oerp.pos.PosHwService;
+import at.oerp.pos.PosHwSmartCard;
 import at.oerp.pos.WeightResult;
 
 public class PosHwPlugin extends CordovaPlugin {
@@ -109,10 +109,6 @@ public class PosHwPlugin extends CordovaPlugin {
 							status.put("numpad", service.hasNumpad());
 							// check scanner
 							status.put("scanner",  service.hasScanner());
-							// add additional info
-							status.put("model", Build.MODEL);
-							status.put("manufacturer", Build.MANUFACTURER);
-							
 
 							// notify status
 							callbackContext.success(status);
@@ -253,6 +249,17 @@ public class PosHwPlugin extends CordovaPlugin {
 						}
 					});
 					
+					api.put("cardTest", new PosHwPluginCmd() {
+						
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							PosHwSmartCard smartCard = service.getSmartCard();
+							if ( smartCard == null ) return false;
+							String result = smartCard.test();
+							callbackContext.success(result);
+							return true;
+						}
+					});
 				}
 			}
 

@@ -18,6 +18,8 @@ drawable = [
 
 process = [(source,"src"), (libs,"libs"), (drawable,"res/drawable")]
 
+print
+
 for srclist, dest in process:
     for src in srclist:
         for root, directories, files in os.walk(src):

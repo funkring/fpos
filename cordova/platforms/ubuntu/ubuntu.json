@@ -31,6 +31,9 @@
         "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
+        "me.tonny.cordova.plugins.multidex": {
+            "PACKAGE_NAME": "at.oerp.Fpos"
+        },
         "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }
@@ -267,6 +270,7 @@
         "cordova-plugin-file-transfer": "1.5.0",
         "cordova-plugin-whitelist": "1.2.0",
         "cordova-plugin-payworks": "1.0.0",
-        "cordova-plugin-poshw": "1.0.5"
+        "me.tonny.cordova.plugins.multidex": "0.1.0",
+        "cordova-plugin-poshw": "2.0.0"
     }
 }

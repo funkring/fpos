@@ -40,5 +40,9 @@ module.exports = {
     
     scan: function(successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "scan", []);
-    }  
+    },
+    
+    cardTest: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "cardTest", []);
+    }
 };

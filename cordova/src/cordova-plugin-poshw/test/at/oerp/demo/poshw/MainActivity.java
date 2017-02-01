@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,6 +27,8 @@ import at.oerp.pos.hw.android.BTPrinter;
 
 public class MainActivity extends Activity {
 
+	private final static String TAG = "TEST";
+	
 	private TextView infoTextView;
 	private PosHwService posHw;
 	private ScaleTask scaleTask;
@@ -53,6 +56,12 @@ public class MainActivity extends Activity {
 		host.addTab(spec);
 		
 		// Tab 2
+		spec = host.newTabSpec("Card");
+		spec.setContent(R.id.tabCard);
+		spec.setIndicator(spec.getTag());
+		host.addTab(spec);
+		
+		// Tab 3
 		spec = host.newTabSpec("Other");
 		spec.setContent(R.id.tabOther);
 		spec.setIndicator(spec.getTag());
@@ -223,6 +232,19 @@ public class MainActivity extends Activity {
 			}
 		});
 		
+		
+		Button smartcardButton = (Button) findViewById(R.id.smartcardButton);
+		smartcardButton.setOnClickListener(new OnClickListener() {		
+			@Override
+			public void onClick(View v) {
+				try {
+					testSmartCard();
+				} catch ( Throwable e) {
+					Log.e(TAG, e.getMessage(), e);
+				}
+			}
+		});
+		
 	}
 	
 	@Override
@@ -233,6 +255,12 @@ public class MainActivity extends Activity {
 			}
 		}		
 	}
+	
+	protected void setResultText(String inText) {
+		if ( inText == null ) inText = "";		
+		infoTextView.setText(inText);
+	}
+	
 	
 	protected void handleError(Throwable e) {
 		e.printStackTrace();
@@ -266,6 +294,10 @@ public class MainActivity extends Activity {
 		}
 	}
 	
+	protected void testSmartCard() throws IOException {
+		String result = posHw.getSmartCard().test();
+		setResultText(result);
+	}
 	
 	
 	private class ScaleTask extends AsyncTask<Void, WeightResult, Void> {

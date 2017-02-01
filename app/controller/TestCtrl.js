@@ -43,6 +43,9 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testProvisioning]' : {
                 release: 'testProvisioning'
+            },
+            'button[action=testCard]' : {
+                release: 'testCard'
             }
         }
     },
@@ -55,12 +58,14 @@ Ext.define('Fpos.controller.TestCtrl', {
     testInterface: function() {
         var self = this;
         self.beforeTest();
-        window.PosHw.test(function(res) {
-            self.getTestLabel().setHtml(res);
-        }, 
-        function(err) {
-            self.objectInfo(err);
-        });
+        if ( window.PosHw ) {
+            window.PosHw.test(function(res) {
+                self.getTestLabel().setHtml(res);
+            }, 
+            function(err) {
+                self.objectInfo(err);
+            });
+        }
     },
     
     testPrint : function() {        
@@ -70,34 +75,40 @@ Ext.define('Fpos.controller.TestCtrl', {
                    "<br>um zu testen ob der Druck" +
                    "<br>funktioniert"+
                    "<br><br><br><br><br><br>";
-        window.PosHw.printHtml(html, function(res) {
-            self.getTestLabel().setHtml(res || '');
-        }, 
-        function(err) {
-            self.objectInfo(err);
-        });  
+        if (window.PosHw) {
+            window.PosHw.printHtml(html, function(res) {
+                self.getTestLabel().setHtml(res || '');
+            }, 
+            function(err) {
+                self.objectInfo(err);
+            });  
+        }
     },
     
     testDisplay : function() {
         var self = this;
         self.beforeTest();
-        window.PosHw.display("23",function(res) {
-            self.getTestLabel().setHtml("OK!");
-        }, 
-        function(err) {
-            self.objectInfo(err);
-        });  
+        if ( window.PosHw ) {
+            window.PosHw.display("23",function(res) {
+                self.getTestLabel().setHtml("OK!");
+            }, 
+            function(err) {
+                self.objectInfo(err);
+            });  
+        }
     },
     
     testCashdrawer : function() {
         var self = this;
         self.beforeTest();
-        window.PosHw.openCashDrawer(function() {
-            self.getTestLabel().setHtml("OK!");
-        }, 
-        function(err) {
-            self.objectInfo(err);
-        });  
+        if ( window.PosHw ) {
+            window.PosHw.openCashDrawer(function() {
+                self.getTestLabel().setHtml("OK!");
+            }, 
+            function(err) {
+                self.objectInfo(err);
+            });  
+        }
     },
     
     testInfo : function() {
@@ -221,8 +232,9 @@ Ext.define('Fpos.controller.TestCtrl', {
         if ( obj ) this.textInfo(JSON.stringify(obj, null, 4));  
     },
     
-    testPayworks: function() {
+    testPayworks: function() {        
         var self = this;
+        self.beforeTest();
         if ( !window.Payworks ) {
             self.textInfo('Payworks Iface not available!');
         } else {
@@ -248,7 +260,8 @@ Ext.define('Fpos.controller.TestCtrl', {
     },
     
     testPayworksInit: function() {
-       var self = this;
+        var self = this;
+        self.beforeTest();
         if ( !window.Payworks ) {
             self.textInfo('Payworks Iface not available!');
         } else {
@@ -266,11 +279,25 @@ Ext.define('Fpos.controller.TestCtrl', {
     
     testProvisioning: function() {
         var self = this;
+        self.beforeTest();
         Config.loadProv().then(function(prov) {
             self.objectInfo(prov);
         }, function(err) {
             self.objectInfo(err);
         });
-    }
+    },
+    
+    testCard: function() {
+        var self = this;
+        self.beforeTest();
+        if ( window.PosHw ) {
+            window.PosHw.cardTest(function(res) {
+                self.textInfo(res);
+            }, 
+            function(err) {
+                self.objectInfo(err);
+            });
+        }
+    }    
     
 });

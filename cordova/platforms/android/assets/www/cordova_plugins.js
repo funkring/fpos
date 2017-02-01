@@ -238,7 +238,8 @@ module.exports.metadata =
     "com.borismus.webintent": "1.0.0",
     "cordova-plugin-crosswalk-webview": "2.2.0",
     "cordova-plugin-payworks": "1.0.0",
-    "cordova-plugin-poshw": "1.0.5"
+    "me.tonny.cordova.plugins.multidex": "0.1.0",
+    "cordova-plugin-poshw": "2.0.0"
 };
 // BOTTOM OF METADATA
 });
