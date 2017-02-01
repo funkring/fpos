@@ -25,9 +25,6 @@
         "cordova-plugin-payworks": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         },
-        "me.tonny.cordova.plugins.multidex": {
-            "PACKAGE_NAME": "at.oerp.Fpos"
-        },
         "cordova-plugin-poshw": {
             "PACKAGE_NAME": "at.oerp.Fpos"
         }

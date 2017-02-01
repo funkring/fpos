@@ -1,11 +1,11 @@
 package at.oerp.smartcard;
 
 import java.io.ByteArrayInputStream;
-import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
-import org.spongycastle.cert.X509CertificateHolder;
 
 /**
  * Created by chinnow on 03.05.2016.
@@ -50,8 +50,8 @@ public class SmartCardUtil {
 		}
 		return i;
 	}
-
-	public static X509CertificateHolder buildX509Certificate(List<byte[]> dataList) throws SmartCardException {
+	
+	public static X509Certificate buildX509Certificate(List<byte[]> dataList) throws SmartCardException {
 
 		int size = (dataList.size() - 1) * 256;
 		size += dataList.get(dataList.size() - 1).length;
@@ -61,25 +61,12 @@ public class SmartCardUtil {
 			System.arraycopy(b, 0, cert, i, b.length);
 			i += b.length;
 		}
+		
 		try {
-			X509CertificateHolder ch = new X509CertificateHolder(cert);
-			return ch;
-		} catch (Exception e) {
-			e.printStackTrace();
-			try {
-				ByteArrayInputStream bis = new ByteArrayInputStream(cert);
-				Certificate c2 = CertificateFactory.getInstance("X509").generateCertificate(bis);
-				X509CertificateHolder ch = new X509CertificateHolder(c2.getEncoded());
-				return ch;
-			} catch (Exception e2) {
-				e2.printStackTrace();
-				throw new SmartCardException("Error building certificate");
-			}
+			return  (X509Certificate) CertificateFactory.getInstance("X509").generateCertificate(new ByteArrayInputStream(cert));
+		} catch (CertificateException e) {
+			throw new SmartCardException(e);
 		}
-		/*
-		 * catch (Exception e) { e.printStackTrace(); throw new
-		 * SmartCardException("Error building certificate"); }
-		 */
 	}
 
 	public static byte[] getFormat1PIN(String pin) throws SmartCardException {

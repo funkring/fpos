@@ -1,8 +1,7 @@
 package at.oerp.pos;
 
 import java.io.IOException;
-
-import org.spongycastle.cert.X509CertificateHolder;
+import java.security.cert.X509Certificate;
 
 import android.util.Log;
 import at.oerp.smartcard.Card;
@@ -41,8 +40,8 @@ public abstract class PosHwSmartCard extends Card {
 			b.append("=================================\n");
 			b.append("\n");
 			b.append("CARD CIN " + cin + "\n");
-			X509CertificateHolder cert = cashRegisterSmartCard.getCertificate();
-			b.append("CERT SUBJECT " + cert.getSubject() + "\n");
+			X509Certificate cert = cashRegisterSmartCard.getCertificate();
+			b.append("CERT SUBJECT " + cert.getSubjectDN() + "\n");
 			String certSerialDec = cashRegisterSmartCard.getCertificateSerialDecimal();
 			b.append("CERT SERIAL " + certSerialDec + "\n");
 			String certSerialHex = cashRegisterSmartCard.getCertificateSerialHex();

@@ -84,9 +84,6 @@
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAX1ParserAdapter.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/JAXPTest.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
 
-        <source-file src="libs/core-1.54.0.0.jar" target-dir="libs/" />
-        <source-file src="libs/pkix-1.54.0.0.jar" target-dir="libs/" />
-
         <source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
         <source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
 

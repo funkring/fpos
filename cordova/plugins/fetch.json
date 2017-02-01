@@ -73,15 +73,6 @@
         "is_top_level": true,
         "variables": {}
     },
-    "me.tonny.cordova.plugins.multidex": {
-        "source": {
-            "type": "git",
-            "url": "https://github.com/jwall149/cordova-multidex.git",
-            "subdir": "."
-        },
-        "is_top_level": true,
-        "variables": {}
-    },
     "cordova-plugin-poshw": {
         "source": {
             "type": "local",

@@ -1,9 +1,8 @@
 package at.oerp.smartcard;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.List;
-
-import org.spongycastle.cert.X509CertificateHolder;
 
 
 /**
@@ -65,7 +64,7 @@ public class SmartCardACOS extends AbstractCashRegisterSmartCard {
 	}
 
 	@Override
-	public X509CertificateHolder getCertificate() throws IOException {
+	public X509Certificate getCertificate() throws IOException {
 		List<byte[]> dataList = getBuffer(false, DF_SIG, EF_C_CH_DS);
 		if ( dataList == null || dataList.isEmpty() ) throw new SmartCardException("Buffer is empty");
 		return SmartCardUtil.buildX509Certificate(dataList);

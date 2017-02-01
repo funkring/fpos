@@ -90,7 +90,6 @@ ext {
 // PLUGIN GRADLE EXTENSIONS START
 apply from: "cordova-plugin-crosswalk-webview/Fpos-xwalk.gradle"
 apply from: "cordova-plugin-payworks/Fpos-plugin.gradle"
-apply from: "me.tonny.cordova.plugins.multidex/Fpos-build.gradle"
 // PLUGIN GRADLE EXTENSIONS END
 
 def hasBuildExtras = file('build-extras.gradle').exists()

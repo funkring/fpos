@@ -1,8 +1,8 @@
 package at.oerp.smartcard;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 
-import org.spongycastle.cert.X509CertificateHolder;
 
 /**
  * Created by chinnow on 03.05.2016.
@@ -17,7 +17,7 @@ public interface ICashRegisterSmartCard {
 
 	String getCertificateSerialHex() throws IOException;
 
-	X509CertificateHolder getCertificate() throws IOException;
+	X509Certificate getCertificate() throws IOException;
 
 	String getCIN() throws IOException;
 
