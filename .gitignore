@@ -9,3 +9,8 @@ bin/
 # backup files
 *~
 *.log
+
+# ignore libs directories
+cordova/platforms/android/assets/www/lib/
+cordova/www/lib/
+
