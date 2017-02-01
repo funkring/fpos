@@ -32,68 +32,71 @@
         
         <!--  generated -->
 			
-		<source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
-		<source-file src="src/at/oerp/smartcard/ResponseAPDU.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/SmartCardUtil.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/SmartCardCardOS.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/WrongCardException.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/CashRegisterSmartCardFactory.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/SmartCardACOS.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/AbstractCashRegisterSmartCard.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/Card.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/CommandAPDU.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/ICashRegisterSmartCard.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/ATR.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/smartcard/SmartCardException.java" target-dir="src/at/oerp/smartcard/" />
-		<source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/FileUtil.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/StringUtil.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/BinUtil.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
-		<source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/ReadConfig.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwScale.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwDisplay.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/CtrlBytes.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwSmartCard.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwScan.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/PosHwService.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/WeightResult.java" target-dir="src/at/oerp/pos/" />
-		<source-file src="src/at/oerp/pos/hw/android/AndroidHwService.java" target-dir="src/at/oerp/pos/hw/android/" />
-		<source-file src="src/at/oerp/pos/hw/android/BTPrinter.java" target-dir="src/at/oerp/pos/hw/android/" />
-		<source-file src="src/at/oerp/pos/hw/android/BTPrinter80.java" target-dir="src/at/oerp/pos/hw/android/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/ScanHandler.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/HTMLSchema.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/Parser.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/PYXScanner.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/HTMLScanner.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/XMLWriter.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/ElementType.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/Schema.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/AttributesImpl.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/CommandLine.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/HTMLModels.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/AutoDetector.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/Scanner.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/Element.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/PYXWriter.java" target-dir="src/org/ccil/cowan/tagsoup/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAXParserImpl.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAXFactoryImpl.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAX1ParserAdapter.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
-		<source-file src="src/org/ccil/cowan/tagsoup/jaxp/JAXPTest.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
-		
-		<source-file src="libs/core-1.54.0.0.jar" target-dir="libs/" />
-		<source-file src="libs/pkix-1.54.0.0.jar" target-dir="libs/" />
-		
-		<source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
-		<source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
+        <source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
+        <source-file src="src/at/oerp/smartcard/ResponseAPDU.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/SmartCardUtil.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/SmartCardCardOS.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/WrongCardException.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/CashRegisterSmartCardFactory.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/SmartCardACOS.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/AbstractCashRegisterSmartCard.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/Card.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/CommandAPDU.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/ICashRegisterSmartCard.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/ATR.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/smartcard/SmartCardException.java" target-dir="src/at/oerp/smartcard/" />
+        <source-file src="src/at/oerp/util/LinePrintDriver.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/util/FileUtil.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/util/StringUtil.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/util/BinUtil.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/ReadConfig.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/PosHwScale.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/PosHwDisplay.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/CtrlBytes.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/PosHwSmartCard.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/PosHwScan.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/PosHwService.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/WeightResult.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/hw/android/AndroidHwService.java" target-dir="src/at/oerp/pos/hw/android/" />
+        <source-file src="src/at/oerp/pos/hw/android/BTPrinter.java" target-dir="src/at/oerp/pos/hw/android/" />
+        <source-file src="src/at/oerp/pos/hw/android/BTPrinter80.java" target-dir="src/at/oerp/pos/hw/android/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/ScanHandler.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/HTMLSchema.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/Parser.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/PYXScanner.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/HTMLScanner.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/XMLWriter.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/ElementType.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/Schema.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/AttributesImpl.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/CommandLine.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/HTMLModels.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/AutoDetector.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/Scanner.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/Element.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/PYXWriter.java" target-dir="src/org/ccil/cowan/tagsoup/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAXParserImpl.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAXFactoryImpl.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAX1ParserAdapter.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
+        <source-file src="src/org/ccil/cowan/tagsoup/jaxp/JAXPTest.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
 
+        <source-file src="libs/core-1.54.0.0.jar" target-dir="libs/" />
+        <source-file src="libs/pkix-1.54.0.0.jar" target-dir="libs/" />
+
+        <source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
+        <source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
+
+        
+        <!--  generated from inherited -->
+        
 
 		<!--  activities -->
 		
-		<!-- source-file src="res/layout/activity_h510_scanner.xml" target-dir="res/layout/" /-->
+		<!-- as Example: source-file src="res/layout/activity_h510_scanner.xml" target-dir="res/layout/" /-->
 		
 		
 		<!--  config -->
