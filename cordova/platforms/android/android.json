@@ -107,62 +107,6 @@
                             "count": 2
                         },
                         {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PRINTER\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_MSR\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_CONTACTLESS_CARD\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_SMARTCARD\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_SERIAL\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_LED\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_CUSTOMER_DISPLAY\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_GET_PIN_BLOCK\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_MAC\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_ENCRYPT_DATA\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_UPDATA_USER_KEY\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_PIN_UPDATE_MASTER_KEY\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_IDCard\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.CLOUDPOS_MONEYBOX\" />",
-                            "count": 1
-                        },
-                        {
                             "xml": "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\" />",
                             "count": 1
                         },
@@ -197,12 +141,7 @@
                             "count": 1
                         }
                     ],
-                    "/manifest/application": [
-                        {
-                            "xml": "<activity android:name=\"at.oerp.pos.hw.h510.H510ScanActivity\" />",
-                            "count": 1
-                        }
-                    ]
+                    "/manifest/application": []
                 }
             },
             "config.xml": {
