@@ -234,4 +234,48 @@ public final class BinUtil
 		in_buffer.limit(oldLimit);		
 		return str;
 	}
+	
+	/**
+	 * get two's-complement representation for given long value, result is encoded into byte-array of the given
+	 * length
+	 * @param value long value to be encoded
+	 * @param numberOfBytesFor2ComplementRepresentation length of resulting byte-array
+	 * @return byte array of turnover counter, in two's-complement representation
+	 */
+	public static byte[] get2ComplementRepForLong(long value,int numberOfBytesFor2ComplementRepresentation) {
+	    if (numberOfBytesFor2ComplementRepresentation<1 || (numberOfBytesFor2ComplementRepresentation>8)) {
+	      throw new IllegalArgumentException();
+	    }
+	
+	    //create byte buffer, max length 8 bytes (equal to long representation)
+	    ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+	    byteBuffer.putLong(value);
+	    byte[] longRep = byteBuffer.array();
+	
+	    //if given length for encoding is equal to 8, we are done
+	    if (numberOfBytesFor2ComplementRepresentation==8) {
+	      return longRep;
+	    }
+	
+	    //if given length of encoding is less than 8 bytes, we truncate the representation (of course one needs to be sure
+	    //that the given long value is not larger than the created byte array
+	    byte[] byteRep = new byte[numberOfBytesFor2ComplementRepresentation];
+	
+	    //truncating the 8-bytes long representation
+	    System.arraycopy(longRep,8-numberOfBytesFor2ComplementRepresentation,byteRep,0,numberOfBytesFor2ComplementRepresentation);
+	    return byteRep;
+	}
+	
+	/**
+	 * zero byte buffer
+	 * @param ioBuffer
+	 */
+	public static void zero(ByteBuffer ioBuffer){
+		ioBuffer.rewind();
+		while (ioBuffer.remaining() > 8)
+			ioBuffer.putLong(0);
+		while (ioBuffer.remaining() > 0) 
+			ioBuffer.put((byte) 0);
+		ioBuffer.rewind();
+	}
 }
