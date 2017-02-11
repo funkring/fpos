@@ -1,6 +1,7 @@
 package at.oerp.pos.cordova;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 
 import org.apache.cordova.CallbackContext;
@@ -8,16 +9,18 @@ import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.util.Log;
+import at.oerp.pos.NoInitException;
 import at.oerp.pos.PosHwDisplay;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwScale;
 import at.oerp.pos.PosHwScan;
 import at.oerp.pos.PosHwService;
 import at.oerp.pos.PosHwSmartCard;
+import at.oerp.pos.PosReceipt;
 import at.oerp.pos.WeightResult;
 
 public class PosHwPlugin extends CordovaPlugin {
@@ -26,6 +29,8 @@ public class PosHwPlugin extends CordovaPlugin {
 	private PosHwService service;
 	private HashMap<String, PosHwPluginCmd> api;
 	private ActivityCallback activityCallback;
+	@SuppressLint("SimpleDateFormat")
+	private SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 		
 	abstract static class PosHwPluginCmd {
@@ -108,8 +113,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							// check numpad
 							status.put("numpad", service.hasNumpad());
 							// check scanner
-							status.put("scanner",  service.hasScanner());
-
+							status.put("scanner", service.hasScanner());
 							// notify status
 							callbackContext.success(status);
 							return true;
@@ -249,7 +253,7 @@ public class PosHwPlugin extends CordovaPlugin {
 						}
 					});
 					
-					api.put("cardTest", new PosHwPluginCmd() {
+					api.put("signTest", new PosHwPluginCmd() {
 						
 						@Override
 						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
@@ -257,6 +261,65 @@ public class PosHwPlugin extends CordovaPlugin {
 							if ( smartCard == null ) return false;
 							String result = smartCard.test();
 							callbackContext.success(result);
+							return true;
+						}
+					});
+					
+					api.put("signInit", new PosHwPluginCmd() {
+
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							PosHwSmartCard smartCard = service.getSmartCard();
+							if ( smartCard == null ) return false;
+							JSONObject config = args.getJSONObject(0);
+							smartCard.init(config.getString("sign_key"));
+							return true;
+						}
+					});
+					
+					api.put("sign", new PosHwPluginCmd() {
+						
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							PosHwSmartCard smartCard = service.getSmartCard();
+							if ( smartCard == null ) return false;
+							
+							JSONObject jsonReceipt = args.getJSONObject(0);
+							
+							// convert
+							PosReceipt receipt = new PosReceipt();							
+							receipt.cashBoxID = jsonReceipt.getString("sign_pid");
+							receipt.receiptIdentifier = Long.toString(jsonReceipt.getLong("seq"));
+							receipt.receiptDateAndTime = dateTimeFormat.parse(jsonReceipt.getString("date"));
+							receipt.sumTaxSetNormal = jsonReceipt.getDouble("amount");
+							receipt.sumTaxSetErmaessigt1 = jsonReceipt.getDouble("amount_1");
+							receipt.sumTaxSetErmaessigt2 = jsonReceipt.getDouble("amount_2");
+							receipt.sumTaxSetNull = jsonReceipt.getDouble("amount_0");
+							receipt.sumTaxSetBesonders = jsonReceipt.getDouble("amount_s");
+							receipt.specialType = jsonReceipt.optString("st", null);
+							receipt.turnover = jsonReceipt.getDouble("turnover");
+							receipt.signatureCertificateSerialNumber = jsonReceipt.getString("sign_serial");
+							
+							// sign
+							smartCard.signReceipt(receipt);
+							
+							// build result
+							jsonReceipt.put("turnover_enc", receipt.encryptedTurnoverValue);
+							jsonReceipt.put("qr", receipt.plainData);
+							jsonReceipt.put("dep", receipt.compactData);
+							callbackContext.success(jsonReceipt);
+							
+							return true;
+						}
+					});
+					
+					api.put("signQueryCert", new PosHwPluginCmd() {
+						
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							PosHwSmartCard smartCard = service.getSmartCard();
+							if ( smartCard == null ) return false;
+							callbackContext.success(smartCard.getCertificate());
 							return true;
 						}
 					});
@@ -278,6 +341,9 @@ public class PosHwPlugin extends CordovaPlugin {
 			// execute cmd
 			return cmd.execute(inArgs, inCallbackContext);
 			
+		} catch ( NoInitException e ) {
+			inCallbackContext.error("no_init");
+			return true;
 		} catch ( Throwable e) {
 			// log error
 			String msg = e.getMessage();

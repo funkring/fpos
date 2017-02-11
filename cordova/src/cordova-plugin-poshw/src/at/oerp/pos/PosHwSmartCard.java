@@ -148,66 +148,6 @@ public abstract class PosHwSmartCard extends Card {
 		return "R1-AT1";
 	}
 	
-
-	/**
-	 * sign data
-	 * @param inData
-	 * @return
-	 * @throws IOException
-	 */
-	protected String signData(String inData) throws IOException {
-		
-		//prepare data to be signed, "ES256 JWS header" fixed (currently the only relevant signature/hash method (RK1)
-        String jwsHeader = "eyJhbGciOiJFUzI1NiJ9";
-        String jwsPayload =  Base64.encodeToString(inData.getBytes(), Base64.NO_WRAP | Base64.URL_SAFE);
-        String jwsSignature;
-        
-        // build signature
-        if ( damaged ) {
-        	// prepare damaged signature
-        	jwsSignature = Base64.encodeToString("Sicherheitseinrichtung ausgefallen".getBytes(), Base64.NO_WRAP | Base64.URL_SAFE);  //create damaged signature part
-        } else {
-	        String jwsDataToBeSigned = jwsHeader + "." + jwsPayload;
-			byte[] signature = null;
-			try {
-				// try
-				signature = sign(jwsDataToBeSigned);			
-			} catch(IOException e) {
-				close();			
-				try {
-					try {
-						Thread.sleep(SLEEP_FIRST_TRY);
-						signature = sign(jwsDataToBeSigned);
-					} catch ( IOException e2 ) {
-						close();
-						Thread.sleep(SLEEP_SECOND_TRY);
-						try {
-							signature = sign(jwsDataToBeSigned);
-						} catch ( IOException e3 ) {
-							damaged = true;
-							close();
-							throw e3;						
-						}
-					}
-				} catch (InterruptedException e1) {
-					Thread.currentThread().interrupt();
-					throw new InterruptedIOException();
-				}			
-			}
-			
-			// prepare signature
-			jwsSignature = Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE);
-        }
-        
-        // build result
-        StringBuilder b = new StringBuilder();
-        b.append(jwsHeader);
-        b.append(".");
-        b.append(jwsPayload);
-        b.append(".");
-        b.append(jwsSignature);
-        return b.toString();
-	}
 	
 	/**
 	 * initialization
@@ -405,12 +345,53 @@ public abstract class PosHwSmartCard extends Card {
     		
     	// build signature
     	ioReceipt.plainData = b.toString();
-    	ioReceipt.compactData = signData(ioReceipt.plainData);
     	
+ 		//prepare data to be signed, "ES256 JWS header" fixed (currently the only relevant signature/hash method (RK1)
+        String jwsHeaderUrl = "eyJhbGciOiJFUzI1NiJ9";
+        String jwsPayloadUrl = Base64.encodeToString(ioReceipt.plainData.getBytes(), Base64.NO_WRAP | Base64.URL_SAFE);
+        String jwsDataToBeSigned = jwsHeaderUrl + "." + jwsPayloadUrl;
+
+        // build signature
+    	byte[] signature;
+        if ( damaged ) {
+         	// prepare damaged signature
+        	signature = "Sicherheitseinrichtung ausgefallen".getBytes(); 
+        } else {
+ 	        
+ 			try {
+ 				// try
+ 				signature = sign(jwsDataToBeSigned);			
+ 			} catch(IOException e) {
+ 				close();			
+ 				try {
+ 					try {
+ 						Thread.sleep(SLEEP_FIRST_TRY);
+ 						signature = sign(jwsDataToBeSigned);
+ 					} catch ( IOException e2 ) {
+ 						close();
+ 						Thread.sleep(SLEEP_SECOND_TRY);
+ 						try {
+ 							signature = sign(jwsDataToBeSigned);
+ 						} catch ( IOException e3 ) {
+ 							damaged = true;
+ 							close();
+ 							throw e3;						
+ 						}
+ 					}
+ 				} catch (InterruptedException e1) {
+ 					Thread.currentThread().interrupt();
+ 					throw new InterruptedIOException();
+ 				}			
+ 			}
+        }
+        
     	// check serial
     	if ( ioReceipt.signatureCertificateSerialNumber != null && ioReceipt.signatureCertificateSerialNumber.equals(serial) )
     		throw new IOException("Invalid Serial: " + ioReceipt.signatureCertificateSerialNumber + " != " + serial);
-    	
+        
+        // store data        
+    	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE);
+    	ioReceipt.plainData = ioReceipt.plainData + "_" + Base64.encodeToString(signature, Base64.NO_WRAP);
         return ioReceipt;
     }
 	

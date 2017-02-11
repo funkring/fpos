@@ -42,7 +42,19 @@ module.exports = {
         cordova.exec(successCallback, errorCallback, "PosHw", "scan", []);
     },
     
-    cardTest: function(successCallback, errorCallback) {
-        cordova.exec(successCallback, errorCallback, "PosHw", "cardTest", []);
+    signTest: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "signTest", []);
+    },
+    
+    signInit: function(config, successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "signInit", [config]);
+    },
+    
+    sign: function(receipt, successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "sign", [receipt]);
+    },
+    
+    signQueryCert: function(receipt, successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "signQueryCert", []);
     }
 };
