@@ -299,6 +299,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							receipt.specialType = jsonReceipt.optString("st", null);
 							receipt.turnover = jsonReceipt.getDouble("turnover");
 							receipt.signatureCertificateSerialNumber = jsonReceipt.getString("sign_serial");
+							receipt.prevCompactData = jsonReceipt.getString("last_dep");
 							
 							// sign
 							smartCard.signReceipt(receipt);

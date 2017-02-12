@@ -327,6 +327,13 @@ public abstract class PosHwSmartCard extends Card {
     		ioReceipt.encryptedTurnoverValue = encryptECB(turnoverHash, ioReceipt.turnover);
     	}
     	
+    	// calculate chain value
+    	if ( ioReceipt.signatureValuePreviousReceipt == null ) {
+    		digest.reset();
+    		byte[] prevHash = digest.digest(ioReceipt.prevCompactData.getBytes());
+    		ioReceipt.signatureValuePreviousReceipt = Base64.encodeToString(prevHash, 0, 8, Base64.NO_WRAP);
+    	}
+    	
         //prepare signature payload string for signature creation (Detailspezifikation/ABS 5
     	StringBuilder b = new StringBuilder();
     		b.append("_").append(getSuiteID());
