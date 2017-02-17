@@ -114,6 +114,8 @@ public class PosHwPlugin extends CordovaPlugin {
 							status.put("numpad", service.hasNumpad());
 							// check scanner
 							status.put("scanner", service.hasScanner());
+							// check cardreader
+							status.put("cardreader", service.hasCardReader());
 							// notify status
 							callbackContext.success(status);
 							return true;
