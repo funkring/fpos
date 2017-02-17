@@ -11,6 +11,9 @@ Ext.define('Fpos.controller.AdminCtrl', {
         control: {     
             'button[action=adminResetDB]' : {
                 release: 'resetDB'
+            },
+            'button[action=activateCard]' : {
+                release: 'activateCard'
             }
         }
     },
@@ -32,6 +35,39 @@ Ext.define('Fpos.controller.AdminCtrl', {
                
             }
         });
+    },
+    
+    activateCard: function() {
+        var self = this;
+        var profile = Config.getProfile();
+        
+        ViewManager.startLoading("Aktiviere Karte...");
+        
+        var finished = function(err) {
+            ViewManager.stopLoading();
+            if (err) ViewManager.handleError(err);
+        };
+        
+        if ( profile.sign_status == 'config' ) {
+           
+            Config.signQueryCert().then(function(cert) {
+                Config.getClient().then(function(client) {
+                    client.invoke('pos.config','activate_card', profile._id, cert).then(function(res) {
+                       finished();
+                    }, function(err) {
+                       finished(err);
+                    });                
+                }, function(err) {
+                   finished(err);
+                });
+            }, function(err) {
+                finished(err);
+            });      
+                  
+        } else {
+            finished({name:'sign_status_invalid',
+                  message: 'Es wurde keine Kartenkonfiguration angefordert!'});
+        }
     }
     
 });

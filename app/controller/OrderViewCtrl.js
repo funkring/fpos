@@ -110,6 +110,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.seq = 0;
         self.cpos = 0;
         self.turnover = 0;
+        self.dep = null;
         self.displayDelay = Config.getDisplayDelay();
         self.lastDate = null;
         
@@ -549,7 +550,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 if ( noUnit ) {
                     flags +="u";
                 }
-                if ( product.get('pos_minus') ) {
+                if ( product.get('pos_minus') || values.price < 0.0) {
                     flags +="-";
                 }
                 if ( product.get('pos_price') ) {
@@ -1061,24 +1062,46 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // ---------------------------------
             // VALIDATE
             // ---------------------------------
+            
+            var st = null; // special type
+            
             self.lineStore.each(function(line) {                
                 var total_line = self.validateLine(line, tax_group, tax_ids);
                 var tag = line.get('tag');
-                if ( !tag ) {
+                if ( !tag || tag == 'o' || tag == 'i' ) {
                     // add                
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
-                    turnover += total_line.subtotal_incl;
-                } else if ( tag == 'r' || tag == 'o' || tag == 'i') {
-                    // add balance and other
+                    
+                    // turnover handling
+                    var flags = line.get('flags');
+                    var sign = flags && flags.indexOf('-') > -1 ? -1 : 0;
+                    
+                    // determine special type
+                    // check if storno
+                    if ( (sign > 0 && total_line.subtotal_incl < 0) || (sign < 0 && total_line.subtotal_incl > 0) ) {
+                        // set new order special type
+                        if ( !st ) {
+                            st = 'c'; // if no special type set storno
+                        } else {
+                            st = 'm'; // otherwise mixed
+                        }
+                    } else if ( st == 'c' ) {
+                        // if special type is set to storno and there
+                        // is no storno, set mixed type                        
+                        st = 'm';
+                    }
+                    
+                } else if ( tag == 'r' ) {
+                    // add real balance
                     amount_total += total_line.subtotal_incl;
                     amount_tax += total_line.amount_tax;
                 } else if ( tag == 'b' ) {
-                    // substract real balance
+                    // substract balance
                     amount_total -= total_line.subtotal_incl;
                     amount_tax -= total_line.amount_tax;
                 }                
-                
+               
                 // add line                
                 if ( line.dirty ) {
                     updateLines = true;
@@ -1093,8 +1116,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // round
             amount_total = self.round(amount_total);
             amount_tax = self.round(amount_tax);
+            turnover = amount_total;
             
             // set values
+            self.order.set('st', st);
             self.order.set('tax_ids', tax_ids);
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
@@ -1318,6 +1343,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     
     setMode: function(mode, sign) {    
         var self = this;    
+
         // set mode    
         self.mode = mode;
         
@@ -1379,6 +1405,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         self.seq = 0;
         self.cpos = 0;
         self.turnover = 0;
+        self.dep = null;
 
         // check callback
         if ( !callback ) {        
@@ -1642,7 +1669,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             this.setMode('€');
                         }
                         // check input sign
-                        if ( ( tag == 'o' || (minus && this.inputText.length === 0) ) && this.inputSign !== -1 ) {
+                        if ( tag == 'o' || (minus && this.inputText.length === 0) ) {
+                            this.inputSign = -1;
+                        }
+                    } else { // no tag
+                        if ( this.mode == '€' && minus && this.inputText.length === 0 ) {
                             this.inputSign = -1;
                         }
                     }
@@ -1942,7 +1973,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }).then(function(){
             
             // write order
-            var writeOrder = function(seq, turnover, cpos) {
+            var writeOrder = function(seq, turnover, cpos, dep) {
                 // init vars
                 if ( !cpos ) cpos = 0.0;
                 if ( !turnover ) turnover = 0.0; 
@@ -2005,51 +2036,82 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         self.turnover = self.order.get('turnover');
                         self.cpos = self.order.get('cpos');
                         self.lastDate = self.order.get('date');
+                        self.dep = self.order.get('dep');
                         // update pos closed state
                         Config.setPosClosed(self.order.get('tag') == 's');
                     };
                   
-                    if ( Config.getSync() && place_id ) {
-                        // special handling if sync
-                        var orderCopy = ModelUtil.createDocument(self.order);
-                        // set/override basic data
-                        orderCopy.fdoo__ir_model = 'fpos.order';
-                        orderCopy.fpos_user_id = Config.getProfile().user_id;
-                        orderCopy.user_id = Config.getUser()._id;
-                        
-                        db.post(orderCopy).then(function() {
-                            updateCounters();
-                            orderCopy.partner = self.order.get('partner');
-                            // reject order
-                            self.order.reject();
-                            // erase order                        
-                            self.order.erase({
-                                callback: function(op) {                                
-                                    deferred.resolve(orderCopy);                                  
-                                }
-                            });                     
-                        })['catch'](function(err) {
-                            deferred.reject(err);
-                        });
-                           
-                    } else {
-                                   
-                        // save
-                        self.order.save({
-                            callback: function() {
+                    // save order
+                    var saveOrder = function() {
+                        if ( Config.getSync() && place_id ) {
+                            // special handling if sync
+                            var orderCopy = ModelUtil.createDocument(self.order);
+                            // set/override basic data
+                            orderCopy.fdoo__ir_model = 'fpos.order';
+                            orderCopy.fpos_user_id = Config.getProfile().user_id;
+                            orderCopy.user_id = Config.getUser()._id;
+                            
+                            db.post(orderCopy).then(function() {
                                 updateCounters();
-                                deferred.resolve(self.order.getData());   
-                            }
-                        });
-                    }                    
+                                orderCopy.partner = self.order.get('partner');
+                                // reject order
+                                self.order.reject();
+                                // erase order                        
+                                self.order.erase({
+                                    callback: function(op) {                                
+                                        deferred.resolve(orderCopy);                                  
+                                    }
+                                });                     
+                            })['catch'](function(err) {
+                                deferred.reject(err);
+                            });
+                               
+                        } else {
+                                       
+                            // save
+                            self.order.save({
+                                callback: function() {
+                                    updateCounters();
+                                    deferred.resolve(self.order.getData());   
+                                }
+                            });
+                        }      
+                    };
+                    
+                    // check special type
+                    var st = self.order.get('st');
+                    if ( st == 'm' ) {
+                        deferred.reject({name: 'mixed_type', message: 'Storno und Verkäufe dürfen nicht gemischt werden!'});
+                    } else {
+                        // build sum
+                        
+                        
+                        // sign
+                        var signable = {
+                            sign_pid: profile.sign_pid,
+                            seq: seq,
+                            date: date,
+                            st: st
+                        };
+                        
+                        // sign
+                        Config.sign(signable).then(function(signable) {
+                            self.order.set('dep', signable.dep);
+                            self.order.set('qr', signable.qr);
+                            saveOrder();                                
+                        }, function(err) {
+                            deferred.reject(err);
+                        }); 
+                    }         
                 }
             };
+
             
-            
+            // find prev values
             try {
                 // check for cached sequence
                 if ( self.seq > 0 ) {
-                    writeOrder(self.seq+1, self.turnover, self.cpos);
+                    writeOrder(self.seq+1, self.turnover, self.cpos, self.dep);
                 } else {
                     // query last order
                     Config.queryLastOrder()['catch'](function(err) {
@@ -2057,10 +2119,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     }).then(function(res) {
                         // write order
                         if ( res.rows.length === 0 ) {
-                            writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos);
+                            writeOrder(profile.last_seq+1, profile.last_turnover, profile.last_cpos, profile.last_dep);
                         } else {
                             var lastOrder = res.rows[0].doc;
-                            writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos);
+                            writeOrder(lastOrder.seq+1, lastOrder.turnover, lastOrder.cpos, lastOrder.dep);
                         }
                     });
                 }

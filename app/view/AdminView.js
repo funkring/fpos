@@ -22,6 +22,13 @@ Ext.define('Fpos.view.AdminView', {
                         action: 'adminResetDB',
                         ui: 'posInputButtonRed',
                         cls : 'MenuBandButton'        
+                    },
+                    {
+                        xtype: 'button',
+                        text: 'Karte aktivieren',    
+                        action: 'activateCard',
+                        ui: 'posInputButtonGreen',
+                        cls : 'MenuBandButton'        
                     }
                 ]                 
             }

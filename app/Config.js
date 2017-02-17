@@ -1036,6 +1036,111 @@ Ext.define('Fpos.Config', {
         setTimeout(function() {
             window.location.reload();   
         }, 1000);
-    } 
+    },
+
+    /**
+     * if not signing is active
+     */
+    signDisabled: function(signable) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        setTimeout(function() {
+            deferred.resolve(signable);
+        }, 0);
+        return deferred.promise();
+    },
+    
+    /**
+     * if sign was not supported
+     */
+    signNotSupported: function(signable) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        setTimeout(function() {
+            deferred.reject({
+                name : "sign_not_supported",
+                message : "Die konfigurierte Signierung wird nicht unterstützt"
+            });
+        }, 0);
+        return deferred.promise();
+    },
+        
+    /**
+     * if card support, sign with hsm
+     */
+    signHsm: function(signable) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        window.PosHw.sign(signable, function(res) {
+           deferred.resolve(res);
+        }, function(err) {
+           // check if it is to initialize
+           if ( typeof err === 'string' && err == 'no_init') {
+               var profile = self.getProfile();
+               window.PosHw.signInit(profile, function() {
+                   // init successful, sign again
+                   window.PosHw.sign(signable, function(res) {
+                       deferred.resolve(res);
+                   }, function(err) {
+                       deferred.reject(err);
+                   });
+               }, function(err) {
+                   // init reror
+                   deferred.reject(err);
+               });
+           }  else {
+               // forward error
+               deferred.reject(err);
+           }
+        });
+        return deferred.promise();
+    },
+
+    sign: function(signable) {
+        if ( !this.signMethod ) {
+            var profile = this.getProfile();
+            if ( !profile || profile.sign_status != 'active' ) {
+                this.signMethod = this.signDisabled;
+            } else {
+                this.signMethod = this.signNotSupported;
+                if ( profile.sign_method == "card") {
+                    var hwstatus = this.getHwStatus();
+                    if ( hwstatus.cardreader ) {
+                        this.signMethod = this.signHsm;
+                    }                    
+                }
+            }
+        }
+        return this.signMethod(signable);
+    },
+        
+    signQueryCert: function() {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        var profile = self.getProfile();
+        var available = false;
+        
+        if ( profile ) {
+            if ( profile.sign_method == "card" ) {
+                var hwstatus = self.getHwStatus();
+                if ( hwstatus.cardreader ) {
+                    window.posHw.signQueryCert(function(res) {
+                        deferred.resolve(res);
+                    }, function(err) {
+                        deferred.reject(err);
+                    });
+                }
+            } 
+        }
+        
+        if ( !available ) {
+            setTimeout(function() {
+                deferred.reject({
+                    name : "cert_not_available",
+                    message : "Kein Zertifikat vorhanden"
+                });
+            }, 0);
+        }
+        
+        return deferred.promise();
+    }
     
 });

@@ -23,6 +23,8 @@ Ext.define('Fpos.model.PosOrder', {
                 'tag',
                 'turnover',
                 'cpos',
+                'dep',
+                'qr',
                 'line_ids',
                 'log_ids',
                 'place_id',
