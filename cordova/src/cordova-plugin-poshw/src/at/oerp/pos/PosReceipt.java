@@ -53,5 +53,8 @@ public class PosReceipt {
     
     // compact data
     public String compactData;
+    
+    // previous compact data
+    public String prevCompactData;
   
 }
