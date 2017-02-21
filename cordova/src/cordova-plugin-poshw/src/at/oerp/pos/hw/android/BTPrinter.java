@@ -11,12 +11,10 @@ import java.util.UUID;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.graphics.Bitmap;
 import android.util.Log;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwService;
 import at.oerp.util.HtmlLinePrinter;
-import at.oerp.util.IObjectResolver;
 import at.oerp.util.LinePrintDriver;
 import at.oerp.util.PrinterImage;
 import at.oerp.util.StringUtil;
@@ -178,8 +176,6 @@ public class BTPrinter extends PosHwPrinter implements LinePrintDriver {
 		}		
 	}
 
-
-	
 	public boolean hasError() {
 		return    (offlineStatus & (STOFF_PLATEN_OPEN | STOFF_ERROR)) > 0
 			   || (errorStatus & (STERR_AUTOCUTTER | STERR_UNRECOVERABLE)) > 0
