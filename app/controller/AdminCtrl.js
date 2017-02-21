@@ -45,14 +45,18 @@ Ext.define('Fpos.controller.AdminCtrl', {
         
         var finished = function(err) {
             ViewManager.stopLoading();
-            if (err) ViewManager.handleError(err);
+            if (err) {
+                ViewManager.handleError(err);
+            } else {
+                Ext.Viewport.fireEvent("syncAll");
+            }
         };
         
         if ( profile.sign_status == 'config' ) {
            
             Config.signQueryCert().then(function(cert) {
                 Config.getClient().then(function(client) {
-                    client.invoke('pos.config','activate_card', profile._id, cert).then(function(res) {
+                    client.invoke('pos.config','activate_card', [profile.dbid, cert]).then(function(res) {
                        finished();
                     }, function(err) {
                        finished(err);

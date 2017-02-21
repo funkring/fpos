@@ -275,6 +275,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							if ( smartCard == null ) return false;
 							JSONObject config = args.getJSONObject(0);
 							smartCard.init(config.getString("sign_key"));
+							callbackContext.success();
 							return true;
 						}
 					});
@@ -310,6 +311,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							jsonReceipt.put("turnover_enc", receipt.encryptedTurnoverValue);
 							jsonReceipt.put("qr", receipt.plainData);
 							jsonReceipt.put("dep", receipt.compactData);
+							jsonReceipt.put("valid", receipt.valid);
 							callbackContext.success(jsonReceipt);
 							
 							return true;

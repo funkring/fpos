@@ -11,12 +11,14 @@ import java.util.UUID;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.graphics.Bitmap;
 import android.util.Log;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwService;
 import at.oerp.util.HtmlLinePrinter;
 import at.oerp.util.IObjectResolver;
 import at.oerp.util.LinePrintDriver;
+import at.oerp.util.PrinterImage;
 import at.oerp.util.StringUtil;
 
 public class BTPrinter extends PosHwPrinter implements LinePrintDriver {
@@ -234,13 +236,13 @@ public class BTPrinter extends PosHwPrinter implements LinePrintDriver {
 		return socket != null;
 	}
 	
-	public synchronized void printHtml(String inHtml, IObjectResolver inResolver) throws IOException {
+	public synchronized void printHtml(String inHtml) throws IOException {
 		try {
 			// open
 			if ( !isOpen() ) open();
 
 			// print
-			HtmlLinePrinter p = new HtmlLinePrinter(this, inResolver);
+			HtmlLinePrinter p = new HtmlLinePrinter(this);
 			inHtml = StringUtil.toAscii(inHtml);
 			p.print(inHtml);
 			feed(7);
@@ -457,11 +459,22 @@ public class BTPrinter extends PosHwPrinter implements LinePrintDriver {
 	}
 
 	public String getType() {
-		return "80mm";
+		return "57mm";
 	}
 
 	@Override
 	public void printTest() throws IOException {
 		
 	}
+
+	@Override
+	public void printImage(PrinterImage inImage) throws IOException {
+		
+	}
+
+	@Override
+	public double getPixel_mm() {
+		return 1.0;
+	}
+
 }

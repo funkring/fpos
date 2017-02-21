@@ -46,6 +46,7 @@ public abstract class PosHwSmartCard extends Card {
 	protected boolean damaged = false;
 	
 	protected boolean init = false;
+	protected boolean valid = false;
 	protected String  initError = null;
 	
 	protected DateFormat dateFormat;
@@ -74,6 +75,10 @@ public abstract class PosHwSmartCard extends Card {
 		return driver;
 	}
 	
+	public void invalidate() {
+		valid = false;
+	}
+	
 	protected void validate() throws IOException {
 		try {
 			open();
@@ -99,13 +104,13 @@ public abstract class PosHwSmartCard extends Card {
 			}			
 		}
 		
-		String newCIN = driver.getCIN();
-		if ( !cin.equals(newCIN) ) {
+		if ( !valid ) {
+			cin = driver.getCIN();
 			certicate = driver.getCertificate();
-			serial = driver.getCertificateSerialHex();			
-			cin = newCIN;
+			serial = driver.getCertificateSerialHex();
 			noSelect = false;
 			damaged = false;
+			valid = true;
 		}		
 	}
 	
@@ -360,16 +365,17 @@ public abstract class PosHwSmartCard extends Card {
 
         // build signature
     	byte[] signature;
+    	ioReceipt.valid = false;
         if ( damaged ) {
          	// prepare damaged signature
         	signature = "Sicherheitseinrichtung ausgefallen".getBytes(); 
         } else {
- 	        
  			try {
  				// try
- 				signature = sign(jwsDataToBeSigned);			
+ 				signature = sign(jwsDataToBeSigned);		
+ 				ioReceipt.valid = true;
  			} catch(IOException e) {
- 				close();			
+ 				close();
  				try {
  					try {
  						Thread.sleep(SLEEP_FIRST_TRY);
@@ -423,26 +429,54 @@ public abstract class PosHwSmartCard extends Card {
 			receipt.cashBoxID = "K1";
 			receipt.receiptIdentifier = "1";
 			receipt.receiptDateAndTime = new Date();
+			receipt.sumTaxSetNormal = 0;
+			receipt.sumTaxSetErmaessigt1 = 0;
+			receipt.sumTaxSetErmaessigt2 = 0;
+			receipt.sumTaxSetNull = 0;
+			receipt.sumTaxSetBesonders = 0;
+			receipt.turnover = 0.00;
+			receipt.prevCompactData = "K1";
+			receipts.add(receipt);
+			
+			receipt = new PosReceipt();
+			receipt.cashBoxID = "K1";
+			receipt.receiptIdentifier = "3";
+			receipt.receiptDateAndTime = new Date();
 			receipt.sumTaxSetNormal = 120;
 			receipt.sumTaxSetErmaessigt1 = 110;
 			receipt.sumTaxSetErmaessigt2 = 113;
 			receipt.sumTaxSetNull = 100;
 			receipt.sumTaxSetBesonders = 119;
 			receipt.turnover = 569.00;
-			receipt.signatureValuePreviousReceipt = "K1";
+			receipts.add(receipt);
+			
+			receipt = new PosReceipt();
+			receipt.cashBoxID = "K1";
+			receipt.receiptIdentifier = "4";
+			receipt.receiptDateAndTime = new Date();
+			receipt.sumTaxSetNormal = 12;
+			receipt.sumTaxSetErmaessigt1 = 11;
+			receipt.sumTaxSetErmaessigt2 = 11;
+			receipt.sumTaxSetNull = 10;
+			receipt.sumTaxSetBesonders = 11;
+			receipt.turnover = 100.00;
 			receipts.add(receipt);
 			
 			// init encryption
 			init("gpxHh2p1WGGzcgcn8AFq6IEHY8Lql4/ecm5E/OZVE3c=");
 			
 			// sign receipts
+			PosReceipt lastR = null;
 			for ( PosReceipt r : receipts ) {
+				if ( lastR != null ) r.prevCompactData = lastR.compactData;
 				signReceipt(r);
 				b.append(r.plainData).append("\n");
 				b.append(r.compactData).append("\n");
-				b.append("\n");
+				b.append("\n\n");
+				lastR = r;
 			}
 			
+		
 			// start speedtest			
 			open();
 			ICashRegisterSmartCard cashRegisterSmartCard = getDriver();
@@ -485,6 +519,7 @@ public abstract class PosHwSmartCard extends Card {
 			b.append("\n");
 			Log.i(TAG, getCertificate());
 		} catch (IOException e) {
+			Log.e(TAG, e.getMessage(), e);
 			b.append("\n");
 			b.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 			b.append("Error: " + e.getClass().getSimpleName() + "\n");
@@ -497,10 +532,6 @@ public abstract class PosHwSmartCard extends Card {
 		} finally {
 			close();
 		}
-		
-		
-		
-		
 		
 		return b.toString();
 	}

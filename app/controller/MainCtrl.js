@@ -170,6 +170,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             cashStateSilentFinished: self.onSyncTap
         });
         
+        // sync all
+        Ext.Viewport.on({
+            scope: self,
+            syncAll: self.onSyncTap
+        });
+        
         // print html
         Ext.Viewport.on({
             scope: self,

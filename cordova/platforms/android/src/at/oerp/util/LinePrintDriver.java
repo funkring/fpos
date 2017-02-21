@@ -25,6 +25,28 @@ public interface LinePrintDriver {
 	void writeln(String inText) throws IOException;
 	
 	/**
+	 * print image
+	 * @param inImage image data
+	 * @throws IOException
+	 */
+	void printImage(PrinterImage inImage) throws IOException;
+	
+	/**
+	 * print qr code
+	 * @param inCode
+	 * @throws IOException
+	 */
+	void printQRCode(String inCode) throws IOException;
+	
+	/**
+	 * @param inName name used for caching, if it is null no caching was done
+	 * @param inImage base64 coded image data or null to force load from cache
+	 * @return Printer specific image data
+	 * @throws NoDataException if image data is null, and data not in cache
+	 */
+	PrinterImage getImage(String inName, String inImage) throws IOException; 
+	
+	/**
 	 * set style
 	 * @throws IOException
 	 */
@@ -54,4 +76,9 @@ public interface LinePrintDriver {
 	 * @return
 	 */
 	double getCharWidth_mm(int inFont, int inStyle);
+	
+	/**
+	 * @return pixel per mm
+	 */
+	double getPixel_mm();
 }

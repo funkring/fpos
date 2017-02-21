@@ -26,6 +26,21 @@ public final class BinUtil
 		return (short) (in_byte & 0xFF);
 	}
 	
+	public final static byte getByteHigh( byte in_byte ) {
+		short ubyte = toUnsignedByte(in_byte);
+		return (byte) (ubyte >> 4);
+	}
+	
+	public final static byte getByteLow( byte in_byte ) {
+		return (byte) (in_byte & 0xf);
+	}
+	
+	public static byte swapNipple( byte in_byte ) {
+		byte lowNibble = getByteLow(in_byte);
+		byte highNibble = getByteHigh(in_byte);
+		return (byte) (lowNibble << 4 | highNibble);
+	}
+	
 	/**
 	 * @param in_word
 	 * @return word higher value
@@ -96,7 +111,7 @@ public final class BinUtil
 	public final static boolean getBit( byte[] in_array, int in_index )
 	{
 		int bit = in_index % 8;
-		int offset =in_index / 8;
+		int offset = in_index / 8;
 		return getBit( in_array[offset], bit );	
 	}
 	
@@ -109,8 +124,47 @@ public final class BinUtil
 	public final static void setBit( byte[] in_array, int in_index, boolean in_value )
 	{
 		int bit = in_index % 8;
-		int offset =in_index / 8;
+		int offset = in_index / 8;
 		in_array[offset] = setBit(in_array[offset], bit, in_value);
+	}
+	
+	/**
+	 * set bit to array
+	 * @param in_array array with bits
+	 * @param in_index bit index
+	 * @param in_value value true for 1 and false for 0 
+	 */
+	public final static void setBitReverse( byte[] in_array, int in_index, boolean in_value )
+	{
+		int bit = 7 - (in_index % 8);
+		int offset = in_index / 8;
+		in_array[offset] = setBit(in_array[offset], bit, in_value);
+	}
+	
+	/**
+	 * set bit to array
+	 * @param in_array array with bits
+	 * @param in_index bit index
+	 * @param in_value value true for 1 and false for 0 
+	 */
+	public final static void setBitReverse( byte[] in_array, int in_offset, int in_index, boolean in_value )
+	{
+		int bit = 7 - (in_index % 8);
+		in_offset += in_index / 8;
+		in_array[in_offset] = setBit(in_array[in_offset], bit, in_value);
+	}
+	
+	/**
+	 * set bit to array
+	 * @param in_array array with bits
+	 * @param in_index bit index
+	 * @param in_value value true for 1 and false for 0 
+	 */
+	public final static void setBit( byte[] in_array, int in_offset, int in_index, boolean in_value )
+	{
+		int bit = in_index % 8;
+		in_offset += (in_index / 8);
+		in_array[in_offset] = setBit(in_array[in_offset], bit, in_value);
 	}
 	
 
@@ -233,5 +287,49 @@ public final class BinUtil
 		//reset limit
 		in_buffer.limit(oldLimit);		
 		return str;
+	}
+	
+	/**
+	 * get two's-complement representation for given long value, result is encoded into byte-array of the given
+	 * length
+	 * @param value long value to be encoded
+	 * @param numberOfBytesFor2ComplementRepresentation length of resulting byte-array
+	 * @return byte array of turnover counter, in two's-complement representation
+	 */
+	public static byte[] get2ComplementRepForLong(long value,int numberOfBytesFor2ComplementRepresentation) {
+	    if (numberOfBytesFor2ComplementRepresentation<1 || (numberOfBytesFor2ComplementRepresentation>8)) {
+	      throw new IllegalArgumentException();
+	    }
+	
+	    //create byte buffer, max length 8 bytes (equal to long representation)
+	    ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+	    byteBuffer.putLong(value);
+	    byte[] longRep = byteBuffer.array();
+	
+	    //if given length for encoding is equal to 8, we are done
+	    if (numberOfBytesFor2ComplementRepresentation==8) {
+	      return longRep;
+	    }
+	
+	    //if given length of encoding is less than 8 bytes, we truncate the representation (of course one needs to be sure
+	    //that the given long value is not larger than the created byte array
+	    byte[] byteRep = new byte[numberOfBytesFor2ComplementRepresentation];
+	
+	    //truncating the 8-bytes long representation
+	    System.arraycopy(longRep,8-numberOfBytesFor2ComplementRepresentation,byteRep,0,numberOfBytesFor2ComplementRepresentation);
+	    return byteRep;
+	}
+	
+	/**
+	 * zero byte buffer
+	 * @param ioBuffer
+	 */
+	public static void zero(ByteBuffer ioBuffer){
+		ioBuffer.rewind();
+		while (ioBuffer.remaining() > 8)
+			ioBuffer.putLong(0);
+		while (ioBuffer.remaining() > 0) 
+			ioBuffer.put((byte) 0);
+		ioBuffer.rewind();
 	}
 }

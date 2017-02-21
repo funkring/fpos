@@ -31,7 +31,7 @@
         <framework src="com.android.support:support-v4:+" />
         
         <!--  generated -->
-			
+        
         <source-file src="cordova/android/src/at/oerp/pos/cordova/PosHwPlugin.java" target-dir="src/at/oerp/pos/cordova/" />
         <source-file src="src/at/oerp/smartcard/ResponseAPDU.java" target-dir="src/at/oerp/smartcard/" />
         <source-file src="src/at/oerp/smartcard/SmartCardUtil.java" target-dir="src/at/oerp/smartcard/" />
@@ -51,11 +51,13 @@
         <source-file src="src/at/oerp/util/IObjectResolver.java" target-dir="src/at/oerp/util/" />
         <source-file src="src/at/oerp/util/BinUtil.java" target-dir="src/at/oerp/util/" />
         <source-file src="src/at/oerp/util/HtmlLinePrinter.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/pos/PosReceipt.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/PosHwPrinter.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/ReadConfig.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/PosHwScale.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/PosHwRS232.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/PosHwDisplay.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/NoInitException.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/CtrlBytes.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/PosHwSmartCard.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/PosHwScan.java" target-dir="src/at/oerp/pos/" />
@@ -83,10 +85,16 @@
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAXFactoryImpl.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAX1ParserAdapter.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/JAXPTest.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
+        <source-file src="src/at/oerp/util/PrinterImage.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/pos/BitMatrixImage.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/BitmapImage.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/NoDataException.java" target-dir="src/at/oerp/pos/" />
+
+        <source-file src="libs/barcodedecoder-r15283.jar" target-dir="libs/" />
 
         <source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
         <source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />
-
+        
         
         <!--  generated from inherited -->
         

@@ -7,4 +7,8 @@ public class BTPrinter80 extends BTPrinter {
 		width_mm = 70.0;
 		charWidth_mm = 70.0/48.0;
 	}
+	
+	public String getType() {
+		return "80mm";
+	}
 }

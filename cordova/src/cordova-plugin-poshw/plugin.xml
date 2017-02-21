@@ -85,6 +85,12 @@
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAXFactoryImpl.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/SAX1ParserAdapter.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
         <source-file src="src/org/ccil/cowan/tagsoup/jaxp/JAXPTest.java" target-dir="src/org/ccil/cowan/tagsoup/jaxp/" />
+        <source-file src="src/at/oerp/util/PrinterImage.java" target-dir="src/at/oerp/util/" />
+        <source-file src="src/at/oerp/pos/BitMatrixImage.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/BitmapImage.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/NoDataException.java" target-dir="src/at/oerp/pos/" />
+
+        <source-file src="libs/barcodedecoder-r15283.jar" target-dir="libs/" />
 
         <source-file src="res/drawable/oerp_480x320.png" target-dir="res/drawable/" />
         <source-file src="res/drawable/display_ts7003.png" target-dir="res/drawable/" />

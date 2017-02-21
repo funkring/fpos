@@ -90,6 +90,9 @@ public class MainActivity extends Activity {
 							   "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
 			                   "<br>um zu testen ob der Druck" +
 			                   "<br>funktioniert"+
+			                   "<img src=\"qrcode\" alt=\"Martin Reisenhofer\">"+
+			                   "<p>Danach noch ein Text</p>" +
+			                   "<p style=\"font-size: large;\">Großer Text</p>" +
 			                   "<br><br><br><br><br><br>";
 					posHw.getPrinter().printHtml(test);
 					//posHw.getPrinter().printTest();

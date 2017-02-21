@@ -170,6 +170,13 @@ public abstract class PosHwService {
 	}
 	
 	/**
+	 * @return true if smart card was supported
+	 */
+	public boolean hasCardReader() {
+		return false;
+	}
+	
+	/**
 	 * @return smartcard
 	 * @throws IOException
 	 */

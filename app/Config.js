@@ -1122,7 +1122,8 @@ Ext.define('Fpos.Config', {
             if ( profile.sign_method == "card" ) {
                 var hwstatus = self.getHwStatus();
                 if ( hwstatus.cardreader ) {
-                    window.posHw.signQueryCert(function(res) {
+                    available = true;
+                    window.PosHw.signQueryCert(function(res) {
                         deferred.resolve(res);
                     }, function(err) {
                         deferred.reject(err);

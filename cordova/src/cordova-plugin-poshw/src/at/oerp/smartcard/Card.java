@@ -19,6 +19,8 @@ public abstract class Card {
 
     public abstract void close();
     
+    public abstract boolean isOpen();
+    
     public abstract void open() throws IOException;
    
     /**

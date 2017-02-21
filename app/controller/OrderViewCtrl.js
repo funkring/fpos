@@ -844,7 +844,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
        var tax_percent = 0.0;
        var tax_fixed = 0.0;
        var total_tax = 0.0;
-     
         
        Ext.each(tax_ids, function(tax_id) {
             var tax = taxes[tax_id];
@@ -858,6 +857,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         amount_tax : 0.0,
                         amount_netto : 0.0
                     };
+                    
+                    // set tax special type
+                    if (taxDef.st) taxsum.st = taxDef.st;
                     
                     if (taxlist)
                         taxlist.push(taxsum);
@@ -1980,9 +1982,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var cashJournalId = Config.getCashJournal()._id;
                 
                 // add cash payment if no payment
-                var payment_ids = self.order.get('payment_ids');                
+                var payment_ids = self.order.get('payment_ids');
+                var amount_total = self.order.get('amount_total');                
                 if ( !payment_ids || payment_ids.length === 0 || !self.isPayment() ) {
-                    var amount_total = self.order.get('amount_total');
                     payment_ids = [
                         {
                             journal_id : cashJournalId,
@@ -2023,8 +2025,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     self.order.set('date', date);
                     self.order.set('seq', seq);
                     self.order.set('name', Config.formatSeq(seq));
-                    self.order.set('state','paid');
-                    
+                                        
                     // turnover
                     self.order.set('turnover',self.round(self.order.get('turnover')+turnover));
                     // cpos
@@ -2043,6 +2044,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                   
                     // save order
                     var saveOrder = function() {
+                        
                         if ( Config.getSync() && place_id ) {
                             // special handling if sync
                             var orderCopy = ModelUtil.createDocument(self.order);
@@ -2050,9 +2052,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             orderCopy.fdoo__ir_model = 'fpos.order';
                             orderCopy.fpos_user_id = Config.getProfile().user_id;
                             orderCopy.user_id = Config.getUser()._id;
+                            // set state to paid
+                            orderCopy.state = 'paid';
                             
                             db.post(orderCopy).then(function() {
                                 updateCounters();
+                                // set temp partner
                                 orderCopy.partner = self.order.get('partner');
                                 // reject order
                                 self.order.reject();
@@ -2067,8 +2072,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             });
                                
                         } else {
-                                       
-                            // save
+                               
+                            // set state to paid    
+                            self.order.set('state', 'paid');
+                                
+                            // save                                                        
                             self.order.save({
                                 callback: function() {
                                     updateCounters();
@@ -2083,25 +2091,88 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     if ( st == 'm' ) {
                         deferred.reject({name: 'mixed_type', message: 'Storno und Verkäufe dürfen nicht gemischt werden!'});
                     } else {
-                        // build sum
-                        
                         
                         // sign
                         var signable = {
                             sign_pid: profile.sign_pid,
                             seq: seq,
                             date: date,
-                            st: st
+                            st: st,
+                            amount: 0.0,
+                            amount_1: 0.0,
+                            amount_2: 0.0,
+                            amount_0: 0.0,
+                            amount_s: 0.0,
+                            turnover: self.order.get('turnover'),
+                            sign_serial: profile.sign_serial,
+                            last_dep: dep
                         };
                         
+                        // build sum
+                        var taxes = self.order.get('tax_ids');
+                        var amount_st = 0.0;  
+                        Ext.each(taxes, function(tax) {
+                           var amount = tax.amount_tax + tax.amount_netto;
+                           amount_st += amount;
+                           switch ( tax.st ) {                               
+                                case '1': 
+                                    signable.amount_1 += amount;
+                                    break;
+                                case '2':
+                                    signable.amount_2 += amount;
+                                    break;
+                                case '0':
+                                    signable.amount_0 += amount;
+                                    break;
+                                case 's':
+                                    signable.amount_s += amount;
+                                    break;      
+                                default: 
+                                    signable.amount += amount;
+                                    break;                            
+                           }                           
+                        });
+                        
+                        // add non tax value
+                        if ( amount_st != amount_total) {
+                            signable.amount_0 += (amount_total - amount_st);
+                        }
+                        
+                        // check signing
+                        var readyForSign = false;
+                        if ( dep ) {
+                            readyForSign = true;
+                            // if not amount
+                            if ( !amount_total ) {
+                                signable.st = '0';
+                            }
+                        } else {
+                            // startbeleg
+                            if ( !amount_total ) {
+                                readyForSign = true;
+                                signable.st = 's';                                                           
+                                self.order.set('ref', 'STARTBELEG');
+                                // set initial dep
+                                signable.last_dep = profile.sign_pid;                                
+                                // reset turnover
+                                signable.turnover = 0.0;
+                                self.order.set('turnover', signable.turnover);
+                            }
+                        }
+                        
                         // sign
-                        Config.sign(signable).then(function(signable) {
-                            self.order.set('dep', signable.dep);
-                            self.order.set('qr', signable.qr);
-                            saveOrder();                                
-                        }, function(err) {
-                            deferred.reject(err);
-                        }); 
+                        if ( readyForSign ) {
+                            Config.sign(signable).then(function(signable) {
+                                self.order.set('dep', signable.dep);
+                                self.order.set('qr', signable.qr);
+                                self.order.set('sig',signable.valid);
+                                saveOrder();                           
+                            }, function(err) {
+                                deferred.reject(err);
+                            }); 
+                        } else {
+                            saveOrder();        
+                        }
                     }         
                 }
             };
@@ -2434,7 +2505,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '</tr>',
                     '</tpl>',
                     '</table>',
-                '</tpl>',                
+                '</tpl>',            
                 profile.receipt_footer || '',
                 {
                     getUnit: function(uom_id) {
@@ -2889,7 +2960,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var user_id = Config.getUser()._id;
         var fpos_user_id = profile.user_id;
         
-        var turnover = profile.last_turnover;
         var cpos = profile.last_cpos;
         var date = futil.datetimeToStr(new Date());
         var order_id;
@@ -2922,7 +2992,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 return Config.queryLastOrder().then(function(res) {
                         if ( res.rows.length > 0 ) {
                             var lastOrder = res.rows[0].doc;
-                            turnover = lastOrder.turnover;
                             cpos = lastOrder.cpos;
                         } 
                         return db.post({
@@ -2933,17 +3002,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 'date' : date,
                                 'ref' : 'Kassensturz',
                                 'tax_ids' : [],
-                                'line_ids' : [
-                                    {
-                                        // TURNOVER
-                                        'name' : 'Umsatzzähler',
-                                        'price' : turnover,
-                                        'qty' : 1.0,
-                                        'subtotal_incl' : turnover,
-                                        'discount' : 0.0,
-                                        'sequence' : 0,
-                                        'tag' : 'c'
-                                    },
+                                'line_ids' : [                                   
                                     {
                                         // BALANCE
                                         'name' : 'Kassenstand SOLL',
