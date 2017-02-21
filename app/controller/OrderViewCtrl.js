@@ -2387,12 +2387,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '<td><hr/></td>',
                     '</tr>',
                     '<tr>',
-                        '<td>K U N D E</td>',
+                        '<td>Kunde/Lieferant</td>',
                     '</tr>',
                     '<tr>',
                         '<td><hr/></td>',
                     '</tr>',
-                    '<td>{o.partner.name}</td>',
+                    '<tr>',
+                        '<td>{o.partner.name}</td>',
+                    '</tr>',
                     '<tpl if="o.partner.street"><tr><td>{o.partner.street}</td></tr></tpl>',
                     '<tpl if="o.partner.street2"><tr><td>{o.partner.street2}</td></tr></tpl>',
                     '<tpl if="o.partner.zip && o.partner.city"><tr><td>{o.partner.zip} {o.partner.city}</td></tr></tpl>',
@@ -2402,7 +2404,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 '<table width="100%">',
                 '<tr>',
                     '<td colspan="2">Bezeichnung</td>',
-                    '<td align="right" width="32%">Betrag {[Config.getCurrency()]}</td>',
+                    '<td align="right" width="38%">Betrag {[Config.getCurrency()]}</td>',
                 '</tr>',
                 '<tr>',                
                     '<td colspan="3"><hr/></td>',
@@ -2442,12 +2444,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                         '</tpl>', 
                                         '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
                                     '</td>',    
-                                    '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',                        
+                                    '<td align="right" valign="buttom" width="38%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',                        
                                 '</tr>',
                             '<tpl else>',
                                 '<tr>',
                                     '<td colspan="2">{name}</td>',
-                                    '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                                    '<td align="right" valign="buttom" width="38%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
                                 '</tr>',
                             '</tpl>',
                         '</tpl>',                          
@@ -2478,14 +2480,25 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '<td colspan="3"><hr/></td>',
                 '</tr>',
                 '<tr style="font-size: large;">',
-                    '<td align="right" colspan="2"><b>S U M M E</b></td>',
-                    '<td align="right" width="32%"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
+                    '<td align="right" colspan="2"><b>SUMME</b></td>',
+                    '<td align="right" width="38%"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
                 '</tr>',
                 '<tpl for="o.payment_ids">',
-                '<tr style="font-size: larger;">',
-                    '<td align="right" colspan="2">{[this.getJournal(values.journal_id)]}</td>',
-                    '<td align="right" width="32%">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',        
-                '</tr>',
+                        '<tr style="font-size: larger;">',
+                            '<td align="right" colspan="2">{[this.getJournal(values.journal_id)]}</td>',
+                            '<td align="right" width="38%">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',
+                        '</tr>',                    
+                        '<tpl if="payment && payment != amount">',
+                            '<tr>',
+                                '<td align="right" colspan="2">gegeben</td>',
+                                '<td align="right" width="38%">{[futil.formatFloat(values.payment,Config.getDecimals())]}</td>',
+                            '</tr>',
+                            '<tr>',
+                                '<td align="right" colspan="2">retour</td>',
+                                '<td align="right" width="38%">{[futil.formatFloat(values.amount-values.payment,Config.getDecimals())]}</td>',
+                            '</tr>',
+                        '</tpl>',
+                    '</tr>',
                 '</tpl>',                
                 '</table>',                                
                 '<tpl if="o.tax_ids && o.tax_ids.length &gt; 0">',
@@ -2505,7 +2518,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '</tr>',
                     '</tpl>',
                     '</table>',
-                '</tpl>',            
+                '</tpl>',
+                '<tpl if="qrsrc">',
+                    '<img src="{qrsrc}" alt="{o.qr}"/>',
+                    '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',                
+                '</tpl>',                
                 profile.receipt_footer || '',
                 {
                     getUnit: function(uom_id) {
@@ -2570,13 +2587,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             place: place
         };
         
-        // render it
-        var html = self.printTemplate.apply(data);
         // print/show it
-        if ( !Config.hasPrinter() ) { 
-            self.previewPrint(html);
+        if ( !Config.hasPrinter() ) {
+            self.previewPrint(self.printTemplate.apply(data));
         } else {
-            Config.printHtml(html);
+            if ( order.qr ) data.qrsrc = "qrcode";
+            Config.printHtml(self.printTemplate.apply(data));
         }
         
         // open cash drawer

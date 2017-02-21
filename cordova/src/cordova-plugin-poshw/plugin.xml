@@ -89,6 +89,7 @@
         <source-file src="src/at/oerp/pos/BitMatrixImage.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/BitmapImage.java" target-dir="src/at/oerp/pos/" />
         <source-file src="src/at/oerp/pos/NoDataException.java" target-dir="src/at/oerp/pos/" />
+        <source-file src="src/at/oerp/pos/hw/android/BasicPrinter.java" target-dir="src/at/oerp/pos/hw/android/" />
 
         <source-file src="libs/barcodedecoder-r15283.jar" target-dir="libs/" />
 
