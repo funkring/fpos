@@ -21,7 +21,8 @@ import at.oerp.pos.PosHwScan;
 import at.oerp.pos.PosHwService;
 import at.oerp.pos.R;
 import at.oerp.pos.WeightResult;
-import at.oerp.pos.hw.android.BTPrinter;
+import at.oerp.pos.hw.android.BTPrinterInterface;
+import at.oerp.pos.hw.android.BasicPrinter;
 
 
 
@@ -33,7 +34,7 @@ public class MainActivity extends Activity {
 	private PosHwService posHw;
 	private ScaleTask scaleTask;
 	private Random random;
-	private BTPrinter btPrinter;
+	private BasicPrinter btPrinter;
 	
 	private final static int REQUEST_SCAN = 1;
 	
@@ -90,6 +91,8 @@ public class MainActivity extends Activity {
 							   "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
 			                   "<br>um zu testen ob der Druck" +
 			                   "<br>funktioniert"+
+			                   "<p>Ein Text</p>"+
+			                   "<p style=\"font-size: large;\">Großer Text</p>"+
 			                   "<img src=\"qrcode\" alt=\"_R1-AT1_K1_4638_2017-02-21T14:58:32_0,00_0,00_0,00_0,00_0,00_cw==_556809796_uttyg3ZqESo=_YsyLovED2bTiP+LpzSF3Z3ltNaFSO7Mldgd4j4L2OduqpLGbU3sRIiC721EVdBBx3g1ft7mDQc5kJl1CODsucQ==\">"
 			                   /*+"<p>Danach noch ein Text</p>" +
 			                   "<p style=\"font-size: large;\">Großer Text</p>" +
@@ -174,7 +177,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				if ( btPrinter == null ) {
-					btPrinter = BTPrinter.create(posHw);
+					btPrinter = BTPrinterInterface.create(posHw);
 					if ( btPrinter != null ) {
 						log("Bluetooth printer opened");
 					} else {

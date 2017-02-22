@@ -7,6 +7,7 @@ import android.app.Application;
 import android.content.Intent;
 import android.util.Log;
 import at.oerp.pos.hw.android.AndroidHwService;
+import at.oerp.pos.hw.h510.H510PosService;
 
 public abstract class PosHwService {
 	
@@ -28,6 +29,7 @@ public abstract class PosHwService {
 	 * @return
 	 */
 	public static PosHwService create(Application app) {
+		if ( H510PosService.isHardware() ) return new H510PosService(app);
 		return new AndroidHwService(app);
 	}
 	

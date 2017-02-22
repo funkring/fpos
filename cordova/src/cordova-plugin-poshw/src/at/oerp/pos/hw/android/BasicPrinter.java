@@ -1,13 +1,10 @@
 package at.oerp.pos.hw.android;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-import android.util.Log;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwService;
 import at.oerp.util.BinUtil;
@@ -17,14 +14,7 @@ import at.oerp.util.StringUtil;
 
 public abstract class BasicPrinter extends PosHwPrinter {
 
-	protected PosHwService service;	
 	
-	// socket
-	protected InputStream	in;
-	protected OutputStream  out;
-
-	protected Charset ascii;
-
 	protected byte[] cmd3 = new byte[3];
 	protected byte[] cmd4 = new byte[4];
 	protected byte[] cmd2 = new byte[2];
@@ -68,62 +58,35 @@ public abstract class BasicPrinter extends PosHwPrinter {
 	private final static int SEL_FONT_DOUBLE_W = 1 << 5;
 	private final static int SEL_FONT_UNDERLINE = 1 << 7;
 
-	// debug tag
-	private final static String TAG = "Printer"; 
+	// iface
+	protected final PrinterInterface iface;
+	// service
+	protected final PosHwService service;
+	// charset
+	protected final Charset ascii;
 	
 	/**
 	 * constructor
 	 */
-	public BasicPrinter() {
+	public BasicPrinter(PosHwService inService, PrinterInterface inIface) {
 		ascii = Charset.forName("ascii");
+		iface = inIface;
+		service = inService;
 	}
 
 	/**
-	 * open method is for implementation
+	 * open printer
 	 * @throws IOException
 	 */
-	public abstract void open() throws IOException;
+	public void open() throws IOException {
+		iface.open();	
+	}	
 	
 	/**
-	 * @return true if open
+	 * close printer
 	 */
-	public abstract boolean isOpen();
-	
-	/**
-	 * @return printer name
-	 */
-	public abstract String getName();
-
-	/**
-	 * open commincation
-	 * @param inIn
-	 * @param inOut
-	 */
-	protected void openCom(InputStream inIn, OutputStream inOut) {
-		out = inOut;
-		in = inIn;
-	}
-	
-	protected void closeCom() {
-		if ( out != null ) {
-			try {
-				out.flush();
-				out.close();
-			} catch (IOException e ) {
-				Log.e(TAG, e.getMessage(), e);
-			} finally {
-				out = null;
-			}
-		}
-		if ( in != null ) {
-			try {
-				in.close();
-			} catch (IOException e ) {
-				Log.e(TAG, e.getMessage(),e);
-			} finally {
-				in = null;
-			}
-		}	
+	public void close() {
+		iface.close();		
 	}
 	
 	public boolean hasError() {
@@ -165,7 +128,7 @@ public abstract class BasicPrinter extends PosHwPrinter {
 	}
 
 	public String toString() {
-		StringBuilder b = new StringBuilder(String.format("PRINTER\t%s [width=%s,charwidth=%s,timeout=%s]", getName(), width_mm, charWidth_mm, timeout));
+		StringBuilder b = new StringBuilder(String.format("PRINTER\t%s [width=%s,charwidth=%s,timeout=%s]", iface.getName(), width_mm, charWidth_mm, timeout));
 		b.append(String.format("\n\terror              = %s", hasError()));
 		b.append(String.format("\n\tdrawerOpen         = %s", isCashboxOpen()));
 		b.append(String.format("\n\tplatenOpen         = %s", isPlatenOpen()));
@@ -178,35 +141,37 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		return b.toString();
 	}
 	
-	public synchronized void printHtml(String inHtml) throws IOException {
-		try {
-			// open
-			if ( !isOpen() ) open();
-
-			// print
-			HtmlLinePrinter p = new HtmlLinePrinter(this);
-			inHtml = StringUtil.toAscii(inHtml);
-			p.print(inHtml);
-			feed(7);
-			cut();
-			
-			out.flush();
-			
-			// sleep mode
-			if ( sleep > 0 ) {
-				sleepAfter(sleep);
-			}
-			
-		} catch ( IOException e) {
-			close();
-			throw e;
-		} 
+	public void printHtml(String inHtml) throws IOException {
+		synchronized ( service ) {
+			try {
+				// open
+				if ( !iface.isOpen() ) iface.open();
+				iface.begin();
+	
+				// print
+				HtmlLinePrinter p = new HtmlLinePrinter(this);
+				inHtml = StringUtil.toAscii(inHtml);
+				p.print(inHtml);
+				feed(7);
+				cut();
+				
+				// sleep mode
+				if ( sleep > 0 ) {
+					sleepAfter(sleep);
+				}
+				
+				iface.end();			
+			} catch ( IOException e) {
+				iface.close();
+				throw e;
+			} 
+		}
 	}
 
 	@Override
 	public void writeln(String inText) throws IOException {
-		out.write(inText.getBytes(ascii));
-		out.write(0xA);
+		iface.write(inText.getBytes(ascii));
+		iface.write(0xA);
 	}
 
 	public void cut() throws IOException {
@@ -216,7 +181,7 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		cmd3[0] = 0x1B;
 		cmd3[1] = (byte) 'd';
 		cmd3[2] = (byte) inLines;
-		out.write(cmd3);
+		iface.write(cmd3);
 	}
 
 	@Override
@@ -244,38 +209,40 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		cmd3[0] = 0x1B;
 		cmd3[1] = (byte) 't';
 		cmd3[2] = inTable;
-		out.write(cmd3);
+		iface.write(cmd3);
 	}
 
 	public void init() throws IOException {
 		cmd2[0] = 0x1B;
 		cmd2[1] = (byte) '@';
-		out.write(cmd2);
+		iface.write(cmd2);
 	}
 
 	public void readStatus() throws IOException {
+		if ( !iface.readSupport() ) return;
+		
 		cmd3[0] = 0x10;
 		cmd3[1] = 0x04;
 
 		// printer status
 		cmd3[2] = 1;
-		out.write(cmd3);
-		printerStatus = in.read();
+		iface.write(cmd3);
+		printerStatus = iface.read();
 
 		// offline status
 		cmd3[2] = 2;
-		out.write(cmd3);
-		offlineStatus = in.read();
+		iface.write(cmd3);
+		offlineStatus = iface.read();
 
 		// error status
 		cmd3[2] = 3;
-		out.write(cmd3);
-		errorStatus = in.read();
+		iface.write(cmd3);
+		errorStatus = iface.read();
 
 		// paper status
 		cmd3[2] = 4;
-		out.write(cmd3);
-		paperStatus = in.read();
+		iface.write(cmd3);
+		paperStatus = iface.read();
 	}
 
 	@Override
@@ -295,8 +262,8 @@ public abstract class BasicPrinter extends PosHwPrinter {
 	 * @throws IOException
 	 */
 	protected void wakeUp() throws IOException {
-		out.write(0xFF);
-		out.flush();
+		iface.write(0xFF);
+		iface.flush();
 		try {
 			Thread.sleep(50);
 		} catch (InterruptedException e) {
@@ -315,7 +282,7 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		cmd4[1] = 0x38;		
 		cmd4[2] = (byte) (inSeconds & 0xFF);
 		cmd4[3] = (byte) (inSeconds >> 8);
-		out.write(cmd4);
+		iface.write(cmd4);
 	}
 
 	@Override
@@ -326,21 +293,21 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		cmd3[0] = 0x1B;
 		cmd3[1] = (byte) '!';
 		cmd3[2] = (byte) inSel;
-		out.write(cmd3);
+		iface.write(cmd3);
 	}
 	
 	public void alignCenter() throws IOException {
 		cmd3[0] = 0x1B;
 		cmd3[1] = (byte) 'a';
 		cmd3[2] = 0x01;
-		out.write(cmd3);
+		iface.write(cmd3);
 	}
 	
 	public void alignLeft() throws IOException {
 		cmd3[0] = 0x1B;
 		cmd3[1] = (byte) 'a';
 		cmd3[2] = 0x00;
-		out.write(cmd3);
+		iface.write(cmd3);
 	}
 
 	@Override
@@ -438,7 +405,7 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		cmd4[0] = 0x1D;
 		cmd4[1] = 0x76;
 		cmd4[2] = 0x30;
-		cmd4[2] = 0x00;
+		cmd4[3] = 0x00;
 		
 		int size = cmd4.length+2+2+(stride*bmpHeight);
 		
@@ -490,8 +457,8 @@ public abstract class BasicPrinter extends PosHwPrinter {
 
 		// print image
 		alignCenter();		
-		out.write(data.array(), 0, data.limit());
-		out.flush();
+		iface.write(data.array(), 0, data.limit());
+		iface.flush();
 		alignLeft();
 	}
 	

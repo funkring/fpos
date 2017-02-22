@@ -11,7 +11,7 @@ import at.oerp.pos.PosHwService;
 
 public class AndroidHwService extends PosHwService {
 
-	BTPrinter printer;
+	BasicPrinter printer;
 	boolean   printerFail;
 	
 	public AndroidHwService(Application app) {
@@ -44,7 +44,7 @@ public class AndroidHwService extends PosHwService {
 	@Override
 	public synchronized PosHwPrinter getPrinter() {
 		if ( printer == null && !printerFail ) {
-			printer = BTPrinter.create(this);
+			printer = BTPrinterInterface.create(this);
 			printerFail = (printer == null); 
 		}
 		return printer;
