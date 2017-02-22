@@ -81,6 +81,10 @@ public abstract class PosHwSmartCard extends Card {
 		valid = false;
 	}
 	
+	public boolean closeAfterSign() {
+		return false;
+	}
+	
 	protected void validate() throws IOException {
 		try {
 			open();
@@ -132,7 +136,7 @@ public abstract class PosHwSmartCard extends Card {
 		byte[] sha256Hash = digest.digest(inValue.getBytes());
 		
 		byte[] signature = null;		
-		if ( noSelect ) {
+		if ( noSelect && !closeAfterSign() ) {
 			signature = driver.doSignaturWithoutSelection(sha256Hash, pin);
 		} else {			
 			signature = driver.doSignatur(sha256Hash, pin);
@@ -260,99 +264,104 @@ public abstract class PosHwSmartCard extends Card {
 	 */
     public PosReceipt signReceipt(PosReceipt ioReceipt) throws IOException {
     	initCheck();
-    	
-    	// encrypt turnover
-    	if ( ioReceipt.specialType != null ) {
-    		ioReceipt.encryptedTurnoverValue = Base64.encodeToString(ioReceipt.specialType.getBytes(), Base64.NO_WRAP);
-    	} else if ( ioReceipt.encryptedTurnoverValue == null ) {
-    		digest.reset();    		
-    		String receiptId = ioReceipt.cashBoxID + ioReceipt.receiptIdentifier;
-    		byte[] turnoverHash = digest.digest(receiptId.getBytes());
-    		ioReceipt.encryptedTurnoverValue = encryptCTR(turnoverHash, ioReceipt.turnover);
+    	try {
+	    	// encrypt turnover
+	    	if ( ioReceipt.specialType != null ) {
+	    		ioReceipt.encryptedTurnoverValue = Base64.encodeToString(ioReceipt.specialType.getBytes(), Base64.NO_WRAP);
+	    	} else if ( ioReceipt.encryptedTurnoverValue == null ) {
+	    		digest.reset();    		
+	    		String receiptId = ioReceipt.cashBoxID + ioReceipt.receiptIdentifier;
+	    		byte[] turnoverHash = digest.digest(receiptId.getBytes());
+	    		ioReceipt.encryptedTurnoverValue = encryptCTR(turnoverHash, ioReceipt.turnover);
+	    	}
+	    	
+	    	// calculate chain value
+	    	if ( ioReceipt.signatureValuePreviousReceipt == null ) {
+	    		digest.reset();
+	    		byte[] prevHash = digest.digest(ioReceipt.prevCompactData.getBytes());
+	    		ioReceipt.signatureValuePreviousReceipt = Base64.encodeToString(prevHash, 0, 8, Base64.NO_WRAP);
+	    	}
+	    	
+	        //prepare signature payload string for signature creation (Detailspezifikation/ABS 5
+	    	StringBuilder b = new StringBuilder();
+	    		b.append("_").append(getSuiteID()); // 0
+	    		b.append("_").append(ioReceipt.cashBoxID); // 1
+	    		b.append("_").append(ioReceipt.receiptIdentifier); // 2
+	    		b.append("_").append(dateFormat.format(ioReceipt.receiptDateAndTime)); // 3
+	    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNormal)); // 4
+	    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt1)); // 5
+	    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt2)); // 6
+	    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNull)); // 7
+	    		b.append("_").append(nf.format(ioReceipt.sumTaxSetBesonders)); // 8
+	    		b.append("_").append(ioReceipt.encryptedTurnoverValue); // 9
+	    		b.append("_").append(ioReceipt.signatureCertificateSerialNumber); // 10
+	    		b.append("_").append(ioReceipt.signatureValuePreviousReceipt);    // 11
+	    		
+	    		
+	    	// build signature
+	    	ioReceipt.plainData = b.toString();
+	    	
+	 		//prepare data to be signed, "ES256 JWS header" fixed (currently the only relevant signature/hash method (RK1)
+	        String jwsHeaderUrl = "eyJhbGciOiJFUzI1NiJ9";
+	        String jwsPayloadUrl = Base64.encodeToString(ioReceipt.plainData.getBytes(), Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
+	        String jwsDataToBeSigned = jwsHeaderUrl + "." + jwsPayloadUrl;
+	
+	        // build signature
+	    	byte[] signature;
+	    	ioReceipt.valid = false;
+	        if ( damaged ) {
+	         	// prepare damaged signature
+	        	signature = "Sicherheitseinrichtung ausgefallen".getBytes(); 
+	        } else {
+	 			try {
+	 				// try
+	 				signature = sign(jwsDataToBeSigned);		
+	 			} catch(IOException e) {
+	 				Log.e(TAG, "Failed signing, retry 1");
+	 				close();
+	 				try {
+	 					try {
+	 						Thread.sleep(SLEEP_FIRST_TRY);
+	 						signature = sign(jwsDataToBeSigned);
+	 					} catch ( IOException e2 ) {
+	 						Log.e(TAG, "Failed signing, retry 2");
+	 						close();
+	 						Thread.sleep(SLEEP_SECOND_TRY);
+	 						try {
+	 							signature = sign(jwsDataToBeSigned);
+	 						} catch ( IOException e3 ) {
+	 							Log.e(TAG, "Failed signing, no retry!");
+	 							if ( !ioReceipt.first ) {
+	 								damaged = true;	
+	 							}
+	 							close();
+	 							throw e3;						
+	 						}
+	 					}
+	 				} catch (InterruptedException e1) {
+	 					Thread.currentThread().interrupt();
+	 					throw new InterruptedIOException();
+	 				}			
+	 			}
+	 			
+	 			// mark valid
+	 			ioReceipt.valid = true;
+	        }
+	        
+	    	// check serial
+	    	if ( ioReceipt.signatureCertificateSerialNumber != null && !ioReceipt.signatureCertificateSerialNumber.equals(serial) ) {
+	    		throw new IOException("Invalid Serial: " + ioReceipt.signatureCertificateSerialNumber + " != " + serial);
+	    	}
+	        
+	        // store data        
+	    	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
+	    	ioReceipt.plainData = ioReceipt.plainData + "_" + Base64.encodeToString(signature, Base64.NO_WRAP);
+	        return ioReceipt;
+    	} finally {
+    		if ( closeAfterSign() ) {
+    			close();
+    		}
     	}
-    	
-    	// calculate chain value
-    	if ( ioReceipt.signatureValuePreviousReceipt == null ) {
-    		digest.reset();
-    		byte[] prevHash = digest.digest(ioReceipt.prevCompactData.getBytes());
-    		ioReceipt.signatureValuePreviousReceipt = Base64.encodeToString(prevHash, 0, 8, Base64.NO_WRAP);
-    	}
-    	
-        //prepare signature payload string for signature creation (Detailspezifikation/ABS 5
-    	StringBuilder b = new StringBuilder();
-    		b.append("_").append(getSuiteID()); // 0
-    		b.append("_").append(ioReceipt.cashBoxID); // 1
-    		b.append("_").append(ioReceipt.receiptIdentifier); // 2
-    		b.append("_").append(dateFormat.format(ioReceipt.receiptDateAndTime)); // 3
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNormal)); // 4
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt1)); // 5
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt2)); // 6
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNull)); // 7
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetBesonders)); // 8
-    		b.append("_").append(ioReceipt.encryptedTurnoverValue); // 9
-    		b.append("_").append(ioReceipt.signatureCertificateSerialNumber); // 10
-    		b.append("_").append(ioReceipt.signatureValuePreviousReceipt);    // 11
-    		
-    		
-    	// build signature
-    	ioReceipt.plainData = b.toString();
-    	
- 		//prepare data to be signed, "ES256 JWS header" fixed (currently the only relevant signature/hash method (RK1)
-        String jwsHeaderUrl = "eyJhbGciOiJFUzI1NiJ9";
-        String jwsPayloadUrl = Base64.encodeToString(ioReceipt.plainData.getBytes(), Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
-        String jwsDataToBeSigned = jwsHeaderUrl + "." + jwsPayloadUrl;
-
-        // build signature
-    	byte[] signature;
-    	ioReceipt.valid = false;
-        if ( damaged ) {
-         	// prepare damaged signature
-        	signature = "Sicherheitseinrichtung ausgefallen".getBytes(); 
-        } else {
- 			try {
- 				// try
- 				signature = sign(jwsDataToBeSigned);		
- 			} catch(IOException e) {
- 				Log.e(TAG, "Failed signing, retry 1");
- 				close();
- 				try {
- 					try {
- 						Thread.sleep(SLEEP_FIRST_TRY);
- 						signature = sign(jwsDataToBeSigned);
- 					} catch ( IOException e2 ) {
- 						Log.e(TAG, "Failed signing, retry 2");
- 						close();
- 						Thread.sleep(SLEEP_SECOND_TRY);
- 						try {
- 							signature = sign(jwsDataToBeSigned);
- 						} catch ( IOException e3 ) {
- 							Log.e(TAG, "Failed signing, no retry!");
- 							if ( !ioReceipt.first ) {
- 								damaged = true;	
- 							}
- 							close();
- 							throw e3;						
- 						}
- 					}
- 				} catch (InterruptedException e1) {
- 					Thread.currentThread().interrupt();
- 					throw new InterruptedIOException();
- 				}			
- 			}
- 			
- 			// mark valid
- 			ioReceipt.valid = true;
-        }
-        
-    	// check serial
-    	if ( ioReceipt.signatureCertificateSerialNumber != null && !ioReceipt.signatureCertificateSerialNumber.equals(serial) ) {
-    		throw new IOException("Invalid Serial: " + ioReceipt.signatureCertificateSerialNumber + " != " + serial);
-    	}
-        
-        // store data        
-    	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
-    	ioReceipt.plainData = ioReceipt.plainData + "_" + Base64.encodeToString(signature, Base64.NO_WRAP);
-        return ioReceipt;
     }
 	
     /**
