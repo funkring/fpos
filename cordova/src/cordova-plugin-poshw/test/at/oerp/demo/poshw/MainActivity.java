@@ -90,10 +90,10 @@ public class MainActivity extends Activity {
 							   "<br>Wielange darf eine Zeile sein damit sie sich ausgeht" +
 			                   "<br>um zu testen ob der Druck" +
 			                   "<br>funktioniert"+
-			                   "<img src=\"qrcode\" alt=\"Martin Reisenhofer\">"+
-			                   "<p>Danach noch ein Text</p>" +
+			                   "<img src=\"qrcode\" alt=\"_R1-AT1_K1_4638_2017-02-21T14:58:32_0,00_0,00_0,00_0,00_0,00_cw==_556809796_uttyg3ZqESo=_YsyLovED2bTiP+LpzSF3Z3ltNaFSO7Mldgd4j4L2OduqpLGbU3sRIiC721EVdBBx3g1ft7mDQc5kJl1CODsucQ==\">"
+			                   /*+"<p>Danach noch ein Text</p>" +
 			                   "<p style=\"font-size: large;\">Großer Text</p>" +
-			                   "<br><br><br><br><br><br>";
+			                   "<br><br><br><br><br><br>"*/;
 					posHw.getPrinter().printHtml(test);
 					//posHw.getPrinter().printTest();
 				} catch (IOException e) {

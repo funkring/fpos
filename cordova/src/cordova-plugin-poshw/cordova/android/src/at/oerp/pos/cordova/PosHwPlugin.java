@@ -299,10 +299,19 @@ public class PosHwPlugin extends CordovaPlugin {
 							receipt.sumTaxSetErmaessigt2 = jsonReceipt.getDouble("amount_2");
 							receipt.sumTaxSetNull = jsonReceipt.getDouble("amount_0");
 							receipt.sumTaxSetBesonders = jsonReceipt.getDouble("amount_s");
-							receipt.specialType = jsonReceipt.optString("st", null);
 							receipt.turnover = jsonReceipt.getDouble("turnover");
 							receipt.signatureCertificateSerialNumber = jsonReceipt.getString("sign_serial");
 							receipt.prevCompactData = jsonReceipt.getString("last_dep");
+							
+							// evaluate special type
+							String st = jsonReceipt.optString("st", null);
+							if ( st != null ) {
+								if ( "c".equalsIgnoreCase(st)) {
+									receipt.specialType = "STO";
+								} else if ( "t".equalsIgnoreCase(st) ) {
+									receipt.specialType = "TRA";
+								}
+							}
 							
 							// sign
 							smartCard.signReceipt(receipt);

@@ -60,10 +60,13 @@ public abstract class PosHwPrinter implements LinePrintDriver {
 		return preparedImage;		
 	}
 	
+	public double getQRCodeSizeFactor() {
+		return 0.5;
+	}
 			
 	public void printQRCode(String inCode) throws IOException {
 		if ( multiFormatWriter == null ) multiFormatWriter = new MultiFormatWriter();		
-		int size = (int) (getPixel_mm() * getWidth_mm());
+		int size = (int) (getPixel_mm() * getWidth_mm() * getQRCodeSizeFactor());
 		try {
 			BitMatrix qrCode = multiFormatWriter.encode(inCode, BarcodeFormat.QR_CODE, size, size);
 			printImage(new BitMatrixImage(qrCode));

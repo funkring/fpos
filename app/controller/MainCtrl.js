@@ -238,7 +238,13 @@ Ext.define('Fpos.controller.MainCtrl', {
     },
     
     onCloseApp: function(button) {
-       navigator.app.exitApp(); 
+       if ( navigator.app ) {
+           navigator.app.exitApp();    
+       } else if ( navigator.device ) {
+           navigator.device.exitApp();
+       } else {
+           window.close();
+       }
     }, 
     
     // setup user user

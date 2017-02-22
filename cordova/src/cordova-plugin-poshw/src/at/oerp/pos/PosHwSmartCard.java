@@ -3,6 +3,7 @@ package at.oerp.pos;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,6 +13,7 @@ import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -20,6 +22,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import android.annotation.SuppressLint;
 import android.util.Base64;
@@ -55,7 +58,6 @@ public abstract class PosHwSmartCard extends Card {
 	
 	protected ByteBuffer hashBuffer16;
 	protected ByteBuffer dataBuffer16;
-	protected ByteBuffer dataBuffer8;
 		
 	protected final static int SLEEP_FIRST_TRY = 1000;
 	protected final static int SLEEP_SECOND_TRY = 2000;
@@ -126,17 +128,8 @@ public abstract class PosHwSmartCard extends Card {
 	protected byte[] sign(String inValue) throws IOException {
 		validate();
 		
-		if ( digest == null ) {
-			try {
-				digest = MessageDigest.getInstance("SHA-256");
-			} catch (NoSuchAlgorithmException e) {
-				throw new IOException(e.getMessage(),e);
-			}
-		}
-		
 		digest.reset();
-		digest.update(inValue.getBytes());
-		byte[] sha256Hash = digest.digest();
+		byte[] sha256Hash = digest.digest(inValue.getBytes());
 		
 		byte[] signature = null;		
 		if ( noSelect ) {
@@ -170,7 +163,6 @@ public abstract class PosHwSmartCard extends Card {
 	        
 	        hashBuffer16 = ByteBuffer.allocate(16);
 	        dataBuffer16 = ByteBuffer.allocate(16);
-	        dataBuffer8 = ByteBuffer.allocate(8);
 	        
 			byte[] rawAesKey = Base64.decode(inKey, Base64.NO_WRAP);
 			aesKey = new SecretKeySpec(rawAesKey, "AES");
@@ -184,15 +176,12 @@ public abstract class PosHwSmartCard extends Card {
 			    // the cipher. In addition, the data is not enciphered directly. Instead,
 			    // the computed IV is encrypted. The result is subsequently XORed
 			    // bitwise with the data to compute the cipher text.
-				cipher = Cipher.getInstance("AES/ECB/NoPadding", "BC");
-				cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+				cipher = Cipher.getInstance("AES/CTR/NoPadding", "BC");				
 			} catch (NoSuchAlgorithmException e) {
 				throw new IOException(e.getMessage(),e);
 			} catch (NoSuchProviderException e) {
 				throw new IOException(e.getMessage(),e);
 			} catch (NoSuchPaddingException e) {
-				throw new IOException(e.getMessage(),e);
-			} catch (InvalidKeyException e) {
 				throw new IOException(e.getMessage(),e);
 			}
 	
@@ -220,94 +209,44 @@ public abstract class PosHwSmartCard extends Card {
 		}
 	}
 
-	/*
-	protected String encryptECB(final byte[] concatenatedHashValue, double turnover) throws IOException {
-		try {
-			long turnoverCounter = (long) (turnover*100.0);
-			 
-		    // extract bytes 0-15 from hash value
-		    final ByteBuffer byteBufferIV = ByteBuffer.allocate(16);
-		    byteBufferIV.put(concatenatedHashValue, 0, 16);
-		    final byte[] IV = byteBufferIV.array();
-	
-		    // prepare data
-		    // block size for AES is 128 bit (16 bytes)
-		    // thus, the turnover counter needs to be inserted into an array of length 16
-	
-		    //initialisation of the data which should be encrypted
-		    final ByteBuffer byteBufferData = ByteBuffer.allocate(16);
-		    byteBufferData.putLong(turnoverCounter);
-		    final byte[] data = byteBufferData.array();
-	
-		    //now the turnover counter is represented in two's-complement representation (negative values are possible)
-		    //length is defined by the respective implementation (min. 5 bytes)
-		    byte[] turnOverCounterByteRep = BinUtil.get2ComplementRepForLong(turnoverCounter,TURN_OVER_COUNTER_LENGTH_IN_BYTES);
-	
-		    //two's-complement representation is copied to the data array, and inserted at index 0
-		    System.arraycopy(turnOverCounterByteRep,0,data,0,turnOverCounterByteRep.length);
-		    final byte[] intermediateResult = cipher.doFinal(IV);
-		    final byte[] result = new byte[data.length];
-	
-		    // xor encryption result with data
-		    for (int i = 0; i < data.length; i++) {
-		      result[i] = (byte) ((data[i]) ^ (intermediateResult[i]));
-		    }
-	
-		    final byte[] encryptedTurnOverValue = new byte[TURN_OVER_COUNTER_LENGTH_IN_BYTES];
-	
-		    // turnover length is used
-		    System.arraycopy(result, 0, encryptedTurnOverValue, 0, TURN_OVER_COUNTER_LENGTH_IN_BYTES);
-	
-		    // encode result as BASE64
-		    return Base64.encodeToString(encryptedTurnOverValue, Base64.NO_WRAP);
-		}  catch (IllegalBlockSizeException e) {
-			throw new IOException(e.getMessage(),e);
-		} catch (BadPaddingException e) {
-			throw new IOException(e.getMessage(),e);
-		}
-	}*/
-	
 	/**
-	  * method for AES encryption in ECB mode
+	  * method for AES encryption in CTR mode
 	  *
 	  * @param concatenatedHashValue
 	  * @param turnoverCounter
 	  * @param symmetricKey
 	  */
-	 protected String encryptECB(final byte[] concatenatedHashValue, double turnover) throws IOException {
+	 protected String encryptCTR(final byte[] concatenatedHashValue, double turnover) throws IOException {
 		try {
 			// reset buffer before reuse
 			BinUtil.zero(dataBuffer16);
 			BinUtil.zero(hashBuffer16);
-			BinUtil.zero(dataBuffer8);
 			
-		    // extract bytes 0-15 from hash value
-			final long turnoverCounter = (long) (turnover*100.0);
+		    // extract bytes 0-15 from hash value			
 			hashBuffer16.put(concatenatedHashValue, 0, 16);
 			final byte[] hashBuffer16Raw = hashBuffer16.array();
-
-		    // prepare data
-		    // block size for AES is 128 bit (16 bytes)
-		    // thus, the turnover counter needs to be inserted into an array of length 16
-	
-		    //initialisation of the data which should be encrypted
+			final IvParameterSpec ivSpec = new IvParameterSpec(hashBuffer16Raw);
+			
+			// init cipher
+			cipher.init(Cipher.ENCRYPT_MODE, aesKey, ivSpec);
+			
+		    // put turnover to data buffer
+			final long turnoverCounter = (long) (turnover*100.0);
 		    dataBuffer16.putLong(turnoverCounter);
 		    final byte[] dataBuffer16Raw = dataBuffer16.array();
 	
 		    // encrypt
-		    final byte[] intermediateResult = cipher.doFinal(hashBuffer16Raw);
-		    	
-		    // xor encryption result with data
-		    final byte[] result = dataBuffer8.array();
-		    for (int i = 0; i < result.length; i++) {
-		    	result[i] = (byte) ((dataBuffer16Raw[i]) ^ (intermediateResult[i]));
-		    }
-	
-		    // encode result as BASE64
-		    return Base64.encodeToString(result, Base64.NO_WRAP);
+		    final byte[] enryptedTurnover = cipher.doFinal(dataBuffer16Raw);
+		    
+		    // encode only 8 (bytes) the turnover len as base64
+		    return Base64.encodeToString(enryptedTurnover, 0, 8, Base64.NO_WRAP);
 		}  catch (IllegalBlockSizeException e) {
 			throw new IOException(e.getMessage(),e);
 		} catch (BadPaddingException e) {
+			throw new IOException(e.getMessage(),e);
+		} catch (InvalidKeyException e) {
+			throw new IOException(e.getMessage(),e);
+		} catch (InvalidAlgorithmParameterException e) {
 			throw new IOException(e.getMessage(),e);
 		}
 	}
@@ -329,7 +268,7 @@ public abstract class PosHwSmartCard extends Card {
     		digest.reset();    		
     		String receiptId = ioReceipt.cashBoxID + ioReceipt.receiptIdentifier;
     		byte[] turnoverHash = digest.digest(receiptId.getBytes());
-    		ioReceipt.encryptedTurnoverValue = encryptECB(turnoverHash, ioReceipt.turnover);
+    		ioReceipt.encryptedTurnoverValue = encryptCTR(turnoverHash, ioReceipt.turnover);
     	}
     	
     	// calculate chain value
@@ -341,18 +280,18 @@ public abstract class PosHwSmartCard extends Card {
     	
         //prepare signature payload string for signature creation (Detailspezifikation/ABS 5
     	StringBuilder b = new StringBuilder();
-    		b.append("_").append(getSuiteID());
-    		b.append("_").append(ioReceipt.cashBoxID);
-    		b.append("_").append(ioReceipt.receiptIdentifier);
-    		b.append("_").append(dateFormat.format(ioReceipt.receiptDateAndTime));
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNormal));
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt1));
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt2));
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNull));
-    		b.append("_").append(nf.format(ioReceipt.sumTaxSetBesonders));
-    		b.append("_").append(ioReceipt.encryptedTurnoverValue);
-    		b.append("_").append(ioReceipt.signatureCertificateSerialNumber);
-    		b.append("_").append(ioReceipt.signatureValuePreviousReceipt);
+    		b.append("_").append(getSuiteID()); // 0
+    		b.append("_").append(ioReceipt.cashBoxID); // 1
+    		b.append("_").append(ioReceipt.receiptIdentifier); // 2
+    		b.append("_").append(dateFormat.format(ioReceipt.receiptDateAndTime)); // 3
+    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNormal)); // 4
+    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt1)); // 5
+    		b.append("_").append(nf.format(ioReceipt.sumTaxSetErmaessigt2)); // 6
+    		b.append("_").append(nf.format(ioReceipt.sumTaxSetNull)); // 7
+    		b.append("_").append(nf.format(ioReceipt.sumTaxSetBesonders)); // 8
+    		b.append("_").append(ioReceipt.encryptedTurnoverValue); // 9
+    		b.append("_").append(ioReceipt.signatureCertificateSerialNumber); // 10
+    		b.append("_").append(ioReceipt.signatureValuePreviousReceipt);    // 11
     		
     		
     	// build signature
@@ -360,7 +299,7 @@ public abstract class PosHwSmartCard extends Card {
     	
  		//prepare data to be signed, "ES256 JWS header" fixed (currently the only relevant signature/hash method (RK1)
         String jwsHeaderUrl = "eyJhbGciOiJFUzI1NiJ9";
-        String jwsPayloadUrl = Base64.encodeToString(ioReceipt.plainData.getBytes(), Base64.NO_WRAP | Base64.URL_SAFE);
+        String jwsPayloadUrl = Base64.encodeToString(ioReceipt.plainData.getBytes(), Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
         String jwsDataToBeSigned = jwsHeaderUrl + "." + jwsPayloadUrl;
 
         // build signature
@@ -373,19 +312,21 @@ public abstract class PosHwSmartCard extends Card {
  			try {
  				// try
  				signature = sign(jwsDataToBeSigned);		
- 				ioReceipt.valid = true;
  			} catch(IOException e) {
+ 				Log.e(TAG, "Failed signing, retry 1");
  				close();
  				try {
  					try {
  						Thread.sleep(SLEEP_FIRST_TRY);
  						signature = sign(jwsDataToBeSigned);
  					} catch ( IOException e2 ) {
+ 						Log.e(TAG, "Failed signing, retry 2");
  						close();
  						Thread.sleep(SLEEP_SECOND_TRY);
  						try {
  							signature = sign(jwsDataToBeSigned);
  						} catch ( IOException e3 ) {
+ 							Log.e(TAG, "Failed signing, no retry!");
  							damaged = true;
  							close();
  							throw e3;						
@@ -396,6 +337,9 @@ public abstract class PosHwSmartCard extends Card {
  					throw new InterruptedIOException();
  				}			
  			}
+ 			
+ 			// mark valid
+ 			ioReceipt.valid = true;
         }
         
     	// check serial
@@ -403,7 +347,7 @@ public abstract class PosHwSmartCard extends Card {
     		throw new IOException("Invalid Serial: " + ioReceipt.signatureCertificateSerialNumber + " != " + serial);
         
         // store data        
-    	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE);
+    	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
     	ioReceipt.plainData = ioReceipt.plainData + "_" + Base64.encodeToString(signature, Base64.NO_WRAP);
         return ioReceipt;
     }
@@ -413,7 +357,7 @@ public abstract class PosHwSmartCard extends Card {
      */
 	public String test() {
 		StringBuilder b = new StringBuilder();
-				
+		boolean speedTest = false;
 		try {
 			
 			b.append("\n");
@@ -422,13 +366,17 @@ public abstract class PosHwSmartCard extends Card {
 			b.append("=================================\n");
 			b.append("\n");
 			
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(new Date());
+			cal.add(Calendar.HOUR, -8);
+			
 			PosReceipt receipt = null;
 			LinkedList<PosReceipt> receipts = new LinkedList<PosReceipt>();
 
 			receipt = new PosReceipt();
 			receipt.cashBoxID = "K1";
 			receipt.receiptIdentifier = "1";
-			receipt.receiptDateAndTime = new Date();
+			receipt.receiptDateAndTime = cal.getTime();
 			receipt.sumTaxSetNormal = 0;
 			receipt.sumTaxSetErmaessigt1 = 0;
 			receipt.sumTaxSetErmaessigt2 = 0;
@@ -436,20 +384,24 @@ public abstract class PosHwSmartCard extends Card {
 			receipt.sumTaxSetBesonders = 0;
 			receipt.turnover = 0.00;
 			receipt.prevCompactData = "K1";
+			receipt.signatureCertificateSerialNumber = "556809796";
 			receipts.add(receipt);
 			
 			receipt = new PosReceipt();
+			cal.add(Calendar.HOUR, 1);
 			receipt.cashBoxID = "K1";
-			receipt.receiptIdentifier = "3";
-			receipt.receiptDateAndTime = new Date();
-			receipt.sumTaxSetNormal = 120;
-			receipt.sumTaxSetErmaessigt1 = 110;
-			receipt.sumTaxSetErmaessigt2 = 113;
+			receipt.receiptIdentifier = "2";
+			receipt.receiptDateAndTime = cal.getTime();
+			receipt.sumTaxSetNormal = 120.0;
+			receipt.sumTaxSetErmaessigt1 = 110.0;
+			receipt.sumTaxSetErmaessigt2 = 113.0;
 			receipt.sumTaxSetNull = 100;
-			receipt.sumTaxSetBesonders = 119;
-			receipt.turnover = 569.00;
+			receipt.sumTaxSetBesonders = 119.0;
+			receipt.turnover = 562.00;
+			receipt.signatureCertificateSerialNumber = "556809796";
 			receipts.add(receipt);
 			
+			/*
 			receipt = new PosReceipt();
 			receipt.cashBoxID = "K1";
 			receipt.receiptIdentifier = "4";
@@ -460,7 +412,8 @@ public abstract class PosHwSmartCard extends Card {
 			receipt.sumTaxSetNull = 10;
 			receipt.sumTaxSetBesonders = 11;
 			receipt.turnover = 100.00;
-			receipts.add(receipt);
+			receipt.signatureCertificateSerialNumber = "556809796";
+			receipts.add(receipt);*/
 			
 			// init encryption
 			init("gpxHh2p1WGGzcgcn8AFq6IEHY8Lql4/ecm5E/OZVE3c=");
@@ -473,51 +426,56 @@ public abstract class PosHwSmartCard extends Card {
 				b.append(r.plainData).append("\n");
 				b.append(r.compactData).append("\n");
 				b.append("\n\n");
-				lastR = r;
+				lastR = r;				
 			}
 			
+			for ( PosReceipt r : receipts ) {
+				Log.i(TAG, r.compactData);
+			}
 		
-			// start speedtest			
-			open();
-			ICashRegisterSmartCard cashRegisterSmartCard = getDriver();
-			String cin = cashRegisterSmartCard.getCIN();
-			b.append("\n");
-			b.append("=================================\n");
-			b.append("CARD TEST\n");
-			b.append("=================================\n");
-			b.append("\n");
-			b.append("CARD CIN " + cin + "\n");
-			X509Certificate cert = cashRegisterSmartCard.getCertificate();
-			b.append("CERT SUBJECT " + cert.getSubjectDN() + "\n");
-			String certSerialDec = cashRegisterSmartCard.getCertificateSerialDecimal();
-			b.append("CERT SERIAL " + certSerialDec + "\n");
-			String certSerialHex = cashRegisterSmartCard.getCertificateSerialHex();
-			b.append("CERT SERIAL HEX " + certSerialHex +"\n");
-			
-			byte[] exampleSha256Hash = { (byte) 0xe3, (byte) 0xb0, (byte) 0xc4, 0x42, (byte) 0x98, (byte) 0xfc, 0x1c,
-					0x14, (byte) 0x9a, (byte) 0xfb, (byte) 0xf4, (byte) 0xc8, (byte) 0x99, 0x6f, (byte) 0xb9, 0x24,
-					0x27, (byte) 0xae, 0x41, (byte) 0xe4, 0x64, (byte) 0x9b, (byte) 0x93, 0x4c, (byte) 0xa4,
-					(byte) 0x95, (byte) 0x99, 0x1b, 0x78, 0x52, (byte) 0xb8, 0x55 };
-			b.append("\n");
-			long startTime = System.currentTimeMillis();
-			int numberOfSignatures = 10;
-			byte[] exampleSignature = cashRegisterSmartCard.doSignatur(exampleSha256Hash, pin);
-			for (int i = 1; i <= numberOfSignatures; i++) {
-				exampleSignature = cashRegisterSmartCard.doSignaturWithoutSelection(exampleSha256Hash, pin);
-				b.append("SIGNATURE Created "+ i + " / " + numberOfSignatures + "\n");
+			// start speedtest		
+			if ( speedTest ) {
+				open();
+				ICashRegisterSmartCard cashRegisterSmartCard = getDriver();
+				String cin = cashRegisterSmartCard.getCIN();
+				b.append("\n");
+				b.append("=================================\n");
+				b.append("CARD TEST\n");
+				b.append("=================================\n");
+				b.append("\n");
+				b.append("CARD CIN " + cin + "\n");
+				X509Certificate cert = cashRegisterSmartCard.getCertificate();
+				b.append("CERT SUBJECT " + cert.getSubjectDN() + "\n");
+				String certSerialDec = cashRegisterSmartCard.getCertificateSerialDecimal();
+				b.append("CERT SERIAL " + certSerialDec + "\n");
+				String certSerialHex = cashRegisterSmartCard.getCertificateSerialHex();
+				b.append("CERT SERIAL HEX " + certSerialHex +"\n");
+				
+				byte[] exampleSha256Hash = { (byte) 0xe3, (byte) 0xb0, (byte) 0xc4, 0x42, (byte) 0x98, (byte) 0xfc, 0x1c,
+						0x14, (byte) 0x9a, (byte) 0xfb, (byte) 0xf4, (byte) 0xc8, (byte) 0x99, 0x6f, (byte) 0xb9, 0x24,
+						0x27, (byte) 0xae, 0x41, (byte) 0xe4, 0x64, (byte) 0x9b, (byte) 0x93, 0x4c, (byte) 0xa4,
+						(byte) 0x95, (byte) 0x99, 0x1b, 0x78, 0x52, (byte) 0xb8, 0x55 };
+				b.append("\n");
+				long startTime = System.currentTimeMillis();
+				int numberOfSignatures = 10;
+				byte[] exampleSignature = cashRegisterSmartCard.doSignatur(exampleSha256Hash, pin);
+				for (int i = 1; i <= numberOfSignatures; i++) {
+					exampleSignature = cashRegisterSmartCard.doSignaturWithoutSelection(exampleSha256Hash, pin);
+					b.append("SIGNATURE Created "+ i + " / " + numberOfSignatures + "\n");
+				}
+				long endTime = System.currentTimeMillis();
+				long duration = endTime - startTime;
+										
+				b.append("\n");			
+				b.append(duration / 1000.0 + " Seconds for " + numberOfSignatures + " signatures \n");
+				b.append(Math.round(duration / numberOfSignatures) / 1000.0 + " Seconds per signature \n");
+				b.append("\n");
+				b.append("---------------------------------\n");
+				b.append("TEST OK!\n");
+				b.append("---------------------------------\n");
+				b.append("\n");
+				Log.i(TAG, getCertificate());
 			}
-			long endTime = System.currentTimeMillis();
-			long duration = endTime - startTime;
-									
-			b.append("\n");			
-			b.append(duration / 1000.0 + " Seconds for " + numberOfSignatures + " signatures \n");
-			b.append(Math.round(duration / numberOfSignatures) / 1000.0 + " Seconds per signature \n");
-			b.append("\n");
-			b.append("---------------------------------\n");
-			b.append("TEST OK!\n");
-			b.append("---------------------------------\n");
-			b.append("\n");
-			Log.i(TAG, getCertificate());
 		} catch (IOException e) {
 			Log.e(TAG, e.getMessage(), e);
 			b.append("\n");
