@@ -41,7 +41,7 @@ public class HtmlLinePrinter  {
 	private static int ALIGN_LEFT = 0;
 	private static int ALIGN_CENTER = 1;
 	private static int ALIGN_RIGHT = 2;
-
+	
 	/**
      * Lazy initialization holder for HTML parser. This class will
      * a) be preloaded by the zygote, or b) not loaded until absolutely
@@ -58,7 +58,9 @@ public class HtmlLinePrinter  {
 	private Parser					parser;
 	private int						maxLineChars;
 	private LinePrintDriver			driver;
-
+	
+	private double					textsplitFactor = 0.3;
+	private int						minTextSplitChars = 2;
 	
 	public HtmlLinePrinter(int inMaxLineChars) throws IOException {
 		maxLineChars = inMaxLineChars;
@@ -69,6 +71,22 @@ public class HtmlLinePrinter  {
 		driver = inDriver;
 	}
 	
+	public double getTextsplitFactor() {
+		return textsplitFactor;
+	}
+
+	public void setTextsplitFactor(double textsplitFactor) {
+		this.textsplitFactor = textsplitFactor;
+	}
+
+	public int getMinTextSplitChars() {
+		return minTextSplitChars;
+	}
+
+	public void setMinTextSplitChars(int minTextSplitChars) {
+		this.minTextSplitChars = minTextSplitChars;
+	}
+
 	/**
 	 * @return parser
 	 * @throws IOException
@@ -460,9 +478,9 @@ public class HtmlLinePrinter  {
 					// split text
 					TextElement tElement = (TextElement) child;
 					while ( tElement.text.length() > tElement.chars ) {
-						int searchCount = (tElement.chars/3*2);
+						int searchCount = (int) Math.round(tElement.chars*textsplitFactor);
 						int splitIndex = tElement.chars-1;
-						if ( searchCount > 0) {
+						if ( searchCount > minTextSplitChars) {
 							for ( int i=tElement.text.length()-1; i>searchCount;i--) {
 								if ( tElement.text.charAt(i) == ' ' && i < tElement.chars ) {
 									splitIndex = i+1;

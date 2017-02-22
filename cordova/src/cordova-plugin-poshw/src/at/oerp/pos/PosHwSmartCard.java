@@ -327,7 +327,9 @@ public abstract class PosHwSmartCard extends Card {
  							signature = sign(jwsDataToBeSigned);
  						} catch ( IOException e3 ) {
  							Log.e(TAG, "Failed signing, no retry!");
- 							damaged = true;
+ 							if ( !ioReceipt.first ) {
+ 								damaged = true;	
+ 							}
  							close();
  							throw e3;						
  						}
@@ -343,8 +345,9 @@ public abstract class PosHwSmartCard extends Card {
         }
         
     	// check serial
-    	if ( ioReceipt.signatureCertificateSerialNumber != null && ioReceipt.signatureCertificateSerialNumber.equals(serial) )
+    	if ( ioReceipt.signatureCertificateSerialNumber != null && !ioReceipt.signatureCertificateSerialNumber.equals(serial) ) {
     		throw new IOException("Invalid Serial: " + ioReceipt.signatureCertificateSerialNumber + " != " + serial);
+    	}
         
         // store data        
     	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
@@ -357,7 +360,7 @@ public abstract class PosHwSmartCard extends Card {
      */
 	public String test() {
 		StringBuilder b = new StringBuilder();
-		boolean speedTest = false;
+		boolean speedTest = true;
 		try {
 			
 			b.append("\n");
@@ -384,7 +387,7 @@ public abstract class PosHwSmartCard extends Card {
 			receipt.sumTaxSetBesonders = 0;
 			receipt.turnover = 0.00;
 			receipt.prevCompactData = "K1";
-			receipt.signatureCertificateSerialNumber = "556809796";
+			receipt.signatureCertificateSerialNumber = "21303e44";
 			receipts.add(receipt);
 			
 			receipt = new PosReceipt();
@@ -398,7 +401,7 @@ public abstract class PosHwSmartCard extends Card {
 			receipt.sumTaxSetNull = 100;
 			receipt.sumTaxSetBesonders = 119.0;
 			receipt.turnover = 562.00;
-			receipt.signatureCertificateSerialNumber = "556809796";
+			receipt.signatureCertificateSerialNumber = "21303e44";
 			receipts.add(receipt);
 			
 			/*

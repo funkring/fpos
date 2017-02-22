@@ -52,7 +52,7 @@ Ext.define('Fpos.controller.AdminCtrl', {
             }
         };
         
-        if ( profile.sign_status == 'config' ) {
+        if ( profile.sign_status == 'config' || profile.sign_status == 'react' ) {
            
             Config.signQueryCert().then(function(cert) {
                 Config.getClient().then(function(client) {

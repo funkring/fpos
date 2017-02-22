@@ -59,5 +59,8 @@ public class PosReceipt {
     
     // valid
     public boolean valid;
+    
+    // first
+    public boolean first;
   
 }

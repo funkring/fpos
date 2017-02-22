@@ -1066,7 +1066,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // ---------------------------------
             
             var st = null; // special type
-            
             self.lineStore.each(function(line) {                
                 var total_line = self.validateLine(line, tax_group, tax_ids);
                 var tag = line.get('tag');
@@ -1077,7 +1076,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     // turnover handling
                     var flags = line.get('flags');
-                    var sign = flags && flags.indexOf('-') > -1 ? -1 : 0;
+                    var sign = flags && flags.indexOf('-') > -1 ? -1 : 1;
                     
                     // determine special type
                     // check if storno
@@ -1974,6 +1973,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             deferred.reject(err);
         }).then(function(){
             
+             // update running vars
+            var orderCopy = ModelUtil.createDocument(self.order);
+           
+            // set/override basic data
+            orderCopy.fdoo__ir_model = 'fpos.order';
+            orderCopy.fpos_user_id = profile.user_id;
+            orderCopy.user_id = Config.getUser()._id;
+            
             // write order
             var writeOrder = function(seq, turnover, cpos, dep) {
                 // init vars
@@ -1982,8 +1989,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var cashJournalId = Config.getCashJournal()._id;
                 
                 // add cash payment if no payment
-                var payment_ids = self.order.get('payment_ids');
-                var amount_total = self.order.get('amount_total');                
+                var payment_ids = orderCopy.payment_ids;
+                var amount_total = orderCopy.amount_total;                
                 if ( !payment_ids || payment_ids.length === 0 || !self.isPayment() ) {
                     payment_ids = [
                         {
@@ -1992,7 +1999,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             payment : amount_total                     
                         }
                     ];
-                    self.order.set('payment_ids',payment_ids);
+                    orderCopy.payment_ids = payment_ids;
                 }
                 
                 // determine cpos     
@@ -2019,76 +2026,46 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // check last date
                 if ( date < lastDate ) {
                     deferred.reject({name: 'wrong_date', message: 'Datum und/oder Uhrzeit ist auf der Kasse falsch eingestellt!'});    
-                } else {
-                
-                    self.order.set('payment_ids',fixed_payments);
-                    self.order.set('date', date);
-                    self.order.set('seq', seq);
-                    self.order.set('name', Config.formatSeq(seq));
-                                        
-                    // turnover
-                    self.order.set('turnover',self.round(self.order.get('turnover')+turnover));
-                    // cpos
-                    self.order.set('cpos', self.round(cpos));
-                  
-                    // update counters
-                    var updateCounters = function() {
-                        self.seq = self.order.get('seq');
-                        self.turnover = self.order.get('turnover');
-                        self.cpos = self.order.get('cpos');
-                        self.lastDate = self.order.get('date');
-                        self.dep = self.order.get('dep');
-                        // update pos closed state
-                        Config.setPosClosed(self.order.get('tag') == 's');
-                    };
-                  
+                } else { 
+                    // set state, sequence and update counters
+                    orderCopy.turnover += turnover;
+                    orderCopy.state = 'paid';
+                    orderCopy.date = date;
+                    orderCopy.seq = seq;
+                    orderCopy.name = Config.formatSeq(seq);
+                    orderCopy.cpos = self.round(cpos);
+                    orderCopy.payment_ids = fixed_payments;
+                    
                     // save order
                     var saveOrder = function() {
-                        
-                        if ( Config.getSync() && place_id ) {
-                            // special handling if sync
-                            var orderCopy = ModelUtil.createDocument(self.order);
-                            // set/override basic data
-                            orderCopy.fdoo__ir_model = 'fpos.order';
-                            orderCopy.fpos_user_id = Config.getProfile().user_id;
-                            orderCopy.user_id = Config.getUser()._id;
-                            // set state to paid
-                            orderCopy.state = 'paid';
+                        // save order copy
+                        db.post(orderCopy).then(function() {
+                            // update counters
+                            self.seq = orderCopy.seq;
+                            self.turnover = orderCopy.turnover;
+                            self.cpos = orderCopy.cpos;
+                            self.lastDate = orderCopy.date;
+                            self.dep = orderCopy.dep;    
                             
-                            db.post(orderCopy).then(function() {
-                                updateCounters();
-                                // set temp partner
-                                orderCopy.partner = self.order.get('partner');
-                                // reject order
-                                self.order.reject();
-                                // erase order                        
-                                self.order.erase({
-                                    callback: function(op) {                                
-                                        deferred.resolve(orderCopy);                                  
-                                    }
-                                });                     
-                            })['catch'](function(err) {
-                                deferred.reject(err);
-                            });
-                               
-                        } else {
-                               
-                            // set state to paid    
-                            self.order.set('state', 'paid');
-                                
-                            // save                                                        
-                            self.order.save({
-                                callback: function() {
-                                    updateCounters();
-                                    deferred.resolve(self.order.getData());   
+                            // workaround, set partner
+                            orderCopy.partner = self.order.get('partner');
+                            
+                            // update pos closed state
+                            Config.setPosClosed(orderCopy.tag == 's');
+                            
+                            // erase draft order
+                            self.order.erase({
+                                callback: function(op) {                                
+                                    deferred.resolve(orderCopy);    
                                 }
                             });
-                        }      
+                        })['catch'](function(err) {
+                            deferred.reject(err);
+                        });
                     };
                     
                     // check special type
-                    var st = self.order.get('st');
-                    if ( st == 'm' ) {
+                    if ( orderCopy.st == 'm' ) {
                         deferred.reject({name: 'mixed_type', message: 'Storno und Verkäufe dürfen nicht gemischt werden!'});
                     } else {
                         
@@ -2097,19 +2074,19 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             sign_pid: profile.sign_pid,
                             seq: seq,
                             date: date,
-                            st: st,
+                            st: orderCopy.st,
                             amount: 0.0,
                             amount_1: 0.0,
                             amount_2: 0.0,
                             amount_0: 0.0,
                             amount_s: 0.0,
-                            turnover: self.order.get('turnover'),
+                            turnover: orderCopy.turnover,
                             sign_serial: profile.sign_serial,
                             last_dep: dep
                         };
                         
                         // build sum
-                        var taxes = self.order.get('tax_ids');
+                        var taxes = orderCopy.tax_ids;
                         var amount_st = 0.0;  
                         Ext.each(taxes, function(tax) {
                            var amount = tax.amount_tax + tax.amount_netto;
@@ -2140,23 +2117,22 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         
                         // check signing
                         var readyForSign = false;
-                        if ( dep ) {
+                        if ( dep || profile.last_dep ) {
                             readyForSign = true;
                             // if not amount
                             if ( !amount_total ) {
-                                signable.st = '0';
+                                orderCopy.st = signable.st = '0';
                             }
                         } else {
                             // startbeleg
                             if ( !amount_total ) {
                                 readyForSign = true;
-                                signable.st = 's';     
-                                self.order.set('ref', 'STARTBELEG');
-                                // set initial dep
-                                signable.last_dep = profile.sign_pid;                                
-                                // reset turnover
-                                signable.turnover = 0.0;
-                                self.order.set('turnover', signable.turnover);
+                                // prepare first signed data
+                                orderCopy.st = signable.st = 's';                                
+                                orderCopy.ref = 'STARTBELEG';
+                                orderCopy.turnover  = signable.turnover = 0.0;
+                                // initial dep is the sign_pid
+                                signable.last_dep = profile.sign_pid;
                             }
                         }
                         
@@ -2164,10 +2140,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         if ( readyForSign ) {
                             Config.sign(signable).then(function(signable) {
                                 if ( signable.dep ) { 
-                                    self.order.set('dep', signable.dep);
-                                    self.order.set('qr', signable.qr);
-                                    self.order.set('sig', signable.valid);
-                                    self.order.set('st', signable.st);
+                                    // set signation
+                                    orderCopy.dep = signable.dep;
+                                    orderCopy.qr = signable.qr;
+                                    orderCopy.sig = signable.sig;
+                                    
+                                    // check failed start beleg
+                                    if ( !signable.sig && orderCopy.st === 's') {
+                                        orderCopy.st = null;
+                                        orderCopy.ref = null;
+                                    }
+                                    
+                                    // save order
                                     saveOrder();                           
                                 } else {
                                      deferred.reject({
@@ -2351,9 +2335,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     printOrder: function(order) {
-        var self = this;        
-        if ( !self.printTemplate ) {
-            var profile = Config.getProfile();
+        var self = this;
+        var profile = Config.getProfile();        
+        if ( !self.printTemplate ) {            
             self.printTemplate = Ext.create('Ext.XTemplate',
                 profile.receipt_header || '',
                 '<table width="100%">',
@@ -2370,7 +2354,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '</tr>',
                     '<tr>',
                         '<td width="34%">Kasse:</td>',
-                        '<td>{[Config.getProfile().name]}</td>',
+                        '<td>{pos}</td>',
                     '</tr>',
                     '<tr>',
                         '<td width="34%">Bediener:</td>',
@@ -2441,9 +2425,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                         '<td>',
                                             '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
                                              '<tpl if="values.qty != 1.0">',
-                                                ' * ',
+                                                ' *&nbsp;',
                                                 '{[futil.formatFloat(values.price,Config.getDecimals())]}',
-                                                ' ',
+                                                '&nbsp;',
                                                 '{[Config.getCurrency()]}',
                                                 '<tpl if="netto">',
                                                 ' ',
@@ -2592,8 +2576,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             o: order,
             lines : order.line_ids,
             date: futil.strToDate(order.date),
-            place: place
+            place: place,
+            pos: profile.name
         };
+        
+        // add sign pid
+        if ( profile.sign_pid ) data.pos = '[' + profile.sign_pid + '] ' + data.pos;
         
         // print/show it
         if ( !Config.hasPrinter() ) {
@@ -3221,7 +3209,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var user_id = Config.getUser()._id;
         var fpos_user_id = profile.user_id;
         var date = futil.datetimeToStr(new Date());
-        var turnover = profile.last_turnover;
         var cpos = profile.last_cpos;
         
         // check user
@@ -3305,17 +3292,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // if detail show current state
                 if ( !user ) {
                     lines.push(
-                        {
-                            // TURNOVER
-                            name : 'Umsatzzähler',
-                            price : turnover,
-                            qty : 1.0,
-                            subtotal_incl : turnover,
-                            discount : 0.0,
-                            sequence : seq++,
-                            tag : 'c',
-                            flags: 'b'
-                        },
                         {
                             // BALANCE
                             name : 'Kassenstand',
@@ -3535,7 +3511,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
              Config.queryLastOrder().then(function(res) {
                 if ( res.rows.length > 0 ) {
                     var lastOrder = res.rows[0].doc;
-                    turnover = lastOrder.turnover;
                     cpos = lastOrder.cpos;
                 }
                 createOverview();

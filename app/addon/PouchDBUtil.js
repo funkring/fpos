@@ -372,6 +372,29 @@ Ext.define('Ext.proxy.PouchDBUtil',{
         });
     },
     
+    save: function(db, doc) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if ( doc._id ) {
+            db.get(doc._id).then(function(res) {
+                doc._rev = res._rev;
+                db.put(doc).then(function(res) {
+                    deferred.resolve(res);
+                })['catch'](function(err) {
+                    deferred.reject(err);
+                });
+            })['catch'](function(err) {
+                 deferred.reject(err);
+            });
+        } else {
+            db.post(doc).then(function(res) {
+                deferred.resolve(res);
+            })['catch'](function(err) {
+                deferred.reject(err);
+            });
+        }
+        return deferred.promise();
+    },
+    
     resetDB: function(dbName, callback) {
         var self = this;
         var db = self.getDB(dbName);        

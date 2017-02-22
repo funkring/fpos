@@ -310,6 +310,8 @@ public class PosHwPlugin extends CordovaPlugin {
 									receipt.specialType = "STO";
 								} else if ( "t".equalsIgnoreCase(st) ) {
 									receipt.specialType = "TRA";
+								} else if ( "s".equalsIgnoreCase(st) ) {
+									receipt.first = true;
 								}
 							}
 							
@@ -320,7 +322,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							jsonReceipt.put("turnover_enc", receipt.encryptedTurnoverValue);
 							jsonReceipt.put("qr", receipt.plainData);
 							jsonReceipt.put("dep", receipt.compactData);
-							jsonReceipt.put("valid", receipt.valid);
+							jsonReceipt.put("sig", receipt.valid);
 							callbackContext.success(jsonReceipt);
 							
 							return true;
