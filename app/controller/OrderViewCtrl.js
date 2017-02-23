@@ -660,6 +660,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     /**
+     * migrade documents with 
+     * old version
+     */
+    migrateSyncVersion: function() {
+        
+    },
+    
+    /**
      * handle change event
      */
     onChange: function(info) {
@@ -668,39 +676,42 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( info.change && info.change.docs ) {
                 Ext.each(info.change.docs, function(doc) {
                     if ( doc.fdoo__ir_model == 'fpos.order' ) {
+                       
                         // check out of sync
-                        if ( doc.sv > Config.getSyncVersion() ) {
-                            // restart if out of sync
-                            Config.restart();
-                        } else {                        
+                        if ( doc.sv > Config.getHighestVersion() ) {
+                            // update to highest version
+                            Config.setHighestSyncVersion(doc.sv);
+                            setTimeout(function() {
+                                Config.migrateSyncVersion();
+                            }, 0);                            
+                        }                         
                     
-                            // check if it is a place                        
-                            if ( doc.place_id ) {
-                                // set the new place amount
-                                var place = self.placeStore.getPlaceById(doc.place_id);        
-                                if ( place ) {
-                                    if ( doc._deleted ) {
-                                        self.updatePlace(place, 0.0);
-                                    } else {
-                                        self.updatePlace(place, doc.amount_total, doc.user_id);
-                                    }
+                        // check if it is a place                        
+                        if ( doc.place_id ) {
+                            // set the new place amount
+                            var place = self.placeStore.getPlaceById(doc.place_id);        
+                            if ( place ) {
+                                if ( doc._deleted ) {
+                                    self.updatePlace(place, 0.0);
+                                } else {
+                                    self.updatePlace(place, doc.amount_total, doc.user_id);
                                 }
                             }
-                            
-                            // reload data if data is the same
-                            // as current selected            
-                            if ( self.order && self.order.getId() == doc._id ) {
-                                if ( doc._deleted ) {
-                                     if ( Config.getProfile().iface_place ) {
-                                        Ext.Viewport.fireEvent("showPlace");
-                                     } else {
-                                        self.nextOrder();
-                                     }                                     
-                                } else {
-                                    self.reloadData();
-                                }    
-                            } 
                         }
+                        
+                        // reload data if data is the same
+                        // as current selected            
+                        if ( self.order && self.order.getId() == doc._id ) {
+                            if ( doc._deleted ) {
+                                 if ( Config.getProfile().iface_place ) {
+                                    Ext.Viewport.fireEvent("showPlace");
+                                 } else {
+                                    self.nextOrder();
+                                 }                                     
+                            } else {
+                                self.reloadData();
+                            }    
+                        } 
                     }
                 });
             }     
@@ -1125,6 +1136,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             self.order.set('amount_tax', amount_tax);
             self.order.set('amount_total', amount_total);
             self.order.set('turnover', turnover);
+            self.order.set('sv', Config.getHighestSyncVersion());
+            
             if ( updateLines || forceSave ) {
                 self.order.set('line_ids', lines);
             } else {
@@ -1306,7 +1319,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
          order.fdoo__ir_model = 'fpos.order';
          order.fpos_user_id = Config.getProfile().user_id;
          order.user_id = Config.getUser()._id;
-         order.sv = Config.getSyncVersion();
+         order.sv = Config.getHighestSyncVersion();
          order.state = 'draft';
          order.date = date;
          order.tax_ids = [];

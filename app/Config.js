@@ -41,6 +41,8 @@ Ext.define('Fpos.Config', {
         sync: false,
         syncState: 'idle',
         syncVersion: 0,
+        highestSyncVersion: 0,
+        lowestSyncVersion: 0,        
         syncHandlers: null,
         logoutCode: '0000000',
         journalById: {},
@@ -93,7 +95,7 @@ Ext.define('Fpos.Config', {
         var filterVersion = 'fpos_v4_1';
         var filterId = '_design/' + filterVersion;  
         var filterName =  filterVersion + "/dist";
-        var version = this.getSyncVersion();
+        var version = this.getLowestSyncVersion();
         return {
             name: filterName,  
             filter : {
@@ -118,7 +120,7 @@ Ext.define('Fpos.Config', {
          // check local
         db.get(data.filter._id).then(function(res) {
             // check for local filter update
-            if ( !res.version || res.version < data.filter.version) {            
+            if ( !res.version || res.version != data.filter.version) {            
                 data.filter._rev = res._rev;                      
                 db.put(data.filter).then(function(res) {
                     deferred.resolve();
@@ -147,7 +149,6 @@ Ext.define('Fpos.Config', {
         var deferred = Ext.create('Ext.ux.Deferred');
         var self = this;
         var db = self.getDB();
-        var version = self.getSyncVersion();
         var data = self.getSyncFilter();
         
         // start sync
@@ -256,7 +257,8 @@ Ext.define('Fpos.Config', {
 
             var nodeCount = 0;
             var nodeErr = null;
-            var syncVersion = 0;
+            var lowestSyncVersion = self.getLowestSyncVersion();
+            var highestSyncVersion = self.getHighestSyncVersion();
             
             var procNotify = function(err, res) {
                 nodeCount++;                                
@@ -265,17 +267,21 @@ Ext.define('Fpos.Config', {
                 } 
                 // determine lowest version
                 else if ( test ) {                    
-                    if ( res && res.version && (!syncVersion || res.version < syncVersion) ) {
-                        syncVersion = res.version;
+                    if ( res && res.version ) {
+                        if  (res.version < lowestSyncVersion) {
+                            lowestSyncVersion = res.version;
+                        } 
+                        if (res.version > highestSyncVersion) {
+                            highestSyncVersion = res.version;
+                        }                         
                     }
                 }
                 
                 if ( nodeCount >= destDatabases.length ) {
                     if ( test ) {
-                        // set lowest version, if there is one
-                        if ( syncVersion ) {
-                            self.setSyncVersion(syncVersion);
-                        }
+                        // update sync version range
+                        self.setLowestSyncVersion(lowestSyncVersion);
+                        self.setHighestSyncVersion(highestSyncVersion);
                         deferred.resolve();
                     } else {
                         if ( nodeErr ) {
@@ -486,7 +492,10 @@ Ext.define('Fpos.Config', {
         var sync = false;  
         if (profile) {
             // set sync version
-            self.setSyncVersion(profile.fpos_sync_version || 0);
+            var syncVersion = profile.fpos_sync_version ? profile.fpos_sync_version : 1;
+            self.setSyncVersion(syncVersion);
+            self.setHighestSyncVersion(syncVersion);
+            self.setLowestSyncVersion(syncVersion);
             
             // set cash journal
             var journalById = self.getJournalById();            
@@ -817,6 +826,42 @@ Ext.define('Fpos.Config', {
             startkey: ['fpos.order', Number.MAX_VALUE],
             endkey: ['fpos.order', 1]
         });
+    },
+       
+    migrateDraftOrders: function() {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        var db = this.getDB();
+        DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['seq','=',0]], {
+            include_docs: true
+        }).then(function(res) {
+            var orders = [];
+            var version = self.getHighestSyncVersion();
+            
+            // search order for migration
+            Ext.each(res.rows, function(row) {
+                if ( row.doc.sv < version ) {
+                    row.doc.sv = version;
+                    orders.push(row.doc);    
+                }                                 
+            });
+            
+            if ( orders.length > 0 ) {
+                // bulk update for all orders
+                db.bulkDocs(orders).then(function() {
+                    deferred.resolve();
+                })['catch'](function(err) {
+                    deferred.reject(err);
+                });
+            } else {
+                deferred.resolve();
+            }
+            
+        })['catch'](function(err) {
+            deferred.reject(err);
+        });
+        
+        deferred.promise();
     },
     
     queryLastCashState: function() {
