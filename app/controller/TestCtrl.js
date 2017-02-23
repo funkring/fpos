@@ -12,40 +12,40 @@ Ext.define('Fpos.controller.TestCtrl', {
         },
         control: {     
             'button[action=testInterface]' : {
-                release: 'testInterface'
+                tap: 'testInterface'
             },  
             'button[action=testPrint]' : {
-                release: 'testPrint'
+                tap: 'testPrint'
             },
             'button[action=testDisplay]' : {
-                release: 'testDisplay'
+                tap: 'testDisplay'
             },
             'button[action=testCashdrawer]' : {
-                release: 'testCashdrawer'  
+                tap: 'testCashdrawer'  
             },
             'button[action=testInfo]' : {
-                release: 'testInfo'
+                tap: 'testInfo'
             },
             'button[action=delDB]' : { 
-                release: 'delDB'
+                tap: 'delDB'
             },
             'button[action=resetDB]' : {
-                release: 'resetDB'
+                tap: 'resetDB'
             },
             'button[action=resetDistDB]' : {
-                release: 'resetDistDB'
+                tap: 'resetDistDB'
             },
             'button[action=testPayworks]' : {
-                release: 'testPayworks'
+                tap: 'testPayworks'
             },
             'button[action=testPayworksInit]' : {
-                release: 'testPayworksInit'
+                tap: 'testPayworksInit'
             },
             'button[action=testProvisioning]' : {
-                release: 'testProvisioning'
+                tap: 'testProvisioning'
             },
             'button[action=testCard]' : {
-                release: 'testCard'
+                tap: 'testCard'
             }
         }
     },
