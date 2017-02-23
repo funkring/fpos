@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 import at.oerp.pos.NoInitException;
 import at.oerp.pos.PosHwDisplay;
@@ -85,6 +86,9 @@ public class PosHwPlugin extends CordovaPlugin {
 						@Override
 						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
 							JSONObject status = new JSONObject();
+							status.put("manufacturer", Build.MANUFACTURER);
+							status.put("model", Build.MODEL);
+							
 							// check printer
 							PosHwPrinter printer = service.getPrinter();
 							if ( printer != null ) {
