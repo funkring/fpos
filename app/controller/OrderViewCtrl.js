@@ -2125,7 +2125,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             }
                         } else {
                             // startbeleg
-                            if ( !amount_total ) {
+                            if ( !amount_total && profile.sign_status == 'active' ) {
                                 readyForSign = true;
                                 // prepare first signed data
                                 orderCopy.st = signable.st = 's';                                
