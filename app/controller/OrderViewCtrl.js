@@ -243,9 +243,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     '<span class="PosOrderLineDiscount">',
                                     '- {[futil.formatFloat(values.discount,Config.getDecimals())]}&nbsp;%',
                                     '</span>',
-                                '</tpl>',
-                               
-                            '</div>',                    
+                                '</tpl>',                               
+                            '</div>',
+                            '<tpl if="notice">',
+                                '<div class="PosOrderLineNotice">',
+                                    '{[this.formatText(values.notice)]}',
+                                '</div>',             
+                            '</tpl>',
                         '</div>',
                         '<div class="PosOrderLinePrice">',
                             '{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}',
@@ -297,6 +301,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     getOp: function() {
                         return self.op;
+                    },
+                    
+                    formatText: function(text) {
+                        return text ? text.replace(/\n/g,'<br/>') : '';
                     }
                     
                 }
@@ -660,11 +668,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     /**
-     * migrade documents with 
-     * old version
+     * check if pos runs with the right sync version
      */
-    migrateSyncVersion: function() {
-        
+    checkSyncVersion: function(doc) {
+        // check out of sync
+        if ( doc.sv > Config.getHighestSyncVersion() ) {
+            // update to highest version
+            Config.setHighestSyncVersion(doc.sv);
+            setTimeout(function() {
+                Config.migrateSyncVersion();
+            }, 0);                            
+        }           
     },
     
     /**
@@ -675,17 +689,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( info.direction == 'pull' ) {    
             if ( info.change && info.change.docs ) {
                 Ext.each(info.change.docs, function(doc) {
-                    if ( doc.fdoo__ir_model == 'fpos.order' ) {
-                       
-                        // check out of sync
-                        if ( doc.sv > Config.getHighestVersion() ) {
-                            // update to highest version
-                            Config.setHighestSyncVersion(doc.sv);
-                            setTimeout(function() {
-                                Config.migrateSyncVersion();
-                            }, 0);                            
-                        }                         
+                    if ( doc._id == 'fpos_config' ) {
                     
+                        // check sync version
+                        self.checkSyncVersion(doc);
+                        
+                    } else if ( doc.fdoo__ir_model == 'fpos.order' ) {
+                    
+                        // check sync version
+                        self.checkSyncVersion(doc);
+                        
                         // check if it is a place                        
                         if ( doc.place_id ) {
                             // set the new place amount
@@ -963,6 +976,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 var group_id = null;
                 var addprice = 0.0;
                 var name = '';
+                var notice = null;
+                var noticeList = [];
                 var hasSubsection = false;
                 var mergeable = false;
                 
@@ -991,19 +1006,29 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // merge additions
                 for ( selI = self.lineStore.getCount()-1; selI>=0; selI--) {
-                    line = self.lineStore.getAt(selI);
+                    line = self.lineStore.getAt(selI);                    
                     flags = line.get('flags');
                     if ( flags && flags.indexOf('a') > -1) {
                         name = line.get('name') + ' ' + name;
                         addprice += line.get('price');
+                        notice = line.get('notice');
+                        if ( notice ) noticeList.push(notice);
                         self.lineStore.removeAt(selI);
                     } else if ( name.length > 0 ) {
                         if ( !flags || !(flags.indexOf('1') > -1 || flags.indexOf('2') > -1 || flags.indexOf('d') > -1) ) {
                             // add addition
                             line.set('name', line.get('name') + ' ' + name);
-                            line.set('price', self.round(line.get('price') + addprice));
+                            line.set('price', self.round(line.get('price') + addprice));   
+                            // push notice
+                            notice = line.get('notice');
+                            if ( notice ) noticeList.push(notice);
+                            if ( noticeList.length > 0 ) {
+                                noticeList.reverse();
+                                line.set('notice', noticeList.join('\n'));
+                            } 
                         }                        
                         name = '';
+                        noticeList = [];
                         addprice = 0.0;
                     }
                 }
@@ -1056,9 +1081,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 }
                             }                        
                             // MERGE if possible
-                            if ( !otherHasSubsection && other.get('product_id') === line.get('product_id') && other.get('name') == line.get('name') && other.get('price') == line.get('price') && other.get('group_id') == line.get('group_id') ) {
+                            if ( !otherHasSubsection && other.get('product_id') === line.get('product_id') && other.get('name') == line.get('name') && other.get('price') == line.get('price') && other.get('group_id') == line.get('group_id') && other.get('notice') == line.get('notice')) {
                                 // set new qty
                                 other.set('qty', line.get('qty') + other.get('qty'));
+                                
                                 // remove unused
                                 self.lineStore.removeAt(selI);
                                 break;
