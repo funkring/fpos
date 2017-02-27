@@ -1,4 +1,4 @@
-/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false, ModelUtil:false */
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false, ModelUtil:false, console:false */
 Ext.define('Fpos.controller.OrderViewCtrl', {
     extend: 'Ext.app.Controller',
     requires: [    
@@ -673,10 +673,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     checkSyncVersion: function(doc) {
         // check out of sync
         if ( doc.sv > Config.getHighestSyncVersion() ) {
+            console.log("Upgrade SyncVersion");
             // update to highest version
             Config.setHighestSyncVersion(doc.sv);
             setTimeout(function() {
-                Config.migrateSyncVersion();
+                Config.migrateDraftOrders();
             }, 0);                            
         }           
     },
@@ -2374,264 +2375,269 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     printOrder: function(order) {
-        var self = this;
-        var profile = Config.getProfile();        
-        if ( !self.printTemplate ) {            
-            self.printTemplate = Ext.create('Ext.XTemplate',
-                profile.receipt_header || '',
-                '<table width="100%">',
-                    '<tr>',
-                        '<td colspan="2"><hr/></td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td width="34%">Beleg:</td>',
-                        '<td>{o.name}</td>',
-                    '</tr>',                    
-                    '<tr>',
-                        '<td width="34%">Datum:</td>',
-                        '<td>{date:date("d.m.Y H:i:s")}</td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td width="34%">Kasse:</td>',
-                        '<td>{pos}</td>',
-                    '</tr>',
-                    '<tr>',
-                        '<td width="34%">Bediener:</td>',
-                        '<td>{[Config.getUser().name]}</td>',
-                    '</tr>',
-                    '<tpl if="place">',
-                    '<tr>',
-                        '<td width="34%">Platz:</td>',
-                        '<td>{place}</td>',
-                    '</tr>',
-                    '</tpl>',
-                    '<tpl if="o.ref">',
-                    '<tr>',
-                        '<td width="34%">Referenz:</td>',
-                        '<td>{o.ref}</td>',
-                    '</tr>',
-                    '</tpl>',
-                '</table>',
-                '<tpl if="o.partner">',
+        try {
+            var self = this;
+            var profile = Config.getProfile();        
+            if ( !self.printTemplate ) {            
+                self.printTemplate = Ext.create('Ext.XTemplate',
+                    profile.receipt_header || '',
                     '<table width="100%">',
                         '<tr>',
-                            '<td><hr/></td>',
+                            '<td colspan="2"><hr/></td>',
                         '</tr>',
                         '<tr>',
-                            '<td>Kunde/Lieferant</td>',
+                            '<td width="34%">Beleg:</td>',
+                            '<td>{o.name}</td>',
+                        '</tr>',                    
+                        '<tr>',
+                            '<td width="34%">Datum:</td>',
+                            '<td>{date:date("d.m.Y H:i:s")}</td>',
                         '</tr>',
                         '<tr>',
-                            '<td><hr/></td>',
+                            '<td width="34%">Kasse:</td>',
+                            '<td>{pos}</td>',
                         '</tr>',
                         '<tr>',
-                            '<td>{o.partner.name}</td>',
+                            '<td width="34%">Bediener:</td>',
+                            '<td>{[Config.getUser().name]}</td>',
                         '</tr>',
-                        '<tpl if="o.partner.street"><tr><td>{o.partner.street}</td></tr></tpl>',
-                        '<tpl if="o.partner.street2"><tr><td>{o.partner.street2}</td></tr></tpl>',
-                        '<tpl if="o.partner.zip && o.partner.city"><tr><td>{o.partner.zip} {o.partner.city}</td></tr></tpl>',
+                        '<tpl if="place">',
+                        '<tr>',
+                            '<td width="34%">Platz:</td>',
+                            '<td>{place}</td>',
+                        '</tr>',
+                        '</tpl>',
+                        '<tpl if="o.ref">',
+                        '<tr>',
+                            '<td width="34%">Referenz:</td>',
+                            '<td>{o.ref}</td>',
+                        '</tr>',
+                        '</tpl>',
                     '</table>',
-                '</tpl>',
-                '<br/>',
-                '<table width="100%">',
-                    '<tr>',
-                        '<td colspan="2">Bezeichnung</td>',
-                        '<td align="right" width="32%">Betrag {[Config.getCurrency()]}</td>',
-                    '</tr>',
-                    '<tr>',                
-                        '<td colspan="3"><hr/></td>',
-                    '</tr>',
-                    '<tpl for="lines">',
-                        '<tpl if="!this.hasTag(values,\'#\')">',
-                            '<tpl if="this.hasFlag(values,\'l\')">',
-                                '<tr>',                
-                                    '<td colspan="3"><hr/></td>',
-                                '</tr>',
-                            '</tpl>',
-                            '<tpl if="this.hasTag(values,\'c\')">',
-                                '<tr>',
-                                    '<td colspan="3">{name}</td>',                        
-                                '</tr>',
-                                '<tr>',
-                                    '<td colspan="3">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
-                                '</tr>',
-                            '<tpl else>',                       
-                                '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
+                    '<tpl if="o.partner">',
+                        '<table width="100%">',
+                            '<tr>',
+                                '<td><hr/></td>',
+                            '</tr>',
+                            '<tr>',
+                                '<td>Kunde/Lieferant</td>',
+                            '</tr>',
+                            '<tr>',
+                                '<td><hr/></td>',
+                            '</tr>',
+                            '<tr>',
+                                '<td>{o.partner.name}</td>',
+                            '</tr>',
+                            '<tpl if="o.partner.street"><tr><td>{o.partner.street}</td></tr></tpl>',
+                            '<tpl if="o.partner.street2"><tr><td>{o.partner.street2}</td></tr></tpl>',
+                            '<tpl if="o.partner.zip && o.partner.city"><tr><td>{o.partner.zip} {o.partner.city}</td></tr></tpl>',
+                        '</table>',
+                    '</tpl>',
+                    '<br/>',
+                    '<table width="100%">',
+                        '<tr>',
+                            '<td colspan="2">Bezeichnung</td>',
+                            '<td align="right" width="32%">Betrag {[Config.getCurrency()]}</td>',
+                        '</tr>',
+                        '<tr>',                
+                            '<td colspan="3"><hr/></td>',
+                        '</tr>',
+                        '<tpl for="lines">',
+                            '<tpl if="!this.hasTag(values,\'#\')">',
+                                '<tpl if="this.hasFlag(values,\'l\')">',
+                                    '<tr>',                
+                                        '<td colspan="3"><hr/></td>',
+                                    '</tr>',
+                                '</tpl>',
+                                '<tpl if="this.hasTag(values,\'c\')">',
                                     '<tr>',
-                                        '<td colspan="3">{name}</td>',
+                                        '<td colspan="3">{name}</td>',                        
+                                    '</tr>',
+                                    '<tr>',
+                                        '<td colspan="3">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                                    '</tr>',
+                                '<tpl else>',                       
+                                    '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
+                                        '<tr>',
+                                            '<td colspan="3">{name}</td>',
+                                        '</tr>',
+                                        '<tr>',
+                                            '<td width="5%">&nbsp;</td>',
+                                            '<td>',
+                                                '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
+                                                 '<tpl if="values.qty != 1.0">',
+                                                    ' *&nbsp;',
+                                                    '{[futil.formatFloat(values.price,Config.getDecimals())]}',
+                                                    '&nbsp;',
+                                                    '{[Config.getCurrency()]}',
+                                                    '<tpl if="netto">',
+                                                    ' ',
+                                                    'NETTO',
+                                                    '</tpl>',
+                                                '</tpl>', 
+                                                '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
+                                            '</td>',    
+                                            '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',                        
+                                        '</tr>',
+                                    '<tpl else>',
+                                        '<tr>',
+                                            '<td colspan="2">{name}</td>',
+                                            '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                                        '</tr>',
+                                    '</tpl>',
+                                '</tpl>',                          
+                                '<tpl if="notice && !Config.getProfile().iface_place">',
+                                    '<tr>',
+                                        '<td width="5%">&nbsp;</td>',
+                                        '<td colspan="2"><hr/></td>',                    
                                     '</tr>',
                                     '<tr>',
                                         '<td width="5%">&nbsp;</td>',
-                                        '<td>',
-                                            '{[this.formatAmount(values)]} {[this.getUnit(values.uom_id)]}',
-                                             '<tpl if="values.qty != 1.0">',
-                                                ' *&nbsp;',
-                                                '{[futil.formatFloat(values.price,Config.getDecimals())]}',
-                                                '&nbsp;',
-                                                '{[Config.getCurrency()]}',
-                                                '<tpl if="netto">',
-                                                ' ',
-                                                'NETTO',
-                                                '</tpl>',
-                                            '</tpl>', 
-                                            '<tpl if="discount"> -{[futil.formatFloat(values.discount,Config.getDecimals())]}%</tpl>',
-                                        '</td>',    
-                                        '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',                        
-                                    '</tr>',
-                                '<tpl else>',
+                                        '<td colspan="2">{[this.formatText(values.notice)]}</td>',                    
+                                    '</tr>',                   
+                                    '<tpl if="(xindex &lt; xcount)">',
                                     '<tr>',
-                                        '<td colspan="2">{name}</td>',
-                                        '<td align="right" valign="buttom" width="32%">{[futil.formatFloat(values.subtotal_incl,Config.getDecimals())]}</td>',
+                                        '<td width="5%">&nbsp;</td>',
+                                        '<td colspan="2"><hr/></td>',                    
+                                    '</tr>',
+                                    '</tpl>',
+                                '</tpl>',
+                                '<tpl if="this.hasFlag(values,\'b\') && (xindex &lt; xcount)">',
+                                    '<tr>',                
+                                        '<td colspan="3"><hr/></td>',
                                     '</tr>',
                                 '</tpl>',
-                            '</tpl>',                          
-                            '<tpl if="notice && !Config.getProfile().iface_place">',
-                                '<tr>',
-                                    '<td width="5%">&nbsp;</td>',
-                                    '<td colspan="2"><hr/></td>',                    
-                                '</tr>',
-                                '<tr>',
-                                    '<td width="5%">&nbsp;</td>',
-                                    '<td colspan="2">{[this.formatText(values.notice)]}</td>',                    
-                                '</tr>',                   
-                                '<tpl if="(xindex &lt; xcount)">',
-                                '<tr>',
-                                    '<td width="5%">&nbsp;</td>',
-                                    '<td colspan="2"><hr/></td>',                    
-                                '</tr>',
-                                '</tpl>',
-                            '</tpl>',
-                            '<tpl if="this.hasFlag(values,\'b\') && (xindex &lt; xcount)">',
-                                '<tr>',                
-                                    '<td colspan="3"><hr/></td>',
-                                '</tr>',
                             '</tpl>',
                         '</tpl>',
-                    '</tpl>',
-                    '<tr>',                
-                        '<td colspan="3"><hr/></td>',
-                    '</tr>',
-                    '<tr style="font-size: large;">',
-                        '<td align="left" colspan="2"><b>SUMME</b></td>',
-                        '<td align="right" width="50%"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
-                    '</tr>',
-                    '<tpl for="o.payment_ids">',
-                            '<tr style="font-size: larger;">',
-                                '<td align="left" colspan="2">{[this.getJournal(values.journal_id)]}</td>',
-                                '<td align="right" width="50%">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',
-                            '</tr>',                    
-                            '<tpl if="payment && payment != amount">',
-                                '<tr>',
-                                    '<td align="left" colspan="2">gegeben</td>',
-                                    '<td align="right" width="50%">{[futil.formatFloat(values.payment,Config.getDecimals())]}</td>',
-                                '</tr>',
-                                '<tr>',
-                                    '<td align="left" colspan="2">retour</td>',
-                                    '<td align="right" width="50%">{[futil.formatFloat(values.amount-values.payment,Config.getDecimals())]}</td>',
-                                '</tr>',
-                            '</tpl>',
+                        '<tr>',                
+                            '<td colspan="3"><hr/></td>',
                         '</tr>',
-                    '</tpl>',                
-                '</table>',                                
-                '<tpl if="o.tax_ids && o.tax_ids.length &gt; 0">',
-                    '<br/>',
-                    '<table width="100%">',                    
-                    '<tr>',
-                        '<td width="70%">Steuer</td>',
-                        '<td align="right" width="30%">Netto {[Config.getCurrency()]}</td>',
-                    '</tr>',
-                    '<tr>',                
-                        '<td colspan="2"><hr/></td>',
-                    '</tr>',
-                    '<tpl for="o.tax_ids">',
-                    '<tr>',
-                        '<td width="70%">{name} {[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
-                        '<td align="right" width="30%">{[futil.formatFloat(values.amount_netto,Config.getDecimals())]}</td>',        
-                    '</tr>',
+                        '<tr style="font-size: large;">',
+                            '<td align="left" colspan="2"><b>SUMME</b></td>',
+                            '<td align="right" width="50%"><b>{[futil.formatFloat(values.o.amount_total,Config.getDecimals())]}</b></td>',        
+                        '</tr>',
+                        '<tpl for="o.payment_ids">',
+                                '<tr style="font-size: larger;">',
+                                    '<td align="left" colspan="2">{[this.getJournal(values.journal_id)]}</td>',
+                                    '<td align="right" width="50%">{[futil.formatFloat(values.amount,Config.getDecimals())]}</td>',
+                                '</tr>',                    
+                                '<tpl if="payment && payment != amount">',
+                                    '<tr>',
+                                        '<td align="left" colspan="2">gegeben</td>',
+                                        '<td align="right" width="50%">{[futil.formatFloat(values.payment,Config.getDecimals())]}</td>',
+                                    '</tr>',
+                                    '<tr>',
+                                        '<td align="left" colspan="2">retour</td>',
+                                        '<td align="right" width="50%">{[futil.formatFloat(values.amount-values.payment,Config.getDecimals())]}</td>',
+                                    '</tr>',
+                                '</tpl>',
+                            '</tr>',
+                        '</tpl>',                
+                    '</table>',                                
+                    '<tpl if="o.tax_ids && o.tax_ids.length &gt; 0">',
+                        '<br/>',
+                        '<table width="100%">',                    
+                        '<tr>',
+                            '<td width="70%">Steuer</td>',
+                            '<td align="right" width="30%">Netto {[Config.getCurrency()]}</td>',
+                        '</tr>',
+                        '<tr>',                
+                            '<td colspan="2"><hr/></td>',
+                        '</tr>',
+                        '<tpl for="o.tax_ids">',
+                        '<tr>',
+                            '<td width="70%">{name} {[futil.formatFloat(values.amount_tax,Config.getDecimals())]} {[Config.getCurrency()]}</td>',
+                            '<td align="right" width="30%">{[futil.formatFloat(values.amount_netto,Config.getDecimals())]}</td>',        
+                        '</tr>',
+                        '</tpl>',
+                        '</table>',
                     '</tpl>',
-                    '</table>',
-                '</tpl>',
-                '<tpl if="qrsrc">',
-                    '<img src="{qrsrc}" alt="{o.qr}"/>',
-                    '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',                
-                '</tpl>',                
-                profile.receipt_footer || '',
-                {
-                    getUnit: function(uom_id) {
-                        var uom = self.unitStore.getById(uom_id);
-                        return uom ? uom.get('name') : '';
-                    },
-                    getJournal: function(journal_id) {
-                        var journal = Config.getJournal(journal_id);
-                        return journal ? journal.name : '';
-                    },
-                    formatText: function(text) {
-                        return text ? text.replace(/\n/g,'<br/>') : '';
-                    },
-                    formatAmount: function(values)  {
-                        var dec = values.a_dec;
-                        if ( dec < 0 ) {
-                            return futil.formatFloat(values.qty, 0);
-                        } else if ( dec > 0 ) {
-                            return futil.formatFloat(values.qty, dec);
-                        } else {
-                            return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                    '<tpl if="qrsrc">',
+                        '<img src="{qrsrc}" alt="{o.qr}"/>',
+                        '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',                
+                    '</tpl>',                
+                    profile.receipt_footer || '',
+                    {
+                        getUnit: function(uom_id) {
+                            var uom = self.unitStore.getById(uom_id);
+                            return uom ? uom.get('name') : '';
+                        },
+                        getJournal: function(journal_id) {
+                            var journal = Config.getJournal(journal_id);
+                            return journal ? journal.name : '';
+                        },
+                        formatText: function(text) {
+                            return text ? text.replace(/\n/g,'<br/>') : '';
+                        },
+                        formatAmount: function(values)  {
+                            var dec = values.a_dec;
+                            if ( dec < 0 ) {
+                                return futil.formatFloat(values.qty, 0);
+                            } else if ( dec > 0 ) {
+                                return futil.formatFloat(values.qty, dec);
+                            } else {
+                                return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                            }
+                        },
+                        hasTag: function(values, tag) {
+                            if ( !tag ) {
+                                return values.tag ? true : false;
+                            } else if ( !values.tag ) {
+                                return false;
+                            } else {
+                                return values.tag == tag;
+                            }
+                        },
+                        hasFlag: function(values, flag) {
+                            if ( !flag) {
+                                return values.flags ? true : false;
+                            } else if ( !values.flags ) {
+                                return false;
+                            } else {
+                                return values.flags.indexOf(flag) > -1;
+                            }
                         }
-                    },
-                    hasTag: function(values, tag) {
-                        if ( !tag ) {
-                            return values.tag ? true : false;
-                        } else if ( !values.tag ) {
-                            return false;
-                        } else {
-                            return values.tag == tag;
-                        }
-                    },
-                    hasFlag: function(values, flag) {
-                        if ( !flag) {
-                            return values.flags ? true : false;
-                        } else if ( !values.flags ) {
-                            return false;
-                        } else {
-                            return values.flags.indexOf(flag) > -1;
-                        }
-                    }
-                }                
-            );
+                    }                
+                );
+            }
+    
+            // get order if not passed
+            if (!order) {
+                order = this.order.getData();
+            }
+    
+            // get place        
+            var place = self.placeStore.getPlaceById(order.place_id);
+            if ( place ) {
+                place = place.get('name');
+            }
+            
+            // data
+            var data = {
+                o: order,
+                lines : order.line_ids,
+                date: futil.strToDate(order.date),
+                place: place,
+                pos: profile.name
+            };
+            
+            // add sign pid
+            if ( profile.sign_pid ) data.pos = '[' + profile.sign_pid + '] ' + data.pos;
+            
+            // print/show it
+            if ( !Config.hasPrinter() ) {
+                self.previewPrint(self.printTemplate.apply(data));
+            } else {
+                if ( order.qr ) data.qrsrc = "qrcode";
+                Config.printHtml(self.printTemplate.apply(data));
+            }
+            
+            // open cash drawer
+            Config.openCashDrawer();
+        } catch (err) {
+            ViewManager.handleError(err, {name: 'order_print_error', 
+                                        message: 'Bon konnte nicht gedruckt werden!'});
         }
-
-        // get order if not passed
-        if (!order) {
-            order = this.order.getData();
-        }
-
-        // get place        
-        var place = self.placeStore.getPlaceById(order.place_id);
-        if ( place ) {
-            place = place.get('name');
-        }
-        
-        // data
-        var data = {
-            o: order,
-            lines : order.line_ids,
-            date: futil.strToDate(order.date),
-            place: place,
-            pos: profile.name
-        };
-        
-        // add sign pid
-        if ( profile.sign_pid ) data.pos = '[' + profile.sign_pid + '] ' + data.pos;
-        
-        // print/show it
-        if ( !Config.hasPrinter() ) {
-            self.previewPrint(self.printTemplate.apply(data));
-        } else {
-            if ( order.qr ) data.qrsrc = "qrcode";
-            Config.printHtml(self.printTemplate.apply(data));
-        }
-        
-        // open cash drawer
-        Config.openCashDrawer();
     },
     
     

@@ -1,4 +1,4 @@
-/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false */
+/*global Ext:false, DBUtil:false, PouchDB:false, openerplib:false, futil:false, Fpos:false, Config:false, ViewManager:false, console:false*/
 Ext.define('Fpos.controller.MainCtrl', {
     extend: 'Ext.app.Controller',
     requires: [    
@@ -261,7 +261,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     },                   
               
     
-    sync: function(resync) {               
+    sync: function(resync, callback) {               
         var self = this;
         var db = Config.getDB();
         var client = null;
@@ -383,23 +383,32 @@ Ext.define('Fpos.controller.MainCtrl', {
                ] 
             }, options);
         }).then(function() {
-            // reset sync marker 
-            // if no fullsync should be done
-            profile_doc.resync = profile_doc.fpos_sync_clean && profile_doc.fpos_sync_count && profile_doc.fpos_sync_count >= profile_doc.fpos_sync_clean;
+            // CHECK FULL SYNC DB RESET
+            // reset only after POS DONE
+            profile_doc.resync = profile_doc.fpos_sync_reset && Config.getPosClosed();
             return db.put(profile_doc);
         }).then(function() {
-            // FULL RESET
-            Config.restart();
-        })['catch'](function(err) {
-        
+            if ( callback )  {
+                ViewManager.stopLoading();
+                Config.setProfile(profile_doc);
+                callback();
+            } else {
+                // FULL RESET
+                Config.restart();
+            }
+        })['catch'](function(err) {            
             ViewManager.stopLoading();
-            ViewManager.handleError(err,{
-                name: "Unerwarteter Fehler", 
-                message: "Synchronisation konnte nicht durchgeführt werden"
-            }, true);
-            
             self.resetConfig();
             
+            // notify error to callback
+            if ( callback ) {
+                callback(err);
+            } else {
+                ViewManager.handleError(err,{
+                    name: "Unerwarteter Fehler", 
+                    message: "Synchronisation konnte nicht durchgeführt werden"
+                }, true);                
+            }            
         });
     },
             
@@ -508,51 +517,56 @@ Ext.define('Fpos.controller.MainCtrl', {
                 });         
             })['catch'](function(error) {
                 if ( error.name == 'resync' ) {
-                    ViewManager.startLoading('Datenbank zurücksetzen');
+                    console.log("Database Rebuild");
                     
-                    var resetDB = function() {
-                        ViewManager.startLoading('Datenbank zurücksetzen');            
-                        Config.resetDB()['catch'](function(err) {
-                            ViewManager.stopLoading();
-                            ViewManager.handleError(error,{
-                                name: "Zurücksetzen fehlgeschlagen", 
-                                message: "Datenbank zurücksetzen fehlgeschlagen"
-                            });                           
-                        }).then(function(res) {
-                            return self.sync(true)['catch'](function(err) {
-                                ViewManager.stopLoading();
-                                self.editConfig();
-                                setTimeout(function() {
-                                    ViewManager.handleError(error,{
-                                        name: "Synchronisation fehlgeschlagen", 
-                                        message: "Überprüfen sie die Zugangsdaten"
-                                    });
-                                },0);                            
-                            });
-                        });
+                    var restart = function() {
+                         // RESTART
+                         Config.restart();
                     };
                     
                     // check if remote dbs should also have a
                     // reset
-                    var profile = Config.getProfile();
-                    if ( profile && !profile.parent_user_id && Config.getSync() ) {
-                        // rebuild sync
-                        Config.resetDist().then(function() {
-                            return Config.setupRemoteDatabases().then(resetDB, function(err) {                                
+                    var resetRemoteDB = function() {
+                        var profile = Config.getProfile();
+                        if ( profile && !profile.parent_user_id && Config.getSync() ) {
+                            // rebuild sync
+                            Config.resetDist().then(function() {
+                                return Config.setupRemoteDatabases().then(function() {
+                                    restart();
+                                }, function(err) {                                
+                                    ViewManager.stopLoading();
+                                    ViewManager.handleError(err, {name: 'Fehler', message: 'Verteiler konnte nicht initialisiert werden'}, false, function() {
+                                         restart();
+                                    });
+                                });
+                            }, function(err) {
                                 ViewManager.stopLoading();
-                                ViewManager.handleError(err, {name: 'Fehler', message: 'Verteiler konnte nicht initialisiert werden'}, false, function() {
-                                     resetDB();
+                                ViewManager.handleError(err, {name: 'Fehler', message: 'Verteiler konnte nicht zurückgesetzt werden'}, false, function() {
+                                     restart();
                                 });
                             });
-                        }, function(err) {
-                            ViewManager.stopLoading();
-                            ViewManager.handleError(err, {name: 'Fehler', message: 'Verteiler konnte nicht zurückgesetzt werden'}, false, function() {
-                                 resetDB();
-                            });
+                        } else {
+                            restart();
+                        }
+                    };
+                    
+                    ViewManager.startLoading('Datenbank zurücksetzen');            
+                    Config.resetDB()['catch'](function(err) {
+                        ViewManager.stopLoading();
+                        ViewManager.handleError(error,{
+                            name: "Zurücksetzen fehlgeschlagen", 
+                            message: "Datenbank zurücksetzen fehlgeschlagen"
+                        });                           
+                    }).then(function(res) {
+                        return self.sync(true, function(err) {
+                            ViewManager.stopLoading(); 
+                            if ( err ) {
+                                self.editConfig();
+                            } else {
+                                resetRemoteDB();
+                            }                                
                         });
-                    } else {
-                        resetDB();
-                    }
+                    });
                     
                 } else {
                     ViewManager.stopLoading();

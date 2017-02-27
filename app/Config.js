@@ -1,4 +1,4 @@
-/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper:false, cordova:false, PouchDB:false */
+/*global Ext:false, futil:false, DBUtil:false, LocalFileSystem:false, FileTransfer:false, ViewManager:false, wallpaper:false, cordova:false, PouchDB:false, console:false */
 
 Ext.define('Fpos.Config', {
     singleton : true,
@@ -120,7 +120,6 @@ Ext.define('Fpos.Config', {
          // check local
         db.get(data.filter._id).then(function(res) {
             // check for local filter update
-            debugger;
             if ( !res.version || res.version != data.filter.version) {
                 data.filter._rev = res._rev;                      
                 db.put(data.filter).then(function(res) {
@@ -162,7 +161,7 @@ Ext.define('Fpos.Config', {
                 }).on('change', function(info) {
                     Ext.Viewport.fireEvent('syncChange', info);
                     self.notifySyncState('change');
-                }).on('error', function(err) {
+                }).on('error', function(err) {                  
                     self.notifySyncState('error');
                 }).on('paused', function(err) {
                    if ( err ) {
@@ -209,13 +208,13 @@ Ext.define('Fpos.Config', {
         var checkConfig = function() {
             destDB.get("fpos_config").then(function(fpos_config) {
                 updateConfig(fpos_config);
-            }['catch'](function(err) {
+            })['catch'](function(err) {
                 if ( err.name == 'not_found') {
                     updateConfig(null);
                 } else {
                     deferred.reject(err);
                 }
-            }));    
+            });    
         };
         
         // check remote filter        
@@ -312,10 +311,11 @@ Ext.define('Fpos.Config', {
                 
                 if ( nodeCount >= destDatabases.length ) {
                     if ( test ) {
-                        debugger;
                         // update sync version range
                         self.setLowestSyncVersion(lowestSyncVersion);
                         self.setHighestSyncVersion(highestSyncVersion);
+                        console.log("LowestSyncVersion: " + lowestSyncVersion);
+                        console.log("HighestSyncVersion: " + highestSyncVersion);
                         deferred.resolve();
                     } else {
                         if ( nodeErr ) {
@@ -527,7 +527,7 @@ Ext.define('Fpos.Config', {
         if (profile) {
             // set sync version
             var syncVersion = profile.fpos_sync_version ? profile.fpos_sync_version : 1;
-            debugger;
+            console.log("Profile->fpos_sync_version: " + syncVersion);
             self.setSyncVersion(syncVersion);
             self.setHighestSyncVersion(syncVersion);
             self.setLowestSyncVersion(syncVersion);
@@ -864,7 +864,6 @@ Ext.define('Fpos.Config', {
     },
        
     migrateDraftOrders: function() {
-        debugger;
         var deferred = Ext.create('Ext.ux.Deferred');
         var self = this;
         var db = this.getDB();
@@ -873,15 +872,27 @@ Ext.define('Fpos.Config', {
         }).then(function(res) {
             var orders = [];
             var version = self.getHighestSyncVersion();
-            
+            var countDelete = 0;
+            var countMigrate = 0;
+             
             // search order for migration
-            Ext.each(res.rows, function(row) {
+            Ext.each(res.rows, function(row) {                
                 if ( row.doc.sv < version ) {
-                    row.doc.sv = version;
+                    if ( row.doc.line_ids && row.doc.line_ids.length > 0 && (row.doc.sv+1 == version) ) {
+                        countMigrate++;
+                        row.doc.sv = version;
+                    } else {
+                        // delete empty
+                        countDelete++;
+                        row.doc._deleted = true;
+                    }
                     orders.push(row.doc);    
                 }                                 
             });
             
+            console.log("migrateDraftOrders: " + countMigrate);
+            console.log("deleteDraftOrders: " + countDelete);
+                        
             if ( orders.length > 0 ) {
                 // bulk update for all orders
                 db.bulkDocs(orders).then(function() {
