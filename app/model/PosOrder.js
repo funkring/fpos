@@ -30,6 +30,7 @@ Ext.define('Fpos.model.PosOrder', {
                 'place_id',
                 'sig',
                 'st',
+                'hs',
                 {name:'partner', foreignKey: 'partner_id', resModel: 'res.partner', persist:false}],
        identifier: 'uuid',
        proxy: {

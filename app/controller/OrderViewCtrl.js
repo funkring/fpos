@@ -2185,6 +2185,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                     orderCopy.qr = signable.qr;
                                     orderCopy.sig = signable.sig;
                                     
+                                    // set hash if available
+                                    if ( signable.hs ) orderCopy.hs = signable.hs;
+                                    
                                     // check failed start beleg
                                     if ( !signable.sig && orderCopy.st === 's') {
                                         orderCopy.st = null;
