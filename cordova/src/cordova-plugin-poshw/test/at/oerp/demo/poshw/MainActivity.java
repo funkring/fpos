@@ -251,6 +251,19 @@ public class MainActivity extends Activity {
 			}
 		});
 		
+		
+		Button beepButton = (Button) findViewById(R.id.beepButton);
+		beepButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				try {
+					posHw.beep();
+				} catch (IOException e) {
+					Log.e(TAG, e.getMessage(), e);
+				}				
+			}
+		});
+		
 	}
 	
 	@Override

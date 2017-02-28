@@ -46,7 +46,10 @@ Ext.define('Fpos.controller.TestCtrl', {
             },
             'button[action=testCard]' : {
                 tap: 'testCard'
-            }
+            },
+            'button[action=testBeep]' : {
+                tap: 'testBeep'
+            }            
         }
     },
     
@@ -298,6 +301,10 @@ Ext.define('Fpos.controller.TestCtrl', {
                 self.objectInfo(err);
             });
         }
-    }    
+    },
+    
+    testBeep: function() {
+        window.PosHw.beep();
+    } 
     
 });

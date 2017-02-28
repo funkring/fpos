@@ -39,6 +39,15 @@ public class PosHwPlugin extends CordovaPlugin {
 					throws Exception;		
 	}
 	
+	abstract class AsyncHwPluginCmd extends PosHwPluginCmd implements Runnable {
+		boolean execute(final JSONArray args, final CallbackContext callbackContext)  
+				throws Exception {
+			cordova.getThreadPool().execute(this);
+			callbackContext.success();
+			return true;
+		}
+	}
+	
 	abstract static class ActivityCallback {
 		CallbackContext callbackContext;
 		public ActivityCallback(CallbackContext inCallbackContext) {
@@ -192,21 +201,24 @@ public class PosHwPlugin extends CordovaPlugin {
 						}
 					});
 					
-					api.put("openCashDrawer", new PosHwPluginCmd() {
+					api.put("openCashDrawer", new AsyncHwPluginCmd() {
+						
 						@Override
-						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
-							service.openCashDrawer();
-							callbackContext.success();
-							return true;
+						public void run() {
+							try {
+								service.openCashDrawer();
+							} catch (IOException e) {
+								Log.e(TAG,e.getMessage(),e);
+							}
+							
 						}
 					});
 					
-					api.put("openExternCashDrawer", new PosHwPluginCmd() {
+					api.put("openExternCashDrawer", new AsyncHwPluginCmd() {
+						
 						@Override
-						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
-							service.openExternCashDrawer();
-							callbackContext.success();
-							return true;
+						public void run() {
+							service.openExternCashDrawer();							
 						}
 					});
 					
@@ -349,12 +361,13 @@ public class PosHwPlugin extends CordovaPlugin {
 						}
 					});
 					
-					api.put("beep", new PosHwPluginCmd() {
-						
-						@Override
-						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
-							service.beep();
-							return true;
+					api.put("beep", new AsyncHwPluginCmd() {
+						public void run() {
+							try {
+								service.beep();
+							} catch (IOException e) {
+								Log.e(TAG,e.getMessage(),e);
+							}
 						}
 					});
 				}

@@ -101,6 +101,13 @@ Ext.define('Fpos.view.TestView', {
                          action: 'testCard',
                          ui: 'posInputButtonBlack',
                          cls: 'TestButton'
+                     },
+                     {
+                         xtype: 'button',
+                         text: 'Test Beep',
+                         action: 'testBeep',
+                         ui: 'posInputButtonBlack',
+                         cls: 'TestButton'
                      }
                 ]                 
             },            

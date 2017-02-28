@@ -13,5 +13,6 @@
     <string name="printBT">Print BT</string>
     <string name="closeBT">Close BT</string>
     <string name="scan">Scan</string>
-
+    <string name="beep">Beep</string>
+    
 </resources>

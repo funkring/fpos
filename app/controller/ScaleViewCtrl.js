@@ -2,8 +2,9 @@
 Ext.define('Fpos.controller.ScaleViewCtrl', {
     extend: 'Ext.app.Controller',
     requires: [    
-        "Ext.Button",
-        "Ext.Label"
+        'Ext.Button',
+        'Ext.Label',
+        'Fpos.Config'
     ],
     config: {
         refs: {
@@ -57,10 +58,6 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         this.getTaraButton().setUi("posInputButtonBlack");
     },
     
-    onStopScale: function() {
-       this.stopScale();
-    },
-    
     onHide: function() {
         var self = this;
         self.state = self.STATE_INIT;
@@ -68,9 +65,11 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
         Ext.Viewport.fireEvent("validateLines");        
     },
        
-    stopScale: function() {
-        var self = this;  
+    foundWeight: function() {
+        var self = this;
+        self.getScaleView().setRecord(null);
         self.getScaleView().hide();
+        Config.beep();
     },
     
     nextState: function() {
@@ -127,7 +126,7 @@ Ext.define('Fpos.controller.ScaleViewCtrl', {
                             if ( result.weight > 0) {
                                 record.set('qty', result.weight);
                                 record.set('subtotal_incl',result.total);                            
-                                self.stopScale();
+                                self.foundWeight();
                             } else {
                                 //continue if no value
                                 self.nextState();

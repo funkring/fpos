@@ -1256,6 +1256,9 @@ Ext.define('Fpos.Config', {
         }
         
         return deferred.promise();
-    }
+    },
     
+    beep: function() {
+        window.PosHw.beep();
+    }
 });
