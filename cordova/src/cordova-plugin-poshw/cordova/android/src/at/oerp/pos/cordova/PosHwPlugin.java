@@ -307,6 +307,10 @@ public class PosHwPlugin extends CordovaPlugin {
 							receipt.signatureCertificateSerialNumber = jsonReceipt.getString("sign_serial");
 							receipt.prevCompactData = jsonReceipt.getString("last_dep");
 							
+							// check if hash build be build
+							PosHwPrinter printer = service.getPrinter();							
+							receipt.buildHash = printer != null && printer.textOnly();
+									
 							// evaluate special type
 							String st = jsonReceipt.optString("st", null);
 							if ( st != null ) {
@@ -327,6 +331,7 @@ public class PosHwPlugin extends CordovaPlugin {
 							jsonReceipt.put("qr", receipt.plainData);
 							jsonReceipt.put("dep", receipt.compactData);
 							jsonReceipt.put("sig", receipt.valid);
+							jsonReceipt.putOpt("hs", receipt.hashData);
 							callbackContext.success(jsonReceipt);
 							
 							return true;

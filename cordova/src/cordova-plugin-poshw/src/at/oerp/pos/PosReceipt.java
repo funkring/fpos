@@ -57,10 +57,17 @@ public class PosReceipt {
     // previous compact data
     public String prevCompactData;
     
+    // hash value
+    public String hashData;
+    
     // valid
     public boolean valid;
     
     // first
     public boolean first;
+        
+    // true if hash 
+    // should be build
+    public boolean buildHash;
   
 }

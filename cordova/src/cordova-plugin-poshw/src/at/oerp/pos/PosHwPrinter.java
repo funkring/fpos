@@ -75,4 +75,8 @@ public abstract class PosHwPrinter implements LinePrintDriver {
 		}		
 	}
 	
+	public boolean textOnly() {
+		return false;
+	}
+	
 }

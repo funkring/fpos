@@ -581,6 +581,28 @@ Ext.define('Fpos.Config', {
         return db;
     },
     
+    buildUrl: function(path) {
+        if ( !this.baseUrl ) {
+            var settings = this.getSettings();
+            if (settings) {
+                var url = settings.port != 443 ? 'http://' : 'https://';         
+                url = url + settings.host;    
+                if ( settings.port && settings.port != 80 && settings.port != 443) {
+                    url = url + ':' + settings.port.toString();
+                }                
+                this.baseUrl = url;
+            } else {
+                this.baseUrl = '/';
+            }
+        }
+        
+        if ( path ) {
+            return this.baseUrl + '/' + path;
+        }
+        
+        return this.baseUrl;
+    },
+    
     newClient: function() {
         var settings = this.getSettings();
         if (!settings) {

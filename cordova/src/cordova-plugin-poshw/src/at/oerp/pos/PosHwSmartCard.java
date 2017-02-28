@@ -356,6 +356,12 @@ public abstract class PosHwSmartCard extends Card {
 	        // store data        
 	    	ioReceipt.compactData = jwsDataToBeSigned + "." + Base64.encodeToString(signature, Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
 	    	ioReceipt.plainData = ioReceipt.plainData + "_" + Base64.encodeToString(signature, Base64.NO_WRAP);
+	    	
+	    	// build hash
+	    	if ( ioReceipt.buildHash ) {
+	    		digest.reset();  
+	    		ioReceipt.hashData = Base64.encodeToString(digest.digest(ioReceipt.plainData.getBytes()), 0, 8, Base64.NO_WRAP | Base64.URL_SAFE );
+	    	}	    	
 	        return ioReceipt;
     	} finally {
     		if ( closeAfterSign() ) {

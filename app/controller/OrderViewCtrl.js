@@ -2553,7 +2553,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '</table>',
                     '</tpl>',
                     '<tpl if="qrsrc">',
-                        '<img src="{qrsrc}" alt="{o.qr}"/>',
+                        '<img src="{qrsrc}" alt="{qrdata}"/>',
                         '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',                
                     '</tpl>',                
                     profile.receipt_footer || '',
@@ -2628,7 +2628,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             if ( !Config.hasPrinter() ) {
                 self.previewPrint(self.printTemplate.apply(data));
             } else {
-                if ( order.qr ) data.qrsrc = "qrcode";
+                if ( order.hs ) {
+                    data.qrsrc = "qrcode";
+                    data.qrdata = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
+                } else if ( order.qr ) {
+                    data.qrsrc = "qrcode";
+                    data.qrdata = order.qr;                    
+                }
                 Config.printHtml(self.printTemplate.apply(data));
             }
             
