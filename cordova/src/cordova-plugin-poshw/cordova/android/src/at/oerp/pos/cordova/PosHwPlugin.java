@@ -348,6 +348,15 @@ public class PosHwPlugin extends CordovaPlugin {
 							return true;
 						}
 					});
+					
+					api.put("beep", new PosHwPluginCmd() {
+						
+						@Override
+						boolean execute(JSONArray args, CallbackContext callbackContext) throws Exception {
+							service.beep();
+							return true;
+						}
+					});
 				}
 			}
 

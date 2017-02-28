@@ -183,5 +183,13 @@ public abstract class PosHwService {
 	public PosHwSmartCard getSmartCard() throws IOException {
 		return null;
 	}
+	
+	/**
+	 * simple beep
+	 * @throws IOException
+	 */
+	public void beep() throws IOException {
+		
+	}
 }
 	

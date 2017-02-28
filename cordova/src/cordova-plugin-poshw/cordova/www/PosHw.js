@@ -56,5 +56,9 @@ module.exports = {
     
     signQueryCert: function(successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "PosHw", "signQueryCert", []);
+    },
+    
+    beep: function(successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "PosHw", "beep", []);
     }
 };
