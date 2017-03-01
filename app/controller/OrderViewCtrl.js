@@ -1118,7 +1118,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     // determine special type
                     // check if storno
-                    if ( (sign > 0 && total_line.subtotal_incl < 0) || (sign < 0 && total_line.subtotal_incl > 0) ) {
+                    if ( !tag & ((sign > 0 && total_line.subtotal_incl < 0) || (sign < 0 && total_line.subtotal_incl > 0)) ) {
                         // set new order special type
                         if ( !st ) {
                             st = 'c'; // if no special type set storno
