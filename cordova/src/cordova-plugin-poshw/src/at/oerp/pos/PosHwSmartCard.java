@@ -349,7 +349,7 @@ public abstract class PosHwSmartCard extends Card {
 	        }
 	        
 	    	// check serial
-	    	if ( ioReceipt.signatureCertificateSerialNumber != null && !ioReceipt.signatureCertificateSerialNumber.equals(serial) ) {
+	    	if ( serial != null && ioReceipt.signatureCertificateSerialNumber != null && !ioReceipt.signatureCertificateSerialNumber.equals(serial) ) {
 	    		throw new IOException("Invalid Serial: " + ioReceipt.signatureCertificateSerialNumber + " != " + serial);
 	    	}
 	        
