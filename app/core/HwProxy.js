@@ -13,98 +13,84 @@ Ext.define('Fpos.core.HwProxy', {
         this.initConfig(config);
     },
     
-    getStatus: function(successCallback, errorCallback) {
-        openerplib.json_rpc(this.getUrl(), "getStatus", {}, function(err, res) {
+    call: function(func, params, successCallback, errorCallback) {
+        var self = this;
+        openerplib.json_rpc(self.getUrl(), func, params, function(err, res) {
             if (err) {
-                if (errorCallback) errorCallback(err);
+                if ( errorCallback ) {
+                    if (err.code == -32001) {
+                        errorCallback(err.message);
+                    } else {
+                        errorCallback(err);
+                    }     
+                }
             } else {
                 if (successCallback) successCallback(res);
             }
-        }, { timeout: this.getTimeout() } );
+        }, { timeout: self.getTimeout() });
+    },
+    
+    getStatus: function(successCallback, errorCallback) {
+        this.call("getStatus", {}, successCallback, errorCallback);
     },
     
     printHtml: function(html, successCallback, errorCallback) {
-        var self = this;
-        openerplib.json_rpc(this.getUrl(), "printHtml", {html:html}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
+        this.call("printHtml", {html:html}, successCallback, errorCallback);        
     },
     
     scaleInit: function(price, tara, successCallback, errorCallback) {
-        openerplib.json_rpc(this.getUrl(), "scaleInit", {price: price, tara: tara}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
+        this.call("scaleInit", {price: price, tara: tara}, successCallback, errorCallback);
     },
     
     scaleRead: function(successCallback, errorCallback ) {
-        openerplib.json_rpc(this.getUrl(), "scaleRead", {}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
+        this.call("scaleRead", {}, successCallback, errorCallback);        
     },
     
     display: function(lines, successCallback, errorCallback ) {
         if ( typeof lines === 'string' ) lines = [lines];
-        openerplib.json_rpc(this.getUrl(), "display", {lines: lines}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
+        this.call("display", {lines: lines}, successCallback, errorCallback);
     },
     
     openCashDrawer: function(successCallback, errorCallback) {
-        openerplib.json_rpc(this.getUrl(), "openCashDrawer", {}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
+        this.call("openCashDrawer", {}, successCallback, errorCallback);
     },
     
     openExternCashDrawer: function(successCallback, errorCallback) {
-        openerplib.json_rpc(this.getUrl(), "openExternCashDrawer", {}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        });
+        this.call("openExternCashDrawer", {}, successCallback, errorCallback);
     },
     
     test: function(successCallback, errorCallback) {
-        openerplib.json_rpc(this.getUrl(), "test", {}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
+        this.call("test", {}, successCallback, errorCallback);
     },
     
     provisioning: function(successCallback, errorCallback) {
-        openerplib.json_rpc(this.getUrl(), "provisioning", {}, function(err, res) {
-            if (err) {
-                if (errorCallback) errorCallback(err);
-            } else {
-                if (successCallback) successCallback(res);
-            }
-        }, { timeout: this.getTimeout() });
-    }              
+        this.call("provisioning", {}, successCallback, errorCallback);
+    },
     
+    scan: function(successCallback, errorCallback) {
+        this.call("scan", {}, successCallback, errorCallback);
+    },
+    
+    signTest: function(successCallback, errorCallback) {
+        this.call("signTest", {}, successCallback, errorCallback);
+    },
+    
+    signInit: function(config, successCallback, errorCallback) {
+        this.call("signInit", {sign_key: config.sign_key}, successCallback, errorCallback);
+    },
+    
+    sign: function(receipt, successCallback, errorCallback) {
+        this.call("sign", {data: receipt}, successCallback, errorCallback);
+    },
+    
+    signQueryCert: function(successCallback, errorCallback) {
+        this.call("signQueryCert", {}, successCallback, errorCallback);
+    },
+    
+    beep: function(successCallback, errorCallback) {
+        this.call("beep", {}, successCallback, errorCallback);
+    }    
+   
 });
 
 

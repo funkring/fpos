@@ -388,7 +388,9 @@ Ext.define('Fpos.Config', {
         // check hwproxy        
         if ( profile.iface_print_via_proxy ) {
             var proxyUrl = 'http://localhost:8045';
-            var proxy = Ext.create('Fpos.core.HwProxy', { url: profile.proxy_ip || 'http://localhost:8045' });
+            var url = profile.proxy_ip || 'http://localhost:8045';
+            if ( profile.fpos_hwproxy_id && profile.fpos_hwproxy_id.name ) url = profile.fpos_hwproxy_id.name;
+            var proxy = Ext.create('Fpos.core.HwProxy', { url: url });
             proxy.getStatus(function(hwstatus) {
                 // setup proxy
                 window.PosHw = proxy;
@@ -1226,7 +1228,7 @@ Ext.define('Fpos.Config', {
         return this.signMethod(signable);
     },
         
-    signQueryCert: function() {
+    signQueryCert: function(noProxySetup) {
         var deferred = Ext.create('Ext.ux.Deferred');
         var self = this;
         var profile = self.getProfile();
@@ -1247,12 +1249,24 @@ Ext.define('Fpos.Config', {
         }
         
         if ( !available ) {
-            setTimeout(function() {
-                deferred.reject({
-                    name : "cert_not_available",
-                    message : "Kein Zertifikat vorhanden"
+            if ( !noProxySetup && profile.iface_print_via_proxy ) {
+                self.setupProxy().then(function() {
+                    self.signQueryCert(true).then(function(res) {
+                        deferred.resolve(res);
+                    }, function(err) {
+                        deferred.reject(err);
+                    });
+                }, function(err) {
+                    deferred.reject(err);
                 });
-            }, 0);
+            } else {        
+                setTimeout(function() {
+                    deferred.reject({
+                        name : "cert_not_available",
+                        message : "Kein Zertifikat vorhanden"
+                    });
+                }, 0);
+            }
         }
         
         return deferred.promise();
