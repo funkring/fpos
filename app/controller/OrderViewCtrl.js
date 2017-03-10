@@ -2627,6 +2627,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // add sign pid
             if ( profile.sign_pid ) data.pos = '[' + profile.sign_pid + '] ' + data.pos;
             
+            // open cash drawer
+            Config.openCashDrawer();
+            
             // print/show it
             if ( !Config.hasPrinter() ) {
                 self.previewPrint(self.printTemplate.apply(data));
@@ -2640,9 +2643,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 Config.printHtml(self.printTemplate.apply(data));
             }
-            
-            // open cash drawer
-            Config.openCashDrawer();
         } catch (err) {
             ViewManager.handleError(err, {name: 'order_print_error', 
                                         message: 'Bon konnte nicht gedruckt werden!'});
