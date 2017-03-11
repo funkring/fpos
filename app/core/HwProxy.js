@@ -76,7 +76,8 @@ Ext.define('Fpos.core.HwProxy', {
     },
     
     signInit: function(config, successCallback, errorCallback) {
-        this.call("signInit", {sign_key: config.sign_key}, successCallback, errorCallback);
+        this.call("signInit", {sign_key: config.sign_key,
+                               sign_pid: config.sign_pid }, successCallback, errorCallback);
     },
     
     sign: function(receipt, successCallback, errorCallback) {
