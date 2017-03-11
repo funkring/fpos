@@ -1269,9 +1269,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
             }
             
-            // save
-            // ( only save if it is dirty, not places are active or force save was passed)            
-            if ( self.order.dirty && (!profile.iface_place || forceSave)) {
+            // save only if it is forced
+            // for preventing for unacessecary savings,
+            // to take care of the memory
+            if ( forceSave ) {
                 self.order.save({
                     callback: function() {
                         // send changed event                        
@@ -2015,7 +2016,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
              // update running vars
             var orderCopy = ModelUtil.createDocument(self.order);
-           
+            
+            // check for move
+            var move_rev = null;
+            var move_id = null;
+            if ( !place_id && !self.order.phantom)  {
+                move_id = self.order.getId();
+                move_rev = self.order.raw._rev;
+            }    
+                   
             // set/override basic data
             orderCopy.fdoo__ir_model = 'fpos.order';
             orderCopy.fpos_user_id = profile.user_id;
@@ -2078,6 +2087,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     
                     // save order
                     var saveOrder = function() {
+                        // check for move                    
+                        if ( move_id ) orderCopy._id = move_id;
+                        if ( move_rev ) orderCopy._rev = move_rev;
+
                         // save order copy
                         db.post(orderCopy).then(function() {
                             // update counters
@@ -2093,12 +2106,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             // update pos closed state
                             Config.setPosClosed(orderCopy.tag == 's');
                             
-                            // erase draft order
-                            self.order.erase({
-                                callback: function(op) {                                
-                                    deferred.resolve(orderCopy);    
-                                }
-                            });
+                            // erase draft order, 
+                            // if it is not moved, if it is copied
+                            if ( !move_id ) {
+                                self.order.erase({
+                                    callback: function(op) {                                
+                                        deferred.resolve(orderCopy);    
+                                    }
+                                });
+                            } else {
+                                deferred.resolve(orderCopy);
+                            }
                         })['catch'](function(err) {
                             deferred.reject(err);
                         });
