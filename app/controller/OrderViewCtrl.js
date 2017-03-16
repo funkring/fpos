@@ -884,7 +884,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     };
                     
                     // set tax special type
-                    if (taxDef.st) taxsum.st = taxDef.st;
+                    var st = taxDef.get('st');
+                    if (st) taxsum.st = st;
                     
                     if (taxlist)
                         taxlist.push(taxsum);
@@ -2575,8 +2576,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     '</tpl>',
                     '<tpl if="qrsrc">',
                         '<img src="{qrsrc}" alt="{qrdata}"/>',
-                        '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',                
-                    '</tpl>',                
+                        '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',
+                    '<tpl else>',
+                        '<tpl if="link">',
+                            '<p style="word-wrap: break-word;line-height: 1.2;"><a href="{link}">{link}</a></p>',
+                        '</tpl>',
+                    '</tpl>',     
                     profile.receipt_footer || '',
                     {
                         getUnit: function(uom_id) {
@@ -2650,7 +2655,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             
             // print/show it
             if ( !Config.hasPrinter() ) {
-                self.previewPrint(self.printTemplate.apply(data));
+                if ( order.hs ) {
+                    data.link = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
+                }
+                self.previewPrint(self.printTemplate.apply(data));                
             } else {
                 if ( order.hs ) {
                     data.qrsrc = "qrcode";

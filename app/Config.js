@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '5.0.8',
+        version : '5.0.9',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -1209,6 +1209,24 @@ Ext.define('Fpos.Config', {
         });
         return deferred.promise();
     },
+    
+    /**
+     * sign online
+     */
+    signOnline: function(signable) {
+        var deferred = Ext.create('Ext.ux.Deferred');
+        var self = this;
+        self.getClient().then(function(client) {
+            client.invoke("pos.config","sign_data",[signable], {build_hash: !self.hasPrinter()}).then(function(res) {
+                deferred.resolve(res);
+            }, function(err) {
+                deferred.reject(err);
+            });
+        }, function(err) {
+           deferred.reject(err); 
+        });
+        return deferred.promise();
+    },
 
     sign: function(signable) {
         if ( !this.signMethod ) {
@@ -1222,7 +1240,9 @@ Ext.define('Fpos.Config', {
                     if ( hwstatus.cardreader ) {
                         this.signMethod = this.signHsm;
                     }                    
-                }
+                } else if ( profile.sign_method == "online" ) {
+                    this.signMethod = this.signOnline;
+                } 
             }
         }
         return this.signMethod(signable);

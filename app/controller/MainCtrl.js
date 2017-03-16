@@ -345,7 +345,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                                  'amount',
                                  'type',
                                  'price_include',
-                                 'sequence'],
+                                 'sequence',
+                                 'st'],
                         readonly: true  
                    },
                    {

@@ -9,7 +9,8 @@ Ext.define('Fpos.model.AccountTax', {
                 'amount',
                 'type',
                 'price_include',
-                'sequence'],
+                'sequence',
+                'st'],
        identifier: 'uuid',
        proxy: {
             type: 'pouchdb',
