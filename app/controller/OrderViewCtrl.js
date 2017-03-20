@@ -1105,6 +1105,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // ---------------------------------
             
             var st = null; // special type
+            var index = 0;
             self.lineStore.each(function(line) {                
                 var total_line = self.validateLine(line, tax_group, tax_ids);
                 var tag = line.get('tag');
@@ -1121,9 +1122,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     // check if storno
                     if ( !tag && ((sign > 0 && total_line.subtotal_incl < 0) || (sign < 0 && total_line.subtotal_incl > 0)) ) {
                         // set new order special type
-                        if ( !st ) {
+                        if ( (!st && !index) || st == 'c' ) {
                             st = 'c'; // if no special type set storno
-                        } else {
+                        } else {                            
                             st = 'm'; // otherwise mixed
                         }
                     } else if ( st == 'c' ) {
@@ -1151,6 +1152,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // create doc
                 var doc = ModelUtil.createDocument(line, null, !forceSave);
                 lines.push(doc);
+                index++;
             });
             
             // round
