@@ -1811,43 +1811,44 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             var payments = this.getPaymentItemList().getSelection();
             if ( payments.length > 0  ) {            
                 var payment = payments[0];
-                
-                // switch sign
-                if ( action == "+/-" ) {
-                    if ( this.inputText.length === 0 ) {
-                        payment.set('payment',payment.get('payment')*-1);
-                        this.validatePayment();
-                        valid = false;
-                    } else {
-                        this.inputSign*=-1;
-                    }
-                // add comma
-                } else if ( action == "." ) {
-                    if ( this.inputText.indexOf(".") < 0 ) {
-                        this.inputText += "."; 
-                    } else {
-                        valid = false;
-                    }
-                // default number handling
-                } else {
-                    commaPos = this.inputText.indexOf(".");
-                    if ( commaPos >= 0 ) { 
-                        decimals = this.inputText.length - commaPos; 
-                        if ( decimals > Config.getDecimals() ) {
+                if ( !payment.get('journal').fpos_atomic ) {
+                    // switch sign
+                    if ( action == "+/-" ) {
+                        if ( this.inputText.length === 0 ) {
+                            payment.set('payment',payment.get('payment')*-1);
+                            this.validatePayment();
                             valid = false;
-                        }                        
-                    }                    
-                    //add if valid
-                    if ( valid ) 
-                        this.inputText += action;            
-                }
-              
-                // update if valid
-                if ( valid ) {
-                    // update
-                    value = parseFloat(this.inputText);
-                    payment.set('payment', value*this.inputSign);
-                    this.validatePayment();
+                        } else {
+                            this.inputSign*=-1;
+                        }
+                    // add comma
+                    } else if ( action == "." ) {
+                        if ( this.inputText.indexOf(".") < 0 ) {
+                            this.inputText += "."; 
+                        } else {
+                            valid = false;
+                        }
+                    // default number handling
+                    } else {
+                        commaPos = this.inputText.indexOf(".");
+                        if ( commaPos >= 0 ) { 
+                            decimals = this.inputText.length - commaPos; 
+                            if ( decimals > Config.getDecimals() ) {
+                                valid = false;
+                            }                        
+                        }                    
+                        //add if valid
+                        if ( valid ) 
+                            this.inputText += action;            
+                    }
+                  
+                    // update if valid
+                    if ( valid ) {
+                        // update
+                        value = parseFloat(this.inputText);
+                        payment.set('payment', value*this.inputSign);
+                        this.validatePayment();
+                    }
                 }
             }
         }
@@ -1948,8 +1949,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 payment.set("payment", total);
                 fullPayment.set("payment", 0.0);
                 self.validatePayment();
-            // check if there is an rest
-            } else if ( otherPayment < total ) {
+            // check if there is an rest (only if not atomic payment)
+            } else if ( otherPayment < total && !payment.get('journal').fpos_atomic ) {
                 payment.set("payment", total-otherPayment);
                 self.validatePayment();
             }
