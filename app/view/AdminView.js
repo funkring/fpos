@@ -18,6 +18,13 @@ Ext.define('Fpos.view.AdminView', {
                 items: [
                     {
                         xtype: 'button',
+                        text: 'Datenbank optimieren',    
+                        action: 'optimizeDB',
+                        ui: 'posInputButtonBlack',
+                        cls : 'MenuBandButton'      
+                    },
+                    {
+                        xtype: 'button',
                         text: 'Datenbank zurücksetzen',    
                         action: 'adminResetDB',
                         ui: 'posInputButtonRed',

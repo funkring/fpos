@@ -9,14 +9,33 @@ Ext.define('Fpos.controller.AdminCtrl', {
         refs: {
         },
         control: {     
-            'button[action=adminResetDB]' : {
+            'button[action=optimizeDB]': {
+                release: 'optimizeDB'
+            },
+            'button[action=adminResetDB]': {
                 release: 'resetDB'
             },
-            'button[action=activateCard]' : {
+            'button[action=activateCard]': {
                 release: 'activateCard'
             }
         }
     },
+    
+    optimizeDB: function() {
+        var self = this;
+        var db = Config.getDB();
+        
+        // OPTIMIZE DB
+        ViewManager.startLoading('Optimiere Datenbank');
+        db.compact().then(function(res) {
+            // OPTIMIZE VIEWS
+            ViewManager.startLoading('Optimiere Ansichten');   
+            return db.viewCleanup();
+        }).then(function(res) {   
+            Config.restart();
+        });
+    },
+    
     
     resetDB: function() {
         var self = this;

@@ -261,7 +261,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     },                   
               
     
-    sync: function(resync, callback) {               
+    sync: function(resync, callback) {          
         var self = this;
         var db = Config.getDB();
         var client = null;
@@ -269,6 +269,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         var profile_doc = null;
         var fullResync = false;
         var sync_err = null;
+        var resync_failed = false;
         
         // reload config        
         ViewManager.startLoading("Synchronisiere Datenbank");
@@ -284,6 +285,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             return db.get('_local/profile');  
         }).then(function(profile) {
             profile_rev = profile._rev; 
+            resync_failed = profile.resync;
         })['catch'](function(err) {
             if ( sync_err )
                throw sync_err;
@@ -386,7 +388,8 @@ Ext.define('Fpos.controller.MainCtrl', {
         }).then(function() {
             // CHECK FULL SYNC DB RESET
             // reset only after POS DONE
-            profile_doc.resync = profile_doc.fpos_sync_reset && Config.getPosClosed();
+            // or if LAST SYNC failed
+            profile_doc.resync = (profile_doc.fpos_sync_reset && Config.getPosClosed()) || (!resync && resync_failed);
             return db.put(profile_doc);
         }).then(function() {
             if ( callback )  {
@@ -399,7 +402,6 @@ Ext.define('Fpos.controller.MainCtrl', {
             }
         })['catch'](function(err) {            
             ViewManager.stopLoading();
-            self.resetConfig();
             
             // notify error to callback
             if ( callback ) {
@@ -413,7 +415,88 @@ Ext.define('Fpos.controller.MainCtrl', {
         });
     },
             
-    loadConfig: function() {        
+    loadData: function() {
+        var self = this;
+        try {
+            // load data
+            ViewManager.startLoading('Lade Daten');
+            
+            // load category
+            self.categoryStore.load({
+                callback: function() {
+                    // build category index
+                    self.categoryStore.buildIndex();
+                    
+                    // load tops
+                    self.topStore.load({
+                        callback: function() {
+                        
+                            // load tax
+                            self.taxStore.load({
+                                callback: function() {
+                                
+                                    // load product units
+                                    self.unitStore.load({
+                                        callback: function() {
+                                            
+                                            // load products
+                                            self.productStore.load({
+                                                callback: function() {
+                                                    ViewManager.startLoading('Erstelle Index');
+                                                    try {
+                                                        // build index
+                                                        self.productStore.buildIndex();
+                                                        
+                                                        // load places
+                                                        self.placeStore.load({
+                                                            callback: function() {
+                                                                try {
+                                                                
+                                                                    // build index
+                                                                    self.placeStore.buildIndex();
+                                                                    
+                                                                    // finish load                                                                           
+                                                                    ViewManager.stopLoading();
+                                                                    self.showLogin();  
+    
+                                                                } catch (err) {
+                                                                    ViewManager.stopLoading();
+                                                                    ViewManager.handleError(err,{
+                                                                            name: "Ausnahmefehler beim Laden", 
+                                                                            message: "Login konnte nicht geladen werden"
+                                                                    });
+                                                                }
+                                                            }
+                                                        });     
+                                                    } catch (err) {
+                                                        ViewManager.stopLoading();
+                                                        ViewManager.handleError(err,{
+                                                                name: "Ausnahmefehler beim Laden", 
+                                                                message: "Produkte konnten nicht geladen werden"
+                                                        });
+                                                    }                                                        
+                                                }
+                                                
+                                            });
+                                                                  
+                                        }
+                                    });                                        
+                                }
+                            });  
+                        } 
+                    });
+                }
+            });
+        } catch (err) {
+            ViewManager.stopLoading();
+            ViewManager.handleError(err,{
+                    name: "Ausnahmefehler beim Laden", 
+                    message: "Daten konnten nicht geladen werden"
+            });
+        }  
+    },
+            
+    loadConfig: function() {
         var self = this;
         var db = Config.getDB();
         
@@ -434,102 +517,14 @@ Ext.define('Fpos.controller.MainCtrl', {
                 
                 // check resync
                 if ( profile.resync ) {
-                    throw {
-                        name: 'resync',
-                        message: 'Neu- Synchronisation ist erforderlich'                        
-                    };
-                }
-                  
-                // compact database
-                ViewManager.startLoading('Optimiere Datenbank');
-                return db.compact().then(function(res) {
-                    // optimize db
-                    ViewManager.startLoading('Optimiere Views');                    
-                    return db.viewCleanup();
-                }).then(function(res) {                   
-                    // load data
-                    ViewManager.startLoading('Lade Daten');
-                    // load category
-                    self.categoryStore.load({
-                        callback: function() {
-                            // build category index
-                            self.categoryStore.buildIndex();
-                            
-                            // load tops
-                            self.topStore.load({
-                                callback: function() {
-                                
-                                    // load tax
-                                    self.taxStore.load({
-                                        callback: function() {
-                                        
-                                            // load product units
-                                            self.unitStore.load({
-                                                callback: function() {
-                                                    
-                                                    // load products
-                                                    self.productStore.load({
-                                                        callback: function() {
-                                                            ViewManager.startLoading('Erstelle Index');
-                                                            try {
-                                                                // build index
-                                                                self.productStore.buildIndex();
-                                                                
-                                                                // load places
-                                                                self.placeStore.load({
-                                                                    callback: function() {
-                                                                        try {
-                                                                        
-                                                                            // build index
-                                                                            self.placeStore.buildIndex();
-                                                                            
-                                                                            // finish load                                                                           
-                                                                            ViewManager.stopLoading();
-                                                                            self.showLogin();  
-    
-                                                                        } catch (err) {
-                                                                            ViewManager.stopLoading();
-                                                                            ViewManager.handleError(err,{
-                                                                                    name: "Ausnahmefehler beim Laden", 
-                                                                                    message: "Daten konnte nicht geladen werden"
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                });     
-                                                            } catch (err) {
-                                                                ViewManager.stopLoading();
-                                                                ViewManager.handleError(err,{
-                                                                        name: "Ausnahmefehler beim Laden", 
-                                                                        message: "Produkte konnten nicht geladen werden"
-                                                                });
-                                                            }                                                        
-                                                        }
-                                                        
-                                                    });
-                                                                          
-                                                }
-                                            });                                        
-                                        }
-                                    });  
-                                } 
-                            });
-                        }
-                    });
-                });         
-            })['catch'](function(error) {
-                if ( error.name == 'resync' ) {
-                    console.log("Database Rebuild");
-                    
                     var restart = function() {
                          // RESTART
                          Config.restart();
                     };
                     
-                    // check if remote dbs should also have a
-                    // reset
+                    // CHECK if remote DBs should also have a reset
                     var resetRemoteDB = function() {
-                        var profile = Config.getProfile();
-                        if ( profile && !profile.parent_user_id && Config.getSync() ) {
+                        if ( !profile.parent_user_id && Config.getSync() ) {
                             // rebuild sync
                             Config.resetDist().then(function() {
                                 return Config.setupRemoteDatabases().then(function() {
@@ -551,34 +546,75 @@ Ext.define('Fpos.controller.MainCtrl', {
                         }
                     };
                     
-                    ViewManager.startLoading('Datenbank zurücksetzen');            
-                    Config.resetDB()['catch'](function(err) {
+                    var handleError = function(err) {
+                        // ERROR HANDLING
                         ViewManager.stopLoading();
-                        ViewManager.handleError(error,{
-                            name: "Zurücksetzen fehlgeschlagen", 
-                            message: "Datenbank zurücksetzen fehlgeschlagen"
-                        });                           
-                    }).then(function(res) {
-                        return self.sync(true, function(err) {
-                            ViewManager.stopLoading(); 
-                            if ( err ) {
-                                self.editConfig();
+                        Ext.Msg.confirm('Daten Synchronisation fehlgeschlagen','Keine Internetverbindung zum Server, nochmal versuchen?', function(buttonId) {
+                            if ( buttonId == 'yes' ) {          
+                                restart();
                             } else {
-                                resetRemoteDB();
-                            }                                
-                        });
-                    });
-                    
+                                ViewManager.startLoading('Optimiere Daten');   
+                                db.compact().then(function(res) {
+                                    // OPTIMIZE DB
+                                    ViewManager.startLoading('Optimiere Ansichten');   
+                                    return db.viewCleanup();
+                                }).then(function(res) {   
+                                    // LOAD DATA after Optimizing      
+                                    ViewManager.stopLoading();          
+                                    self.loadData();
+                                })['catch'](function(err) {
+                                    ViewManager.stopLoading();
+                                    ViewManager.handleError(err, {
+                                        name: 'Fehler beim Laden',
+                                        message: 'Sobald als möglich einen Datenabgleich durchführen, um die Daten zu sichern'
+                                    }, false, function(err) {
+                                        // LOAD DATA
+                                        self.loadData();
+                                    });
+                                });       
+                            }
+                        });                       
+                    };       
+                                        
+                    // SYNC AND RESET
+                    ViewManager.startLoading('Datenbank sichern');
+                    self.sync(false, function(err) {
+                        if ( err ) {
+                           handleError(err);
+                        } else {
+                        
+                            ViewManager.startLoading('Datenbank zurücksetzen');            
+                            Config.resetDB()['catch'](function(err) {                               
+                               handleError(err);                               
+                            }).then(function(res) {
+                                
+                                // FULL SYNC
+                                self.sync(true, function(err) {                                  
+                                    if ( err ) {
+                                        handleError(err);
+                                    } else {
+                                        ViewManager.stopLoading(); 
+                                        resetRemoteDB();
+                                    }                                
+                                });
+                                
+                            });
+                        }
+                    });             
                 } else {
+                    // LOAD DATA
                     ViewManager.stopLoading();
-                    if ( error.name === 'not_found') {
-                        self.editConfig();   
-                    } else {
-                        ViewManager.handleError(error,{
-                            name: "Fehler beim Laden", 
-                            message: "Konfiguration konnte nicht geladen werden"
-                        });
-                    }
+                    self.loadData();
+                }
+            })['catch'](function(error) {               
+                ViewManager.stopLoading();
+                if ( error.name === 'not_found') {
+                    self.editConfig();   
+                } else {
+                    ViewManager.handleError(error,{
+                        name: "Fehler beim Laden", 
+                        message: "Konfiguration konnte nicht geladen werden"
+                    });
                 }
             }); 
         } catch (err) {
