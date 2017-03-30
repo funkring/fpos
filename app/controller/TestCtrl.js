@@ -124,10 +124,10 @@ Ext.define('Fpos.controller.TestCtrl', {
         var hwstatus = Config.getHwStatus();
         if (hwstatus) {
             if ( hwstatus.manufacturer ) {
-                hwStatusInfo = hwStatusInfo + "Manufacturer: " + hwstatus.manufacturer + "\n";
+                hwStatusInfo = hwStatusInfo + "Manufacturer: '" + hwstatus.manufacturer + "'\n";
             }
             if ( hwstatus.model ) {
-                hwStatusInfo = hwStatusInfo + "Model: " + hwstatus.model + "\n";
+                hwStatusInfo = hwStatusInfo + "Model: '" + hwstatus.model + "'\n";
             }
         } 
         
