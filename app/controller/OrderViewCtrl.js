@@ -382,6 +382,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             pact_scan: self.onScanQR
         });
         
+        // validate orders
+        Ext.Viewport.on({
+            scope: self,
+            validateOrders: self.validateOrders
+        });
+        
         // reload data
         self.reloadData();
     },
@@ -1439,6 +1445,36 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+    /**
+     * Validate Orders/Places
+     */
+    validateOrders: function() {
+        var self = this;
+        var db = Config.getDB();
+        var deferred = Ext.create('Ext.ux.Deferred');
+        
+        // reset places
+        Ext.each(self.placeStore.allPlaces, function(place) {
+            place.set('amount', 0.0);
+            place.set('user', null); 
+        });
+        
+        // update places
+        DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {'include_docs':true}).then(function(res) {
+           Ext.each(res.rows, function(row) {
+              if ( row.doc.place_id ) {
+                    var place = self.placeStore.getPlaceById(row.doc.place_id);
+                    self.updatePlace(place, row.doc.amount_total, row.doc.user_id);
+              }
+           });
+           deferred.resolve();   
+        })['catch'](function(err) {
+           deferred.reject(err);
+        });
+                
+        return deferred.promise();
+    },    
+    
     fullDataReload: function(callback, op) {
         var self = this;
         
@@ -1467,8 +1503,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
            // set active
            DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {'include_docs':true}).then(function(res) {
                Ext.each(res.rows, function(row) {
-                  var place = self.placeStore.getPlaceById(row.doc.place_id);
-                  self.updatePlace(place, row.doc.amount_total, row.doc.user_id);
+                    if ( row.doc.place_id ) {
+                        var place = self.placeStore.getPlaceById(row.doc.place_id);
+                        self.updatePlace(place, row.doc.amount_total, row.doc.user_id);
+                    }
                });
                self.reloadData(callback, op);
            });

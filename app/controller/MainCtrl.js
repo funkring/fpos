@@ -955,57 +955,11 @@ Ext.define('Fpos.controller.MainCtrl', {
             var setupRemote = function() {
                 var remoteDatabases = Config.getRemoteDatabases();
                 if ( remoteDatabases.length > 0 ) {                    
-                
                     ViewManager.startLoading("Lade Verbindungen");
+                    // TEST REMOTE
                     Config.setupRemoteLinks(remoteDatabases, true).then(function() {
-                        
-                        // get sync version
-                        var syncVersion  = Config.getSyncVersion();
-                        var db = Config.getDB();
-                        
-                        // clean up database
-                        // delete draft order before this version
-
-                        DBUtil.search(db, [['fdoo__ir_model','=','fpos.order'],['state','=','draft']], {include_docs: true}).then(function(res) {
-                           var bulkUpdate = [];
-                           Ext.each(res.rows, function(row) {
-                               if ( !row.doc.sv || row.doc.sv < syncVersion ) {
-                                   // mark deleted                        
-                                   row.doc._deleted = true;
-                                   bulkUpdate.push(row.doc);
-                               }
-                           });
-                           return db.bulkDocs(bulkUpdate);
-                        }).then(function(res) {
-                            if ( Config.getSyncVersion() > profile.fpos_sync_version ) {
-                                ViewManager.stopLoading();
-                                Ext.Msg.confirm('Alte Daten','Auf dem Gerät sind alte Daten, soll der neue Datenstand geholt werden?', function(buttonId) {
-                                    if ( buttonId == 'yes' ) {
-                                        // sync again
-                                        self.sync(true)['catch'](setupRemoteError);
-                                    } else {
-                                        // start normal
-                                        Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
-                                    }        
-                                });
-                            } else {
-                                // start normal
-                                Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
-                            }
-                        })['catch'](function(err) {          
-                            // error
-                            ViewManager.stopLoading();
-                            Ext.Msg.confirm('Alte Daten','Alte Verkäufe konnten nicht gelöscht werden, soll der neue Datenstand geholt werden?', function(buttonId) {
-                                 if ( buttonId == 'yes' ) {
-                                     // sync again
-                                     self.sync(true)['catch'](setupRemoteError);
-                                 } else {
-                                     // start normal
-                                     Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
-                                 }        
-                             });
-                        });                        
-                        
+                        // FINAL SETUP
+                        Config.setupRemoteLinks(remoteDatabases).then(setupPos, setupRemoteError);
                     }, setupRemoteError);
                 } else {
                     setupPos();

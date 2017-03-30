@@ -42,7 +42,8 @@ Ext.define('Fpos.Config', {
         syncState: 'idle',
         syncVersion: 0,
         highestSyncVersion: 0,
-        lowestSyncVersion: 0,        
+        lowestSyncVersion: 0,
+        versionDate: null,
         syncHandlers: null,
         logoutCode: '0000000',
         journalById: {},
@@ -96,11 +97,13 @@ Ext.define('Fpos.Config', {
         var filterId = '_design/' + filterVersion;  
         var filterName =  filterVersion + "/dist";
         var version = this.getHighestSyncVersion();
+        var versionDate = futil.datetimeToStr(new Date());
         return {
             name: filterName,  
             filter : {
                 _id: filterId,
-                version: version,       
+                version: version,
+                date: versionDate, 
                 filters: {
                     dist: function(doc) {
                         return (doc._id == 'fpos_config' || (doc.fdoo__ir_model == 'fpos.order' && doc.state == 'draft' && doc.place_id && doc.sv >= '$sync_version'));
@@ -291,6 +294,7 @@ Ext.define('Fpos.Config', {
             var nodeErr = null;
             var lowestSyncVersion = self.getLowestSyncVersion();
             var highestSyncVersion = self.getHighestSyncVersion();
+            var versionDate = self.getVersionDate();
             
             var procNotify = function(err, res) {
                 nodeCount++;                                
@@ -299,13 +303,18 @@ Ext.define('Fpos.Config', {
                 } 
                 // determine lowest version
                 else if ( test ) {                    
-                    if ( res && res.version ) {
-                        if  (res.version < lowestSyncVersion) {
-                            lowestSyncVersion = res.version;
-                        } 
-                        if (res.version > highestSyncVersion) {
-                            highestSyncVersion = res.version;
-                        }                         
+                    if ( res ) {
+                        if ( res.version ) {
+                            if  (res.version < lowestSyncVersion) {
+                                lowestSyncVersion = res.version;
+                            } 
+                            if (res.version > highestSyncVersion) {
+                                highestSyncVersion = res.version;
+                            }                         
+                        }
+                        if ( res.date && res.date > versionDate ) {
+                            versionDate = res.date;
+                        }
                     }
                 }
                 
@@ -314,15 +323,27 @@ Ext.define('Fpos.Config', {
                         // update sync version range
                         self.setLowestSyncVersion(lowestSyncVersion);
                         self.setHighestSyncVersion(highestSyncVersion);
+                        self.setVersionDate(versionDate);
                         console.log("LowestSyncVersion: " + lowestSyncVersion);
                         console.log("HighestSyncVersion: " + highestSyncVersion);
+                        console.log("VersionDate: " + versionDate);
                         deferred.resolve();
                     } else {
                         if ( nodeErr ) {
                             self.notifySyncState('error');
                             deferred.reject(nodeErr);
-                        } else {                                            
-                            deferred.resolve();
+                        } else {
+                            // MIGRATE IF NECCESSARY        
+                            if ( self.getHighestSyncVersion() != self.getSyncVersion() ) {
+                                self.migrateDraftOrders().then(function() {
+                                    deferred.resolve();
+                                }, function(err) {
+                                    deferred.reject(err);
+                                });
+                            } else {
+                                // DEFAULT
+                                deferred.resolve();
+                            }
                         }
                     }
                 }
@@ -533,6 +554,10 @@ Ext.define('Fpos.Config', {
             self.setSyncVersion(syncVersion);
             self.setHighestSyncVersion(syncVersion);
             self.setLowestSyncVersion(syncVersion);
+            
+            // set current version date
+            var versionDate = futil.dateToStr(new Date());
+            self.setVersionDate(versionDate);
             
             // set cash journal
             var journalById = self.getJournalById();            
@@ -898,11 +923,21 @@ Ext.define('Fpos.Config', {
             var version = self.getHighestSyncVersion();
             var countDelete = 0;
             var countMigrate = 0;
+            
+            // specifiy/update date
+            var versionDate = self.getVersionDate();
+            var today = futil.dateToStr(new Date());
+            if ( !versionDate || versionDate < today ) {
+                versionDate = today;
+                self.setVersionDate(versionDate);
+            }
+            
+            console.log("migrateVersionDate: " + versionDate);
              
             // search order for migration
             Ext.each(res.rows, function(row) {                
                 if ( row.doc.sv < version ) {
-                    if ( row.doc.line_ids && row.doc.line_ids.length > 0 && (row.doc.sv+1 == version) ) {
+                    if ( row.doc.line_ids && row.doc.line_ids.length > 0 && row.doc.date >= versionDate && !row.doc._deleted ) {
                         countMigrate++;
                         row.doc.sv = version;
                     } else {
@@ -916,13 +951,15 @@ Ext.define('Fpos.Config', {
             
             console.log("migrateDraftOrders: " + countMigrate);
             console.log("deleteDraftOrders: " + countDelete);
-                        
+            
             if ( orders.length > 0 ) {
                 // bulk update for all orders
                 db.bulkDocs(orders).then(function() {
                     deferred.resolve();
+                    Ext.Viewport.fireEvent('validateOrders');
                 })['catch'](function(err) {
                     deferred.reject(err);
+                    Ext.Viewport.fireEvent('validateOrders');
                 });
             } else {
                 deferred.resolve();
