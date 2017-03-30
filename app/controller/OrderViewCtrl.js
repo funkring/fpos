@@ -584,7 +584,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         flags += '2';
                     }
                 }                
-                if ( flags.length > 0) {
+                if ( flags.length > 0 ) {
                     values.flags = flags;
                 }
                 
@@ -621,8 +621,30 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     values.tag = null;
                 }
                 
-                // add line
-                changedLine = self.lineStore.add(values)[0];
+                
+                // check flags
+                if ( flags.indexOf('2') >= 0 ) {
+                    // find selected
+                    var records = self.getOrderItemList().getSelection();
+                    var index = -1;
+                    if ( records.length > 0  ) {
+                        var record = records[0];
+                        index = self.lineStore.indexOf(record);
+                    } 
+                    
+                    if ( index >= 0 ) {
+                        // insert
+                        changedLine = self.lineStore.insert(index+1, values)[0];  
+                    } else {
+                        // add line
+                        changedLine = self.lineStore.add(values)[0];
+                    }
+                    
+                } else {
+                    // add line
+                    changedLine = self.lineStore.add(values)[0];
+                }
+                
                 if ( changedLine ) {
                     changedLine.dirty = true;
                 }
