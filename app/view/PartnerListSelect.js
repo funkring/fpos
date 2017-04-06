@@ -9,6 +9,19 @@ Ext.define('Fpos.view.PartnerListSelect', {
     config: {
         store: 'PartnerStore',
         displayField: 'name',
+        displayTemplate: [
+                    '<div>{name}</div>',
+                    '<div><small>{[this.getAddress(values)]}</small></div>',
+                    {
+                        getAddress: function(values) {
+                            var addr =  [];                            
+                            if ( values.zip ) addr.push(values.zip);
+                            if ( values.city ) addr.push(values.city);
+                            if ( values.street ) addr.push(values.street);
+                            if ( values.street2 ) addr.push(values.street2);                           
+                            return addr.join(" - ");
+                        }
+                    }],               
         title: 'Kunde',
         autoSelect: false,
         pickerToolbarItems: [{

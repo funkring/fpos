@@ -44,7 +44,12 @@ Ext.define('Ext.field.ListSelect', {
         /**
          * limit
          */
-        limit: 100
+        limit: 100,
+        
+        /**
+         * display template
+         */
+        displayTemplate: null
         
     },
     
@@ -98,6 +103,11 @@ Ext.define('Ext.field.ListSelect', {
                  toolbarItems = toolbarItems.concat(additionalToolbarItems);
             }
             
+            var displayTpl = self.getDisplayTemplate();
+            if ( !displayTpl ) {
+                displayTpl =  '{' + self.getDisplayField() + '}';
+            }
+            
             navigationView.push({
                title: self.getTitle(),
                newRecord: null,
@@ -116,7 +126,7 @@ Ext.define('Ext.field.ListSelect', {
                  height: '100%',
                  flex: 1, 
                  store: store,
-                 itemTpl: '{' + self.getDisplayField() + '}',
+                 itemTpl: displayTpl,
                  listeners: {
                      select: self.onListSelect,
                      //itemtap: self.onListTap,

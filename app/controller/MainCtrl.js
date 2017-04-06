@@ -209,7 +209,28 @@ Ext.define('Fpos.controller.MainCtrl', {
                title: 'Partner',
                store: 'OPartnerStore',
                formView: 'fpos_partner_form',
-               dataAdd: true 
+               dataAdd: true,
+               itemTpl:  [
+                    '<div>{name}</div>',
+                    '<div><small>{[this.getAddress(values)]}</small></div>',
+                    '<div><small>{[this.getPhone(values)]}</small></div>',
+                    {
+                        getAddress: function(values) {
+                            var addr =  [];                            
+                            if ( values.zip ) addr.push(values.zip);
+                            if ( values.city ) addr.push(values.city);
+                            if ( values.street ) addr.push(values.street);
+                            if ( values.street2 ) addr.push(values.street2);                           
+                            return addr.join(" - ");
+                        }, 
+                        getPhone: function (values) {
+                            var phone = [];
+                            if ( values.mobile ) phone.push(values.mobile);
+                            if ( values.phone ) phone.push(values.phone);
+                            if ( values.email ) phone.push(values.email);
+                            return phone.join(" | ");
+                        }
+                }]    
             });
         })['catch'](function(err) {
             ViewManager.handleError(err);
