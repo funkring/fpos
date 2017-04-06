@@ -16,7 +16,8 @@ Ext.define('Fpos.model.OPartner', {
         'city',
         'fax',
         'customer',
-        'comment'
+        'comment',
+        'vat'
        ],
        proxy: {
             type: 'odoo',

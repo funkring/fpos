@@ -1104,7 +1104,8 @@ Ext.define('Fpos.Config', {
                      'fax',
                      'phone',
                      'mobile',
-                     'is_company']
+                     'is_company',
+                     'vat']
         };
     },
     

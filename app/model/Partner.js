@@ -15,7 +15,8 @@ Ext.define('Fpos.model.Partner', {
                 'city',
                 'fax',
                 'customer',
-                'comment'
+                'comment',
+                'vat'
                 ],        
        identifier: 'uuid',
        proxy: {           
