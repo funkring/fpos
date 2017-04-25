@@ -25,8 +25,8 @@ Ext.define('Ext.util.BarcodeScanner', {
         var keycode = e.keyCode;
         if ( keycode ) {
             // check keys
-            if ( keycode >= 48 && keycode <= 70  ) {
-                // add number    
+            if ( keycode >= 32 && keycode <= 126  ) {
+                // add char    
                 this.keyCodes.push(keycode);
                 this.forwardKeyTask.delay(80);
             } else if ( keycode == 13 && this.keyCodes.length > 0) {
@@ -49,12 +49,13 @@ Ext.define('Ext.util.BarcodeScanner', {
         var self = this;
                 
         try {
-            // forward keys if listener defined
             var keyListener = self.getKeyListener();
             if ( keyListener ) {
-                for ( var i=0; i < self.keyCodes.length; i++ ) {
-                    keyListener(self.keyCodes[i]);
-                }                
+                // forward last key
+                if ( self.keyCodes.length > 0 ) {
+                    keyListener(self.keyCodes[self.keyCodes.length-1]);
+                }
+                // forard new key
                 if ( keycode !== undefined ) {
                     keyListener(keycode);
                 }

@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '5.0.11',
+        version : '5.0.14',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -45,7 +45,6 @@ Ext.define('Fpos.Config', {
         lowestSyncVersion: 0,
         versionDate: null,
         syncHandlers: null,
-        logoutCode: '0000000',
         journalById: {},
         posClosed: false
     },
@@ -1332,5 +1331,9 @@ Ext.define('Fpos.Config', {
     
     beep: function() {
         window.PosHw.beep();
+    },
+    
+    isLogoutCode: function(code) {
+        return code == 'OUT' || code == '0000000'; 
     }
 });

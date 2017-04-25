@@ -3877,7 +3877,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         // check waiter code
         var profile = Config.getProfile();
         if ( profile.iface_waiterkey ) {
-            if ( profile.iface_place && barcode == Config.getLogoutCode() ) {
+            if ( profile.iface_place && Config.isLogoutCode(barcode) ) {
                 // save order
                 self.saveOrder(true);
                 return;

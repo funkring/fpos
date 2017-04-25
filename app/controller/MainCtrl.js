@@ -1337,7 +1337,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                 };               
             }
                 
-                
             // add handler
             self.pinInput.setHandler(function(view, pin) {
                 var settings = Config.getSettings();              
@@ -1494,7 +1493,7 @@ Ext.define('Fpos.controller.MainCtrl', {
     onWaiterCode: function(code) {
         if ( ViewManager.isLoading() ) return;
         if ( code ) {
-            if ( code == Config.getLogoutCode() ) {
+            if ( Config.isLogoutCode(code) ) {
                 this.logout();
             } else if ( code.length > 13 ) {
                 Ext.Viewport.fireEvent('waiterKey', code);
