@@ -2059,6 +2059,51 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     /**
+     * post order to database in realtime
+     */
+    postOrderRemote: function(order, order_id) {
+        var db = Config.getDB();
+        Config.getClient().then(function(client) {
+            client.invoke("fpos.order", "post_order", [order]).then(function(res) {
+                // check if document was posted
+                // (is only posted if it is set)
+                if ( !res._id ) {
+                    // if not search from orders from return seq
+                    // and post it all
+                    DBUtil.search(db, ['fdoo__ir_model', 'seq'], {
+                        include_docs: true,
+                        inclusive_end: true,
+                        startkey: ['fpos.order', res.seq],
+                        endkey: ['fpos.order', Number.MAX_VALUE]
+                    })['catch'](function(err) {
+                        console.error(err);
+                    }).then(function(res) {
+                        var orders = [];
+                        Ext.each(res.rows, function(row) {
+                           orders.push(row.doc); 
+                        });
+                        client.invoke("fpos.order", "post_order", [orders]).then(function(res) {
+                            if  ( res._id ) {
+                                console.log("Bulk order " + res._id + " posted");
+                            } else {
+                                console.error("Bulk order post failed on sequence " + res.seq);
+                            }
+                        }, function(err) {
+                            console.error(err);
+                        });
+                    });                                
+                } else {
+                    console.log("Order " + res._id + " posted");
+                }
+            }, function(err) {
+                console.error(err);
+            });
+        }, function(err)  {
+            console.error(err);
+        });
+    },
+    
+    /**
      * Posting the order.
      *
      * BE CAREFUL, the function only my be called 
@@ -2156,7 +2201,11 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         if ( move_rev ) orderCopy._rev = move_rev;
 
                         // save order copy
-                        db.post(orderCopy).then(function() {
+                        db.post(orderCopy).then(function(res) {
+                            // id and revision
+                            orderCopy._id = res.id;
+                            orderCopy._rev = res.rev;
+                            
                             // update counters
                             self.seq = orderCopy.seq;
                             self.turnover = orderCopy.turnover;
@@ -2180,6 +2229,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 });
                             } else {
                                 deferred.resolve(orderCopy);
+                            }
+                            
+                            // post order remote
+                            // ( if enabled )
+                            if ( profile.fpos_sync_realtime ) {
+                                self.postOrderRemote(orderCopy);
                             }
                         })['catch'](function(err) {
                             deferred.reject(err);
@@ -2463,7 +2518,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         try {
             var self = this;
             var profile = Config.getProfile();        
-            if ( !self.printTemplate ) {            
+            if ( !self.printTemplate ) {
+            
+                // has notice function
+                var hasNotice;            
+                if ( profile.iface_place ) {
+                    hasNotice = function() {
+                        return false;
+                    };
+                } else {
+                    hasNotice = function(values) {
+                        return values.notice;
+                    };
+                }
+                
                 self.printTemplate = Ext.create('Ext.XTemplate',
                     profile.receipt_header || '',
                     '<table width="100%">',
@@ -2572,7 +2640,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                         '</tr>',
                                     '</tpl>',
                                 '</tpl>',                          
-                                '<tpl if="notice && !Config.getProfile().iface_place">',
+                                '<tpl if="this.hasNotice(values)">',
                                     '<tr>',
                                         '<td width="5%">&nbsp;</td>',
                                         '<td colspan="2"><hr/></td>',                    
@@ -2686,7 +2754,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             } else {
                                 return values.flags.indexOf(flag) > -1;
                             }
-                        }
+                        },
+                        hasNotice: hasNotice
                     }                
                 );
             }
