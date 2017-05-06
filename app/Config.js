@@ -576,7 +576,7 @@ Ext.define('Fpos.Config', {
                 var installPayment = false;
                 Ext.each(profile.payment_iface_ids, function(payment_iface) {
                      // asign mcashier api
-                     if ( payment_iface == 'mcashier' && window.Payworks) {
+                     if ( payment_iface.iface == 'mcashier' && window.Payworks) {
                         paymentByJournal[payment_iface.journal_id] = self.handlePaymentPayworks;
                         installPayment = true;
                      }
@@ -1364,18 +1364,19 @@ Ext.define('Fpos.Config', {
     
     handlePaymentPayworks: function(name, payment_ids, index, callback) {
         var self = this;
-        var payment = payment_ids[index];        
+        var payment = payment_ids[index];   
+             
         window.Payworks.init({
             integrator: 'OERP',
             mode: 'LIVE',
             appName: 'MCASHIER'
         }, function(res) {
-           self.objectInfo(res);
-           window.Payworks.payment({
-                amount: payment_ids[index].amount,
+                   
+            window.Payworks.payment({
+                amount: payment.amount,
                 subject: name,
                 customId: name
-           }, function(res) {
+            }, function(res) {
                 // write payment
                 if ( res.transactionId && res.status == "APPROVED" ) {
                     payment.code = res.transactionId;     
@@ -1383,9 +1384,10 @@ Ext.define('Fpos.Config', {
                 } else {
                     callback({name:"Zahlung abgelehnt", message:"Die Transaktion wurde nicht genehmigt"});
                 }
-           }, function(err) {
+            }, function(err) {
                 callback(err);                               
-           });
+            });
+            
         }, function(err) {
             callback(err);                 
         });
@@ -1393,13 +1395,14 @@ Ext.define('Fpos.Config', {
     },
     
     handlePaymentDefault: function(name, payment_ids, index, callback) {
+        var self = this;
         if ( index < payment_ids.length ) {
             var payment = payment_ids[index];
-            var paymentFunc = this.getPaymentByJournal()[payment.journal_id];
+            var paymentFunc = self.getPaymentByJournal()[payment.journal_id];
             if ( payment.amount && paymentFunc ) {
-                paymentFunc(name, payment_ids, index, callback);
+                paymentFunc.call(self, name, payment_ids, index, callback);
             } else {
-                this.handlePaymentDefault(name, payment_ids, index+1, callback);
+                self.handlePaymentDefault(name, payment_ids, index+1, callback);
             }
         } else {
             callback(null);
