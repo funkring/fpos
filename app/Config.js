@@ -46,6 +46,7 @@ Ext.define('Fpos.Config', {
         versionDate: null,
         syncHandlers: null,
         journalById: {},
+        paymentByJournal: {},
         posClosed: false
     },
     
@@ -559,13 +560,33 @@ Ext.define('Fpos.Config', {
             self.setVersionDate(versionDate);
             
             // set cash journal
-            var journalById = self.getJournalById();            
+            var journalById = self.getJournalById();   
             Ext.each(profile.journal_ids, function(journal) {
                 journalById[journal._id] = journal;
                 if ( journal.type == 'cash') {
                     self.setCashJournal(journal); 
                 }
-            }); 
+            });
+            
+            // setup payment            
+            if ( profile.payment_iface_ids && profile.payment_iface_ids.length > 0 ) {
+                
+                // setup payment methods
+                var paymentByJournal = self.getPaymentByJournal();               
+                var installPayment = false;
+                Ext.each(profile.payment_iface_ids, function(payment_iface) {
+                     // asign mcashier api
+                     if ( payment_iface == 'mcashier' && window.Payworks) {
+                        paymentByJournal[payment_iface.journal_id] = self.handlePaymentPayworks;
+                        installPayment = true;
+                     }
+                });
+                
+                // install payment handling
+                if ( installPayment ) {
+                    self.handlePayment = self.handlePaymentDefault;
+                }
+            }
             
             // set users
             Ext.each(profile.user_ids, function(user) {
@@ -1335,5 +1356,49 @@ Ext.define('Fpos.Config', {
     
     isLogoutCode: function(code) {
         return code == 'OUT' || code == '0000000'; 
-    }
+    },
+    
+    handlePayment: function(name, payment_ids, index, callback) {
+        callback(null);
+    },
+    
+    handlePaymentPayworks: function(name, payment_ids, index, callback) {
+        var self = this;
+        var payment = payment_ids[index];        
+        window.Payworks.init({
+            integrator: 'OERP',
+            mode: 'LIVE',
+            appName: 'MCASHIER'
+        }, function(res) {
+           self.objectInfo(res);
+           window.Payworks.payment({
+                amount: payment_ids[index].amount,
+                subject: name,
+                customId: name
+           }, function(res) {
+                // write payment
+                self.handlePaymentDefault(name, payment_ids, index+1, callback);                
+           }, function(err) {
+                callback(err);                               
+           });
+        }, function(err) {
+            callback(err);                 
+        });
+        
+    },
+    
+    handlePaymentDefault: function(name, payment_ids, index, callback) {
+        if ( index < payment_ids.length ) {
+            var payment = payment_ids[index];
+            var paymentFunc = this.getPaymentByJournal()[payment.journal_id];
+            if ( payment.amount && paymentFunc ) {
+                paymentFunc(name, payment_ids, index, callback);
+            } else {
+                this.handlePaymentDefault(name, payment_ids, index+1, callback);
+            }
+        } else {
+            callback(null);
+        }
+    }    
+    
 });

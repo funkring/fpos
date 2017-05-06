@@ -2148,8 +2148,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // add cash payment if no payment
                 var payment_ids = orderCopy.payment_ids;
+                var cashOnly = false;
                 var amount_total = orderCopy.amount_total;                
                 if ( !payment_ids || payment_ids.length === 0 || !self.isPayment() ) {
+                    cashOnly = true;
                     payment_ids = [
                         {
                             journal_id : cashJournalId,
@@ -2193,7 +2195,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     orderCopy.name = Config.formatSeq(seq);
                     orderCopy.cpos = self.round(cpos);
                     orderCopy.payment_ids = fixed_payments;
-                    
+                                        
                     // save order
                     var saveOrder = function() {
                         // check for move                    
@@ -2240,6 +2242,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             deferred.reject(err);
                         });
                     };
+                    
+                    // prepend payment save order
+                    if ( !cashOnly ) {
+                        var afterPayment = saveOrder;
+                        saveOrder = function() {
+                            Config.handlePayment(orderCopy.name, orderCopy.payment_ids, 0, function(err) {
+                                if (err) {
+                                    deferred.reject(err);
+                                } else {
+                                    afterPayment();
+                                }
+                            });
+                        };
+                    }
                     
                     // check special type
                     if ( orderCopy.st == 'm' ) {
