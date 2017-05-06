@@ -1377,7 +1377,12 @@ Ext.define('Fpos.Config', {
                 customId: name
            }, function(res) {
                 // write payment
-                self.handlePaymentDefault(name, payment_ids, index+1, callback);                
+                if ( res.transactionId && res.status == "APPROVED" ) {
+                    payment.code = res.transactionId;     
+                    self.handlePaymentDefault(name, payment_ids, index+1, callback);
+                } else {
+                    callback({name:"Zahlung abgelehnt", message:"Die Transaktion wurde nicht genehmigt"});
+                }
            }, function(err) {
                 callback(err);                               
            });
