@@ -2244,10 +2244,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     };
                     
                     // prepend payment save order
-                    if ( !cashOnly ) {
+                    if ( !cashOnly || orderCopy.tag === 's') {
                         var afterPayment = saveOrder;
                         saveOrder = function() {
-                            Config.handlePayment(orderCopy.name, orderCopy.payment_ids, 0, function(err) {
+                            Config.handlePayment(orderCopy, function(err) {
                                 if (err) {
                                     deferred.reject(err);
                                 } else {
@@ -2400,7 +2400,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( !self.postActive && self.isDraft() && (!self.isPayment() || self.validatePayment()) ) {
             // CHECK THAT 
             // ONLY CALLED ONCE
-            ViewManager.startLoading("Drucken...");
+            ViewManager.startLoading("Zahlung...");
             
             // post active
             self.postActive = true;
@@ -2807,7 +2807,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 if ( order.hs ) {
                     data.link = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
                 }
-                self.previewPrint(self.printTemplate.apply(data));                
+                
+                // print order
+                self.previewPrint(self.printTemplate.apply(data));  
+                
+                // print receipts
+                Ext.each(order.payment_ids, function(payment) {
+                    if ( payment.receipt_ids ) {
+                        Ext.each(payment.receipt_ids, function(receipt) {
+                            if ( receipt.tag && receipt.receipt ) {
+                                self.previewPrint('<pre>' + receipt.receipt + '</pre>');
+                            }                             
+                        });
+                    }
+                }); 
+                              
             } else {
                 if ( order.hs ) {
                     data.qrsrc = "qrcode";
@@ -2816,7 +2830,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     data.qrsrc = "qrcode";
                     data.qrdata = order.qr;                    
                 }
+                
+                // print order
                 Config.printHtml(self.printTemplate.apply(data));
+                
+                // print receipts
+                Ext.each(order.payment_ids, function(payment) {
+                    if ( payment.receipt_ids ) {
+                        Ext.each(payment.receipt_ids, function(receipt) {
+                            if ( receipt.tag && receipt.receipt ) {
+                                Config.printText(receipt.receipt);
+                            }                             
+                        });
+                    }
+                }); 
             }
         } catch (err) {
             ViewManager.handleError(err, {name: 'order_print_error', 

@@ -6,14 +6,14 @@ Ext.define('Fpos.core.HwProxy', {
     
     config : {
         url : 'http://localhost:8045',
-        timeout: 5000
+        timeout: 6000
     },
     
     constructor: function(config) {
         this.initConfig(config);
     },
     
-    call: function(func, params, successCallback, errorCallback) {
+    call: function(func, params, successCallback, errorCallback, timeout) {
         var self = this;
         openerplib.json_rpc(self.getUrl(), func, params, function(err, res) {
             if (err) {
@@ -27,7 +27,7 @@ Ext.define('Fpos.core.HwProxy', {
             } else {
                 if (successCallback) successCallback(res);
             }
-        }, { timeout: self.getTimeout() });
+        }, { timeout: timeout || self.getTimeout() });
     },
     
     getStatus: function(successCallback, errorCallback) {
@@ -90,8 +90,19 @@ Ext.define('Fpos.core.HwProxy', {
     
     beep: function(successCallback, errorCallback) {
         this.call("beep", {}, successCallback, errorCallback);
-    }    
+    },
+    
+    terminalTransaction: function(transaction, successCallback, errorCallback) {
+        this.call("terminalTransaction", {transaction:transaction}, successCallback, errorCallback, 30000);
+    },
+    
+    terminalStatus: function(transaction, successCallback, errorCallback) {
+        this.call("terminalStatus", {transaction:transaction}, successCallback, errorCallback, 30000);
+    },
    
+    terminalBalance: function(transaction, successCallback, errorCallback) {
+        this.call("terminalBalance", {transaction:transaction}, successCallback, errorCallback, 30000);
+    }
 });
 
 

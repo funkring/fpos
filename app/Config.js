@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '5.0.15',
+        version : '5.0.16',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -47,6 +47,7 @@ Ext.define('Fpos.Config', {
         syncHandlers: null,
         journalById: {},
         paymentByJournal: {},
+        paymentBalances: [],
         posClosed: false
     },
     
@@ -449,6 +450,15 @@ Ext.define('Fpos.Config', {
         }          
     },
     
+    printText: function(text) {
+        var lines = text.split('\n');
+        var result = [];
+        Ext.each(lines, function(line) {
+           result.push('<p>' + line + '</p>'); 
+        });
+        this.printHtml(result.join('\n'));
+    },
+    
     getPrinters: function() {        
         var self = this;
         if ( self.printer === undefined ) {   
@@ -573,18 +583,23 @@ Ext.define('Fpos.Config', {
                 
                 // setup payment methods
                 var paymentByJournal = self.getPaymentByJournal();               
+                var paymentBalances = self.getPaymentBalances();
                 var installPayment = false;
                 Ext.each(profile.payment_iface_ids, function(payment_iface) {
                      // asign mcashier api
                      if ( payment_iface.iface == 'mcashier' && window.Payworks) {
                         paymentByJournal[payment_iface.journal_id] = self.handlePaymentPayworks;
                         installPayment = true;
+                     } else if ( payment_iface.iface == 'tim' ) {
+                        paymentByJournal[payment_iface.journal_id] = self.handlePaymentHwProxy;
+                        paymentBalances.push(payment_iface.journal_id);
+                        installPayment = true;
                      }
                 });
                 
                 // install payment handling
                 if ( installPayment ) {
-                    self.handlePayment = self.handlePaymentDefault;
+                    self.handlePayment = self.handlePaymentFirst;
                 }
             }
             
@@ -1358,13 +1373,106 @@ Ext.define('Fpos.Config', {
         return code == 'OUT' || code == '0000000'; 
     },
     
-    handlePayment: function(name, payment_ids, index, callback) {
+    
+    /////////////////////////////////////////////////////////////////////////    
+    // PAYMENT HANDLING
+    /////////////////////////////////////////////////////////////////////////
+    
+    // NO PAYMENT
+    
+    handlePayment: function(order, callback) {
         callback(null);
     },
     
-    handlePaymentPayworks: function(name, payment_ids, index, callback) {
+    // HANDLE PAYMENT
+    
+    handlePaymentFirst: function(order, callback) {
         var self = this;
-        var payment = payment_ids[index];   
+        var balanceOffset = 0;
+                
+        // first
+        if (order.tag == 's') {
+        
+            // FIRST OFFSET IS ALWAYS CASH, therefore
+            // balanceOffset 0 is means no balance
+            // therfore balnceoffset always greater 0
+            
+            // add balance
+            balanceOffset = order.payment_ids.length;
+            Ext.each(self.getPaymentBalances(), function(journal_id) {
+                order.payment_ids.push({
+                    journal_id : journal_id,
+                    amount : 0.0,
+                    payment : 0.0
+                }); 
+            });            
+        }
+        
+        self.handlePaymentDefault(order, 0, callback, balanceOffset);        
+    },
+    
+        
+    // HWPROXY PAYMENT
+    
+    handlePaymentHwProxy: function(order, index, callback, balanceOffset) {
+        var self = this;
+        var payment = order.payment_ids[index];
+        
+        // check if available
+        var hwstatus = this.getHwStatus();
+        if ( !window.PosHw || !hwstatus || !hwstatus.terminal ) {
+            
+            // handle next
+            self.handlePaymentDefault(order, index+1, callback, balanceOffset);
+             
+        } else {
+        
+            var profile = self.getProfile();
+            var transaction = null;
+            
+            var getStatus = function() {
+                if ( transaction.status == 'COMPLETED') {
+                    if ( transaction.error ) {
+                        callback({name:"Bankomat Fehler", message:"Die Transaktion wurde abgelehnt"});
+                    } else {
+                        payment.code = transaction.transactionId;
+                        payment.receipt_ids = transaction.receipts;
+                        self.handlePaymentDefault(order, index+1, callback, balanceOffset);
+                    }
+                } else {
+                    // get/handle status
+                    window.PosHw.terminalStatus(transaction, function(res) {
+                        transaction = res;
+                        setTimeout(function() {
+                            getStatus();
+                        }, 1000);
+                    }, function(err) {
+                        callback({name:"Bankomat Fehler", message:"Die Transaktion konnte nicht durchgeführt werden"});
+                    });
+                }
+            };
+            
+            window.PosHw.terminalTransaction({
+                amount: payment.amount,
+                posId: profile.sign_pid || profile.name,
+                customId: order.name,
+                type: (balanceOffset && index >= balanceOffset) ? 'balance' : null   
+            }, function(res) {
+                transaction = res;
+                // get/handle status
+                getStatus();            
+            }, function(err) {
+                callback({name:"Bankomat Fehler", message:"Die Transaktion konnte nicht gestartet werden"});
+            });        
+        }
+    },
+            
+                
+    // PAYWORKS PAYMENT
+    
+    handlePaymentPayworks: function(order, index, callback, balanceOffset) {
+        var self = this;
+        var payment = order.payment_ids[index];   
              
         window.Payworks.init({
             integrator: 'OERP',
@@ -1374,13 +1482,13 @@ Ext.define('Fpos.Config', {
                    
             window.Payworks.payment({
                 amount: payment.amount,
-                subject: name,
-                customId: name
+                subject: order.name,
+                customId: order.name
             }, function(res) {
                 // write payment
                 if ( res.transactionId && res.status == "APPROVED" ) {
                     payment.code = res.transactionId;     
-                    self.handlePaymentDefault(name, payment_ids, index+1, callback);
+                    self.handlePaymentDefault(order, index+1, callback, balanceOffset);
                 } else {
                     callback({name:"Zahlung abgelehnt", message:"Die Transaktion wurde nicht genehmigt"});
                 }
@@ -1394,15 +1502,28 @@ Ext.define('Fpos.Config', {
         
     },
     
-    handlePaymentDefault: function(name, payment_ids, index, callback) {
+    
+    // PAYMENT ROUTE
+    
+    handlePaymentDefault: function(order, index, callback, balanceOffset) {
         var self = this;
-        if ( index < payment_ids.length ) {
-            var payment = payment_ids[index];
+
+        if ( index < order.payment_ids.length ) {
+            var payment = order.payment_ids[index];
             var paymentFunc = self.getPaymentByJournal()[payment.journal_id];
+            // check if payment should be done
             if ( payment.amount && paymentFunc ) {
-                paymentFunc.call(self, name, payment_ids, index, callback);
-            } else {
-                self.handlePaymentDefault(name, payment_ids, index+1, callback);
+                paymentFunc.call(self, order, index, callback, balanceOffset);
+            } 
+            // check if a balance should be done for payment
+            // balance offset always > 0 if enabled
+            else if ( paymentFunc && balanceOffset && index >= balanceOffset) {
+                paymentFunc.call(self, order, index, callback, balanceOffset);
+            } 
+            // handle default
+            else 
+            {
+                self.handlePaymentDefault(order, index+1, callback, balanceOffset);
             }
         } else {
             callback(null);
