@@ -1547,9 +1547,13 @@ Ext.define('Fpos.controller.MainCtrl', {
             title: title,
             saveable: true,
             saveableText: 'Drucken',
-            saveHandler: function(view) {
-                var f = view.element.down('#printFrame');
-                f.dom.contentWindow.print();
+            saveHandler: function(view) {    
+                if ( Config.supportNativePrint() ) {
+                    Config.nativePrint(htmlDoc);       
+                } else {
+                    var f = view.element.down('#printFrame');
+                    f.dom.contentWindow.print();
+                }
             },
             listeners: {
                 painted: function() {

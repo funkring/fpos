@@ -1373,6 +1373,23 @@ Ext.define('Fpos.Config', {
         return code == 'OUT' || code == '0000000'; 
     },
     
+    supportNativePrint: function() {
+        return cordova && cordova.plugins && cordova.plugins.printer;
+    },
+    
+    nativePrint: function(htmlPage, options) {        
+        var deferred = Ext.create('Ext.ux.Deferred');
+        if ( !options ) options = {};
+        cordova.plugins.printer.print(htmlPage, options, function (printed) {
+            if ( printed ) {
+                deferred.resolve();
+            } else {
+                deferred.reject({name: "Druck", message: "Dokument konnte nicht gedruckt werden"});
+            }
+        });
+        return deferred.promise();
+    },
+    
     
     /////////////////////////////////////////////////////////////////////////    
     // PAYMENT HANDLING
