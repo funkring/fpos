@@ -5,6 +5,7 @@ import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+import android.graphics.Bitmap;
 import at.oerp.pos.PosHwPrinter;
 import at.oerp.pos.PosHwService;
 import at.oerp.util.BinUtil;
@@ -492,6 +493,11 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		
 		public ByteBuffer getData() {
 			return data;
+		}
+
+		@Override
+		public Bitmap getBitmap() {
+			return image.getBitmap();
 		}		
 	}
 

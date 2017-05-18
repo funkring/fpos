@@ -13,9 +13,6 @@ import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.LinkedList;
 import java.util.Locale;
 
 import javax.crypto.BadPaddingException;
@@ -24,6 +21,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
 import android.annotation.SuppressLint;
 import android.util.Base64;
 import android.util.Log;
@@ -375,125 +373,47 @@ public abstract class PosHwSmartCard extends Card {
      */
 	public String test() {
 		StringBuilder b = new StringBuilder();
-		boolean speedTest = true;
 		try {
-			
+			open();
+			ICashRegisterSmartCard cashRegisterSmartCard = getDriver();
+			String cin = cashRegisterSmartCard.getCIN();
 			b.append("\n");
 			b.append("=================================\n");
-			b.append("RECEIPT TEST\n");
+			b.append("CARD TEST\n");
 			b.append("=================================\n");
 			b.append("\n");
+			b.append("CARD CIN " + cin + "\n");
+			X509Certificate cert = cashRegisterSmartCard.getCertificate();
+			b.append("CERT SUBJECT " + cert.getSubjectDN() + "\n");
+			String certSerialDec = cashRegisterSmartCard.getCertificateSerialDecimal();
+			b.append("CERT SERIAL " + certSerialDec + "\n");
+			String certSerialHex = cashRegisterSmartCard.getCertificateSerialHex();
+			b.append("CERT SERIAL HEX " + certSerialHex +"\n");
 			
-			Calendar cal = Calendar.getInstance();
-			cal.setTime(new Date());
-			cal.add(Calendar.HOUR, -8);
-			
-			PosReceipt receipt = null;
-			LinkedList<PosReceipt> receipts = new LinkedList<PosReceipt>();
-
-			receipt = new PosReceipt();
-			receipt.cashBoxID = "K1";
-			receipt.receiptIdentifier = "1";
-			receipt.receiptDateAndTime = cal.getTime();
-			receipt.sumTaxSetNormal = 0;
-			receipt.sumTaxSetErmaessigt1 = 0;
-			receipt.sumTaxSetErmaessigt2 = 0;
-			receipt.sumTaxSetNull = 0;
-			receipt.sumTaxSetBesonders = 0;
-			receipt.turnover = 0.00;
-			receipt.prevCompactData = "K1";
-			receipt.signatureCertificateSerialNumber = "21303e44";
-			receipts.add(receipt);
-			
-			receipt = new PosReceipt();
-			cal.add(Calendar.HOUR, 1);
-			receipt.cashBoxID = "K1";
-			receipt.receiptIdentifier = "2";
-			receipt.receiptDateAndTime = cal.getTime();
-			receipt.sumTaxSetNormal = 120.0;
-			receipt.sumTaxSetErmaessigt1 = 110.0;
-			receipt.sumTaxSetErmaessigt2 = 113.0;
-			receipt.sumTaxSetNull = 100;
-			receipt.sumTaxSetBesonders = 119.0;
-			receipt.turnover = 562.00;
-			receipt.signatureCertificateSerialNumber = "21303e44";
-			receipts.add(receipt);
-			
-			/*
-			receipt = new PosReceipt();
-			receipt.cashBoxID = "K1";
-			receipt.receiptIdentifier = "4";
-			receipt.receiptDateAndTime = new Date();
-			receipt.sumTaxSetNormal = 12;
-			receipt.sumTaxSetErmaessigt1 = 11;
-			receipt.sumTaxSetErmaessigt2 = 11;
-			receipt.sumTaxSetNull = 10;
-			receipt.sumTaxSetBesonders = 11;
-			receipt.turnover = 100.00;
-			receipt.signatureCertificateSerialNumber = "556809796";
-			receipts.add(receipt);*/
-			
-			// init encryption
-			init("gpxHh2p1WGGzcgcn8AFq6IEHY8Lql4/ecm5E/OZVE3c=");
-			
-			// sign receipts
-			PosReceipt lastR = null;
-			for ( PosReceipt r : receipts ) {
-				if ( lastR != null ) r.prevCompactData = lastR.compactData;
-				signReceipt(r);
-				b.append(r.plainData).append("\n");
-				b.append(r.compactData).append("\n");
-				b.append("\n\n");
-				lastR = r;				
+			byte[] exampleSha256Hash = { (byte) 0xe3, (byte) 0xb0, (byte) 0xc4, 0x42, (byte) 0x98, (byte) 0xfc, 0x1c,
+					0x14, (byte) 0x9a, (byte) 0xfb, (byte) 0xf4, (byte) 0xc8, (byte) 0x99, 0x6f, (byte) 0xb9, 0x24,
+					0x27, (byte) 0xae, 0x41, (byte) 0xe4, 0x64, (byte) 0x9b, (byte) 0x93, 0x4c, (byte) 0xa4,
+					(byte) 0x95, (byte) 0x99, 0x1b, 0x78, 0x52, (byte) 0xb8, 0x55 };
+			b.append("\n");
+			long startTime = System.currentTimeMillis();
+			int numberOfSignatures = 10;
+			byte[] exampleSignature = cashRegisterSmartCard.doSignatur(exampleSha256Hash, pin);
+			for (int i = 1; i <= numberOfSignatures; i++) {
+				exampleSignature = cashRegisterSmartCard.doSignaturWithoutSelection(exampleSha256Hash, pin);
+				b.append("SIGNATURE Created "+ i + " / " + numberOfSignatures + "\n");
 			}
-			
-			for ( PosReceipt r : receipts ) {
-				Log.i(TAG, r.compactData);
-			}
-		
-			// start speedtest		
-			if ( speedTest ) {
-				open();
-				ICashRegisterSmartCard cashRegisterSmartCard = getDriver();
-				String cin = cashRegisterSmartCard.getCIN();
-				b.append("\n");
-				b.append("=================================\n");
-				b.append("CARD TEST\n");
-				b.append("=================================\n");
-				b.append("\n");
-				b.append("CARD CIN " + cin + "\n");
-				X509Certificate cert = cashRegisterSmartCard.getCertificate();
-				b.append("CERT SUBJECT " + cert.getSubjectDN() + "\n");
-				String certSerialDec = cashRegisterSmartCard.getCertificateSerialDecimal();
-				b.append("CERT SERIAL " + certSerialDec + "\n");
-				String certSerialHex = cashRegisterSmartCard.getCertificateSerialHex();
-				b.append("CERT SERIAL HEX " + certSerialHex +"\n");
-				
-				byte[] exampleSha256Hash = { (byte) 0xe3, (byte) 0xb0, (byte) 0xc4, 0x42, (byte) 0x98, (byte) 0xfc, 0x1c,
-						0x14, (byte) 0x9a, (byte) 0xfb, (byte) 0xf4, (byte) 0xc8, (byte) 0x99, 0x6f, (byte) 0xb9, 0x24,
-						0x27, (byte) 0xae, 0x41, (byte) 0xe4, 0x64, (byte) 0x9b, (byte) 0x93, 0x4c, (byte) 0xa4,
-						(byte) 0x95, (byte) 0x99, 0x1b, 0x78, 0x52, (byte) 0xb8, 0x55 };
-				b.append("\n");
-				long startTime = System.currentTimeMillis();
-				int numberOfSignatures = 10;
-				byte[] exampleSignature = cashRegisterSmartCard.doSignatur(exampleSha256Hash, pin);
-				for (int i = 1; i <= numberOfSignatures; i++) {
-					exampleSignature = cashRegisterSmartCard.doSignaturWithoutSelection(exampleSha256Hash, pin);
-					b.append("SIGNATURE Created "+ i + " / " + numberOfSignatures + "\n");
-				}
-				long endTime = System.currentTimeMillis();
-				long duration = endTime - startTime;
-										
-				b.append("\n");			
-				b.append(duration / 1000.0 + " Seconds for " + numberOfSignatures + " signatures \n");
-				b.append(Math.round(duration / numberOfSignatures) / 1000.0 + " Seconds per signature \n");
-				b.append("\n");
-				b.append("---------------------------------\n");
-				b.append("TEST OK!\n");
-				b.append("---------------------------------\n");
-				b.append("\n");
-				Log.i(TAG, getCertificate());
-			}
+			long endTime = System.currentTimeMillis();
+			long duration = endTime - startTime;
+									
+			b.append("\n");			
+			b.append(duration / 1000.0 + " Seconds for " + numberOfSignatures + " signatures \n");
+			b.append(Math.round(duration / numberOfSignatures) / 1000.0 + " Seconds per signature \n");
+			b.append("\n");
+			b.append("---------------------------------\n");
+			b.append("TEST OK!\n");
+			b.append("---------------------------------\n");
+			b.append("\n");
+			Log.i(TAG, getCertificate());
 		} catch (IOException e) {
 			Log.e(TAG, e.getMessage(), e);
 			b.append("\n");
@@ -508,7 +428,6 @@ public abstract class PosHwSmartCard extends Card {
 		} finally {
 			close();
 		}
-		
 		return b.toString();
 	}
 }

@@ -110,6 +110,12 @@
                             android:layout_height="wrap_content"
                             android:text="SmartCardTest" />
                         
+                        <Button
+                            android:id="@+id/smartcardTestButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Test Receipt" />
+                        
                     </LinearLayout>
                         
                         

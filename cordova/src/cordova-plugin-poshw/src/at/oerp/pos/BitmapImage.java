@@ -33,4 +33,9 @@ public final class BitmapImage implements PrinterImage {
 		return true;
 	}
 
+	@Override
+	public Bitmap getBitmap() {
+		return data;
+	}
+
 }
