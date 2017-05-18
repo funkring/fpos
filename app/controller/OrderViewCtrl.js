@@ -4000,7 +4000,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             }
         }            
         
-        // check product code
+        // correct barcode if it is only 12 numbers 
+        if ( barcode.match(/^[0-9]{12}$/) ) barcode = '0'+barcode;
+        // search
         var product = this.productStore.searchProductByEan(barcode);
         if ( product ) {
             self.productInput(product);

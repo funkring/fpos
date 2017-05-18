@@ -20,7 +20,6 @@ Ext.define('Fpos.model.Product', {
                 'taxes_id',
                 'netto',                
                 'price',   
-                'brutto_price',
                 'sequence',
                 'pos_name',
                 'pos_color',
