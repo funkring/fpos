@@ -153,7 +153,7 @@ public abstract class BasicPrinter extends PosHwPrinter {
 				HtmlLinePrinter p = new HtmlLinePrinter(this);
 				inHtml = StringUtil.toAscii(inHtml);
 				p.print(inHtml);
-				feed(7);
+				feed(5);
 				cut();
 				
 				// sleep mode
