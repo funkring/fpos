@@ -71,8 +71,9 @@
         <source-file src="src/at/oerp/pos/hw/android/EscPrinter58.java" target-dir="src/at/oerp/pos/hw/android/" />
         <source-file src="src/at/oerp/pos/hw/android/BTPrinterInterface.java" target-dir="src/at/oerp/pos/hw/android/" />
         <source-file src="src/at/oerp/pos/hw/android/PrinterInterface.java" target-dir="src/at/oerp/pos/hw/android/" />
-        <source-file src="src/at/oerp/pos/hw/android/AndroidHwService.java" target-dir="src/at/oerp/pos/hw/android/" />
+        <source-file src="src/at/oerp/pos/hw/android/AndroidHwService.java" target-dir="src/at/oerp/pos/hw/android/" />        
         <source-file src="src/at/oerp/pos/hw/android/BasicPrinter.java" target-dir="src/at/oerp/pos/hw/android/" />
+        <source-file src="src/at/oerp/pos/hw/android/BasicPrinterLow.java" target-dir="src/at/oerp/pos/hw/android/" />
         <source-file src="src/at/oerp/pos/hw/android/EscPrinter80.java" target-dir="src/at/oerp/pos/hw/android/" />
         <source-file src="src/org/ccil/cowan/tagsoup/ScanHandler.java" target-dir="src/org/ccil/cowan/tagsoup/" />
         <source-file src="src/org/ccil/cowan/tagsoup/HTMLSchema.java" target-dir="src/org/ccil/cowan/tagsoup/" />
