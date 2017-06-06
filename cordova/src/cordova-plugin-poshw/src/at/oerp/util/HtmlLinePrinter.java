@@ -144,6 +144,7 @@ public class HtmlLinePrinter  {
 		driver.reset();
 		Grid grid = parseGrid(inHtml);
 		grid.print();
+		driver.reset();
 	}
 
 	/**

@@ -27,5 +27,6 @@ public interface PrinterInterface {
 	public boolean readSupport();
 	
 	public int read() throws IOException;
-
+	
+	public int getDefaultSleep();
 }

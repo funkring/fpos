@@ -152,7 +152,7 @@ public class BTPrinterInterface extends BasicPrinterInterface {
 
 	@Override
 	public void write(byte[] inData, int inOffset, int inDataLen) throws IOException {
-		out.write(inData, inOffset, inDataLen);
+		out.write(inData, inOffset, inDataLen);		
 	}
 
 	@Override
@@ -173,5 +173,10 @@ public class BTPrinterInterface extends BasicPrinterInterface {
 	@Override
 	public int read() throws IOException {
 		return in.read();
+	}
+
+	@Override
+	public int getDefaultSleep() {
+		return 60;
 	}
 }

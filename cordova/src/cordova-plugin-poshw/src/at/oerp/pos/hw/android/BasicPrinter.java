@@ -73,6 +73,7 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		ascii = Charset.forName("ascii");
 		iface = inIface;
 		service = inService;
+		sleep = inIface.getDefaultSleep();
 	}
 
 	/**
@@ -153,6 +154,8 @@ public abstract class BasicPrinter extends PosHwPrinter {
 				HtmlLinePrinter p = new HtmlLinePrinter(this);
 				inHtml = StringUtil.toAscii(inHtml);
 				p.print(inHtml);
+				
+				// feed and cut
 				feed(5);
 				cut();
 				
