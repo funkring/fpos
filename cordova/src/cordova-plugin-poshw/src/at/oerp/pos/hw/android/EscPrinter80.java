@@ -2,7 +2,7 @@ package at.oerp.pos.hw.android;
 
 import at.oerp.pos.PosHwService;
 
-public class EscPrinter80 extends BasicPrinter {
+public class EscPrinter80 extends BasicPrinterLow {
 
 	public EscPrinter80(PosHwService inService, PrinterInterface inIface) {
 		super(inService, inIface);

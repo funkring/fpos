@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
 			                   "<br>funktioniert"+
 			                   "<p>Ein Text</p>"+
 			                   "<p style=\"font-size: large;\">Large</p>"+
+			                   "<p>Ein Text</p>"+
 			                   "<img src=\"qrcode\" alt=\"_R1-AT1_K1_4638_2017-02-21T14:58:32_0,00_0,00_0,00_0,00_0,00_cw==_556809796_uttyg3ZqESo=_YsyLovED2bTiP+LpzSF3Z3ltNaFSO7Mldgd4j4L2OduqpLGbU3sRIiC721EVdBBx3g1ft7mDQc5kJl1CODsucQ==\">" +
 			                   "<p>Danach noch ein Text</p>" +
 			                   "<p style=\"font-size: larger;\">Larger</p>" +

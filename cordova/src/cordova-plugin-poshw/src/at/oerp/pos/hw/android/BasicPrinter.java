@@ -447,6 +447,14 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		return super.prepareImage(inImage);
 	}
 	
+	protected void beforeImage(PrinterImage inImage) throws IOException {
+		alignCenter();
+	}
+	
+	protected void afterImage(PrinterImage inImage) throws IOException {
+		alignLeft();
+	}
+	
 	@Override
 	public void printImage(PrinterImage inImage) throws IOException {
 		ByteBuffer data;
@@ -457,10 +465,11 @@ public abstract class BasicPrinter extends PosHwPrinter {
 		}
 
 		// print image
-		alignCenter();		
+		beforeImage(inImage);
+		iface.flush();
 		iface.write(data.array(), 0, data.limit());
 		iface.flush();
-		alignLeft();
+		afterImage(inImage);
 	}
 	
 	/**

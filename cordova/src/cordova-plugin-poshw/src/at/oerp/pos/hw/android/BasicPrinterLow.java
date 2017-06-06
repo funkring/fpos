@@ -4,10 +4,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import at.oerp.pos.PosHwService;
-import at.oerp.pos.hw.android.BasicPrinter.PreparedImage;
 import at.oerp.util.BinUtil;
 import at.oerp.util.PrinterImage;
 
+/**
+ * Basic Printer low profile
+ * contains a special convertImage function for small buffers
+ * 
+ * @author oerp
+ *
+ */
 public class BasicPrinterLow extends BasicPrinter {
 
 	public BasicPrinterLow(PosHwService inService, PrinterInterface inIface) {
@@ -67,21 +73,5 @@ public class BasicPrinterLow extends BasicPrinter {
 
 		inBuf.flip();
 		return inBuf;		
-	}
-	
-
-	@Override
-	public void printImage(PrinterImage inImage) throws IOException {
-		ByteBuffer data;
-		if ( inImage.getClass() == PreparedImage.class ) {
-			data = ((PreparedImage) inImage).getData();
-		} else {			
-			data = imgBuffer = convertImage(inImage, imgBuffer);
-		}
-
-		// print image
-		iface.flush();
-		iface.write(data.array(), 0, data.limit());
-		iface.flush();
 	}
 }
