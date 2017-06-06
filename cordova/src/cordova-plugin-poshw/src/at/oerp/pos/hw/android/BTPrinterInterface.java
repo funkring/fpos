@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -31,8 +32,7 @@ public class BTPrinterInterface extends BasicPrinterInterface {
 
 	// bluetooth default serial uuid
 	private final static UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-		
-		
+	
 	public static BasicPrinter create(PosHwService inService) {
 		BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 		adapter.cancelDiscovery();
@@ -42,9 +42,9 @@ public class BTPrinterInterface extends BasicPrinterInterface {
 			for ( BluetoothDevice dev : devices ) {
 				try {
 					BasicPrinter printer = null;
-					if ( dev.getName().equalsIgnoreCase("RPP200-E") ) {
+					if ( Pattern.matches("^RP.*200.*$", dev.getName() ) ) {
 						printer = new EscPrinter58(inService, new BTPrinterInterface(inService, dev));
-					} else if (  dev.getName().equalsIgnoreCase("RPP300-E") ) {
+					} else if ( Pattern.matches("^RP.*300.*$", dev.getName() ) ) {
 						printer = new EscPrinter80(inService, new BTPrinterInterface(inService, dev));
 					}  else if (  dev.getName().equalsIgnoreCase("Bluetooth Printer") ) {
 						printer = new EscPrinter58(inService, new BTPrinterInterface(inService, dev));

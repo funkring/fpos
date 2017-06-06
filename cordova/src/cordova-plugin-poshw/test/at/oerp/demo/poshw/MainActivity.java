@@ -104,9 +104,9 @@ public class MainActivity extends Activity {
 			                   "<p style=\"font-size: larger;\">Larger</p>" +
 							   "<p>Danach noch ein Text</p>" +
 							   "<p style=\"font-size: medium;\">Medium</p>" +
-							   "<p>Danach noch ein Text</p>" +
+							   "<p>Danach noch ein Text</p>";
 			                   //"<p style=\"font-size: large;\">Großer Text</p>" +
-			                   "<br><br><br><br><br><br>";
+			                   
 					posHw.getPrinter().printHtml(test);
 					//posHw.getPrinter().printTest();
 				} catch (IOException e) {
