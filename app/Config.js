@@ -406,13 +406,15 @@ Ext.define('Fpos.Config', {
         var self = this;
         var deferred = Ext.create('Ext.ux.Deferred');
         var profile = self.getProfile();
+        
+        var url = null;
+        var proxy = null;
               
         // check hwproxy        
         if ( profile.iface_print_via_proxy ) {
-            var proxyUrl = 'http://localhost:8045';
-            var url = profile.proxy_ip || 'http://localhost:8045';
+            url = profile.proxy_ip || 'http://localhost:8045';
             if ( profile.fpos_hwproxy_id && profile.fpos_hwproxy_id.name ) url = profile.fpos_hwproxy_id.name;
-            var proxy = Ext.create('Fpos.core.HwProxy', { url: url });
+            proxy = Ext.create('Fpos.core.HwProxy', { url: url });
             proxy.getStatus(function(hwstatus) {
                 // setup proxy
                 window.PosHw = proxy;
@@ -423,12 +425,53 @@ Ext.define('Fpos.Config', {
                 // error
                 self.setHwStatus({ err : err });
                 deferred.reject(err);
-            });    
-        
+            });            
         } else {
-            setTimeout(function() {
-                deferred.resolve();
-            },0);
+            
+            // get url of proxy
+            url = profile.proxy_ip;
+            if ( !url && profile.fpos_hwproxy_id && profile.fpos_hwproxy_id.name ) url = profile.fpos_hwproxy_id.name;
+            
+            // check if signing is active
+            var curHwStatus = self.getHwStatus();
+            if ( url && profile.sign_status != 'active' && (!curHwStatus || !curHwStatus.cardreader)) {
+                
+                proxy = Ext.create('Fpos.core.HwProxy', { url: url });
+                proxy.getStatus(function(hwstatus) {
+                    // setup proxy
+                    if ( !window.PosHw) {
+                        // override full if there is no proxy
+                        window.PosHw = proxy;
+                        self.setHwStatus(hwstatus);
+                    } else {
+                        // override partly if there exist a proxy but 
+                        // not signing interface
+                        window.PosHw.signTest = proxy.signTest;
+                        window.PosHw.signInit = proxy.signInit;
+                        window.PosHw.sign = proxy.sign;
+                        window.PosHw.signQueryCert = proxy.signQueryCert;
+                        // update hw status
+                        curHwStatus.cardreader = hwstatus.cardreader;
+                        self.setHwStatus(curHwStatus);                    
+                    }
+                    // finished  
+                    deferred.resolve();              
+                }, function(err) {
+                    // if no hwproxy exist notify error 
+                    if ( !window.PosHw ) {
+                        self.setHwStatus({ err : err });
+                        deferred.reject(err);   
+                    } else {                                     
+                        deferred.resolve();
+                    }
+                });    
+                
+            } else {
+                // no proxy            
+                setTimeout(function() {
+                    deferred.resolve();
+                },0);
+            }
         }
 
         return deferred.promise();
