@@ -2186,7 +2186,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 // check last date
                 if ( date < lastDate ) {
                     deferred.reject({name: 'wrong_date', message: 'Datum und/oder Uhrzeit ist auf der Kasse falsch eingestellt!'});    
-                } else { 
+                }
+                // check sequence 
+                else if ( profile.last_seq >= seq ) { 
+                    deferred.reject({name: 'wrong_seq', message: 'Ungültige Belegnummer: ' + seq.toString() + ', kontaktieren sie umgehend den Kassenhersteller'});
+                } 
+                // post                
+                else {
                     // set state, sequence and update counters
                     orderCopy.turnover += turnover;
                     orderCopy.state = 'paid';
