@@ -427,14 +427,13 @@ Ext.define('Fpos.Config', {
                 deferred.reject(err);
             });            
         } else {
-            
             // get url of proxy
             url = profile.proxy_ip;
             if ( !url && profile.fpos_hwproxy_id && profile.fpos_hwproxy_id.name ) url = profile.fpos_hwproxy_id.name;
             
             // check if signing is active
             var curHwStatus = self.getHwStatus();
-            if ( url && profile.sign_status != 'active' && (!curHwStatus || !curHwStatus.cardreader)) {
+            if ( url && profile.sign_status == 'active' && profile.sign_method == 'card' && (!curHwStatus || !curHwStatus.cardreader)) {
                 
                 proxy = Ext.create('Fpos.core.HwProxy', { url: url });
                 proxy.getStatus(function(hwstatus) {
@@ -1385,7 +1384,7 @@ Ext.define('Fpos.Config', {
         }
         
         if ( !available ) {
-            if ( !noProxySetup && profile.iface_print_via_proxy ) {
+            if ( !noProxySetup ) {
                 self.setupProxy().then(function() {
                     self.signQueryCert(true).then(function(res) {
                         deferred.resolve(res);
