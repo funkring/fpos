@@ -433,7 +433,7 @@ Ext.define('Fpos.Config', {
             
             // check if signing is active
             var curHwStatus = self.getHwStatus();
-            if ( url && profile.sign_status == 'active' && profile.sign_method == 'card' && (!curHwStatus || !curHwStatus.cardreader)) {
+            if ( url && profile.sign_status && profile.sign_status != 'draft' && profile.sign_method == 'card' && (!curHwStatus || !curHwStatus.cardreader)) {
                 
                 proxy = Ext.create('Fpos.core.HwProxy', { url: url });
                 proxy.getStatus(function(hwstatus) {
@@ -445,10 +445,23 @@ Ext.define('Fpos.Config', {
                     } else {
                         // override partly if there exist a proxy but 
                         // not signing interface
-                        window.PosHw.signTest = proxy.signTest;
-                        window.PosHw.signInit = proxy.signInit;
-                        window.PosHw.sign = proxy.sign;
-                        window.PosHw.signQueryCert = proxy.signQueryCert;
+                       
+                        window.PosHw.signTest = function(config, successCallback, errorCallback) {
+                            proxy.signTest(config, successCallback, errorCallback);
+                        };
+                        
+                        window.PosHw.signInit = function(config, successCallback, errorCallback) {
+                            proxy.signInit(config, successCallback, errorCallback);
+                        };
+                                                
+                        window.PosHw.sign = function(receipt, successCallback, errorCallback) {
+                            proxy.sign(receipt, successCallback, errorCallback);
+                        };
+                        
+                        window.PosHw.signQueryCert = function(successCallback, errorCallback) {
+                            proxy.signQueryCert(successCallback, errorCallback);
+                        };
+                        
                         // update hw status
                         curHwStatus.cardreader = hwstatus.cardreader;
                         self.setHwStatus(curHwStatus);                    
