@@ -475,6 +475,10 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 .PosOrderLineAmount {
 }
 
+.PosOrderLineSpan {
+    margin-left: 20px;
+}
+
 .PosOrderLineNotice {
     font-size: 0.8em;
     width: 100%;
@@ -503,6 +507,7 @@ div.ProductCategoryButtonSmall > span.x-button-label {
     font-size: 1.3em;
     vertical-align: middle;
     align: right;
+    white-space: nowrap;
 }
 
 
@@ -763,4 +768,55 @@ div.TopButtonSmall > span.x-button-label {
     background-color: $fpos-input-grey !important;
     padding: 2px 5px;
     border-radius: 2px;
+}
+
+
+// ******************************************************************
+// Partner
+// ******************************************************************
+
+.PartnerLine {
+    display: table;  
+    width: 100%;  
+}
+.PartnerLine1 {
+    display: table-cell;    
+    width: 100%; 
+    align: left;
+}
+.PartnerLine2 {
+    display: table-cell;
+    align: right; 
+}
+.PartnerName {
+    display: table-row;
+    font-weight: bold;   
+}
+.PartnerAddress {
+    display: table-row;
+    font-weight: lighter;
+}
+.PartnerInvoiceButton {
+    color: $fpos-white !important;
+}
+.PartnerInvoiceHeader {
+    font-weight: bold;
+}
+.PartnerInvoiceLine {
+    display: table-row;
+}
+.PartnerInvoiceCell1 {
+    display: table-cell;
+    align: right; 
+    white-space: nowrap;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+.PartnerInvoiceCell2 {
+    display: table-cell;
+    align: right; 
+    font-weight: bold;
+    white-space: nowrap;
+    padding-left: 2px;
+    padding-right: 2px;
 }

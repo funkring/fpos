@@ -1,12 +1,14 @@
-/*global Ext:false, futil:false */
+/*global Ext:false, futil:false, ViewManager:false */
 
 Ext.define('Ext.field.SearchList', {
     extend: 'Ext.Container',
     xtype: 'search_list',
+    
     requires: [
         'Ext.dataview.List',
         'Ext.field.Search',
-        'Ext.util.DelayedTask'
+        'Ext.util.DelayedTask',
+        'Ext.form.ViewManager'
     ],
     
     config: {
@@ -18,6 +20,8 @@ Ext.define('Ext.field.SearchList', {
         displayField: 'name',
         searchDelay: 500,
         limit: 100,
+        searchEmpty: false,
+        itemHandler: null,
         listeners: [
             {
                 fn: 'onPainted',
@@ -64,25 +68,28 @@ Ext.define('Ext.field.SearchList', {
             config.store = Ext.StoreMgr.lookup(config.store);
         } 
         
+        self.list = Ext.create('Ext.dataview.List',{
+                height: '100%',
+                flex: 1, 
+                store: config.store,
+                itemTpl: config.itemTpl,
+                listeners: {                   
+                    itemtap: function(list, index, target, record, event, opts) {
+                        var itemHandler = self.getItemHandler();
+                        if ( !itemHandler || itemHandler(self, list, index, target, record, event, opts) !== false ) {
+                            self.editRecord(record);
+                        }
+                    }
+                }    
+        });
+        
         config.items = [
             {
                  docked: 'top',
                  xtype: 'toolbar',                
                  items: toolbarItems
             },
-            {
-                xtype: 'list',
-                height: '100%',
-                flex: 1, 
-                store: config.store,
-                itemTpl: config.itemTpl,
-                listeners: {
-                    select: function(list, record) {
-                       list.deselect([record], true);
-                       self.editRecord(record);  
-                    }
-                }    
-            }
+            self.list
         ];   
         
         self.searchTask = Ext.create('Ext.util.DelayedTask', function() {
@@ -96,13 +103,13 @@ Ext.define('Ext.field.SearchList', {
        return this.up('navigationview');
     },
     
-    editRecord: function(record) {
+    editRecord: function(record) {      
         if ( this.getFormView() ) {
             var nav = this.findNavigationView();
             var displayField = this.getDisplayField();
             var title = record && record.get(displayField) || this.config.title || '';
-            
             if ( !record ) {
+                // reset searchvalue 
                 var model = this.getStore().getModel();
                 
                 var recordDefaults = {};
@@ -111,11 +118,10 @@ Ext.define('Ext.field.SearchList', {
                     recordDefaults = proxy.getRecordDefaults() || {}; 
                 }
                 
-                if ( !recordDefaults[displayField] ) {
-                    recordDefaults[displayField] = this.getSearchValue();
-                }
-                
                 record = Ext.create(model, recordDefaults);
+                if (  !recordDefaults[displayField] ) {
+                    record.set(displayField, this.getSearchValue());
+                }
             }
             
             if (nav) {
@@ -143,13 +149,13 @@ Ext.define('Ext.field.SearchList', {
     },
     
     onPainted: function() {
-      this.search();          
-      
-      var searchField = this.down('searchfield');
-      if ( searchField ) {
-          searchField.setValue("");
-          searchField.focus();          
-      }        
+        ViewManager.stopLoading();    
+        this.search();
+        var searchField = this.down('searchfield');
+        if ( searchField ) {
+            searchField.setValue(this.getSearchValue());           
+            searchField.focus();          
+        }
     },
     
     searchDelayed: function(searchValue) {
@@ -157,34 +163,46 @@ Ext.define('Ext.field.SearchList', {
         this.searchTask.delay(this.getSearchDelay());
     },
     
-    search: function() {
-       var self = this;
-       var storeInst = self.getStore();
-       var searchValue = self.getSearchValue();
-       
-       // search text or not
-       if ( !Ext.isEmpty(searchValue) ) {
+    search: function(searchOverride) {
+        var self = this;
+        var storeInst = self.getStore();
+        var searchValue = self.getSearchValue();
+        
+        // search text or not
+        var empty = Ext.isEmpty(searchValue);
+        if ( !empty || self.getSearchEmpty() ) {
             // search params
             var params = {
                 limit: self.getLimit()
             };
-            
+             
             // options
             var options = {
-                 params : params
+                params: params,
+                callback: function() {
+                    var records = self.list.getSelection();                    
+                    if ( records.length > 0  ) {
+                        var record = records[0];
+                        self.list.scrollToRecord(record, false, false);
+                    }
+                }
             };
-            
-            options.filters = [{
-                 property: self.getDisplayField(),
-                 value: searchValue,
-                 anyMatch: true
-            }];  
-            
+             
+            // add filters
+            if ( !empty ) {
+                // add text filter                      
+                options.filters = [{
+                    property: self.getDisplayField(),
+                    value: searchValue,
+                    anyMatch: true
+                }];
+            }
+                         
             // load
             storeInst.load(options);
-       } else {
-          storeInst.setData([]);
-       }
+        } else {
+           storeInst.setData([]);
+        }
    }
    
 });

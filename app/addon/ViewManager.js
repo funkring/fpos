@@ -316,13 +316,11 @@ Ext.define('Ext.form.ViewManager', {
       
         // return promise
         var promise = deferred.promise(); 
-        return promise
-            ['catch'](function(err) {
-                self.stopLoading();
-            })
-            .then(function(result) {
-                self.stopLoading();                
-            });
+        return promise.then(function(res) {
+            self.stopLoading();
+        }, function(err) {
+            self.stopLoading();
+        });
     },
     
     handleError: function(err, alternativeError, forward, callback) {

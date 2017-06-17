@@ -64,6 +64,7 @@ Ext.define('Ext.data.proxy.Odoo',{
         resModel: null,
         client: null,
         recordDefaults: null,
+        domain: null,
         
         headers: {
              'Content-Type': 'application/json' 
@@ -92,6 +93,14 @@ Ext.define('Ext.data.proxy.Odoo',{
         if ( action === 'read' ) {
             cmd = 'search_read';
             var domain = [];
+            
+            // add default domain
+            var defaultDomain = this.getDomain();
+            if ( defaultDomain ) {
+                Ext.each(defaultDomain, function(val) {
+                   domain.push(val); 
+                });
+            }
             
             // add filter
             var filters = operation.getFilters();

@@ -6,6 +6,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         'Fpos.view.Main',
         'Ext.Menu',
         'Ext.form.ViewManager',
+        'Ext.dataview.List',
         'Ext.field.SearchList',        
         'Fpos.Config',
         'Fpos.view.ConfigView',
@@ -194,6 +195,12 @@ Ext.define('Fpos.controller.MainCtrl', {
             pact_partner: self.onShowPartner            
         });
         
+        // show order
+        Ext.Viewport.on({
+            scope: self,
+            showOrder: self.onCashOperation
+        });
+        
         // add key listener
         ViewManager.pushKeyboardListener(self);
               
@@ -203,17 +210,29 @@ Ext.define('Fpos.controller.MainCtrl', {
     
     onShowPartner: function() {
         var self = this;
-        Config.getClient().then(function(client) {
-            self.getMainView().push({
-               xtype: 'search_list',
-               title: 'Partner',
-               store: 'OPartnerStore',
-               formView: 'fpos_partner_form',
-               dataAdd: true,
-               itemTpl:  [
-                    '<div>{name}</div>',
-                    '<div><small>{[this.getAddress(values)]}</small></div>',
-                    '<div><small>{[this.getPhone(values)]}</small></div>',
+        
+        if ( !self.partnerTpl ) {
+            self.partnerTpl = Ext.create('Ext.XTemplate',
+                    '<div class="PartnerLine">',
+                        '<div class="PartnerLine1">',
+                            '<div class="PartnerName">{name}</div>',
+                            '<div class="PartnerAddress">{[this.getAddress(values)]}</div>',
+                            '<div class="PartnerAddress">{[this.getPhone(values)]}</div>',
+                        '</div>',                        
+                        '<div class="PartnerLine2">',
+                            '<tpl if="ga_amount &gt; 0">',                 
+                                '<div class="x-button x-button-posInputButtonOrange PartnerInvoiceButton">',
+                                    '<div class="PartnerInvoiceLine">',
+                                        '<div class="PartnerInvoiceLine PartnerInvoiceHeader">Abrechnung</div>',
+                                        '<div class="PartnerInvoiceLine">',
+                                            '<div class="PartnerInvoiceLine"><div class="PartnerInvoiceCell1">Belege:</div><div class="PartnerInvoiceCell2">{ga_count}</div></div>',
+                                            '<div class="PartnerInvoiceLine"><div class="PartnerInvoiceCell1">Gesamt:</div><div class="PartnerInvoiceCell2">{[futil.formatFloat(values.ga_amount,Config.getDecimals())]} {[Config.getCurrency()]}</div></div>',
+                                        '</div>',
+                                    '</div>',
+                                '</div>',
+                            '</tpl>',
+                        '</div>',
+                    '</div>',
                     {
                         getAddress: function(values) {
                             var addr =  [];                            
@@ -230,9 +249,150 @@ Ext.define('Fpos.controller.MainCtrl', {
                             if ( values.email ) phone.push(values.email);
                             return phone.join(" | ");
                         }
-                }]    
+                    });    
+            
+        }
+        
+        ViewManager.startLoading("Lade Kunden...");
+        Config.getClient().then(function(client) {
+              
+            var searchList = Ext.create('Ext.field.SearchList',{
+                xtype: 'search_list',
+                title: 'Partner',
+                store: 'OPartnerStore',
+                formView: 'fpos_partner_form',
+                dataAdd: true,
+                searchEmpty: true,
+                itemTpl:  self.partnerTpl,
+                itemHandler: function(comp, list, index, target, partner, e, opts) {
+                    var element = Ext.get(e.target);  
+                    
+                    // check group invoice
+                    if ( element && (element.hasCls('PartnerInvoiceButton') || element.up('div.PartnerInvoiceButton') ) ) {
+                        ViewManager.startLoading("Lade Verkäufe...");
+
+                        client.invoke('res.partner', 'fpos_ga_order', [partner.getId()], {}).then(function(orders) {
+                            ViewManager.stopLoading();
+                            
+                            // set data
+                            var selectionStore = Ext.StoreMgr.lookup("OrderSelectionStore");
+                            selectionStore.setData(orders);
+                            
+                            // view templatte
+                            var orderItemTmpl = Ext.create('Ext.XTemplate', 
+                                    '<li>',
+                                        '<div class="PosOrderLineDescription">',
+                                            '<div class="PosOrderLineName">',                                
+                                                '{name}',
+                                            '</div>',                   
+                                            '<div class="PosOrderLineAmount">',
+                                                '{date_order:date("d.m.Y H:i:s")}',
+                                                '<span class="PosOrderLineSpan">{journal}</span>',
+                                                '<tpl if="pos_reference">',
+                                                    '<span class="PosOrderLineSpan">{pos_reference}</span>',
+                                                '</tpl>',                   
+                                            '</div>',                                            
+                                        '</div>',
+                                        '<div class="PosOrderLinePrice">{[futil.formatFloat(values.amount_total, Config.getDecimals())]} {[Config.getCurrency()]}</div>',
+                                    '</li>'
+                                    );
+                            
+                            // orders
+                            var orderList = Ext.create('Ext.dataview.List',{
+                                    height: '100%',
+                                    flex: 1, 
+                                    store: selectionStore,
+                                    title: partner.get('name'),
+                                    itemTpl: orderItemTmpl,      
+                                    itemCls: 'PosOrderItem',
+                                    allowDeselect: true,
+                                    mode: 'MULTI',
+                                    saveable: true,
+                                    saveableText: 'Abrechnen',
+                                    saveHandler: function() {
+                                        //
+                                        // check if partner exist,
+                                        // and load if it no exist
+                                        //
+                                        
+                                        var db = Config.getDB();
+                                        var deferred = Ext.create('Ext.ux.Deferred');
+                                        
+                                        var data = Config.getPartnerModel();                
+                                        data.id = partner.getId();
+                                        
+                                        Config.getClient().then(function(client) {
+                                            client.invoke("jdoc.jdoc", "jdoc_load", [data]).then(function(partnerDoc) {
+                                                // set partner data
+                                                db.get(partnerDoc._id).then(function(res) {
+                                                    // exists not create
+                                                    deferred.resolve();
+                                                }, function(err) {
+                                                    // otherwise create                                                    
+                                                    db.put(partnerDoc).then(function(res) {                                                                                                            
+                                                        deferred.resolve();
+                                                    }, function(err) {
+                                                        deferred.reject(err);
+                                                    });
+                                                });                                                
+                                            }, function(err) {
+                                                // forward error
+                                                deferred.reject(err);
+                                            });
+                                        }, function(err) {
+                                            // forward error
+                                            deferred.reject(err);
+                                        });
+                                       
+                                        return deferred.promise();                                            
+                                    },
+                                    savedHandler: function() {
+                                    
+                                        // get selected orders
+                                        var order_ids = [];
+                                        var selectedOrders = orderList.getSelection();
+                                        if ( selectedOrders.length === 0 ) {
+                                            selectionStore.each(function(record) {
+                                                order_ids.push(record.get('id'));    
+                                            });
+                                        } else {
+                                            Ext.each(selectedOrders, function(record) {
+                                                order_ids.push(record.get('id'));   
+                                            });    
+                                        }
+                                        
+                                        ViewManager.startLoading("Erstelle Sammelrechnung...");
+                                        client.invoke('res.partner', 'fpos_ga_order_create', [partner.getId(), order_ids], {}).then(function(order) {
+                                            var db = Config.getDB();
+                                            db.post(order).then(function(res) {
+                                                Ext.Viewport.fireEvent("showOrder", res.id);
+                                                self.getMainView().pop();                                                    
+                                            }, function(err) {
+                                                ViewManager.handleError(err, {name:'Datenbankfehler', message:'Sammelrechnung konnte nicht gespeichert werden'});
+                                            });                                                                                                   
+                                        }, function(err) {
+                                            ViewManager.handleError(err, {name:'Kommunikationsfehler', message:'Sammelrechnung konnte nicht erstellt werden'});
+                                        });
+                                    }
+                            });
+                            
+                            self.getMainView().push(orderList);                                
+                        }, function(err) {                         
+                            ViewManager.stopLoading();
+                            ViewManager.handleError(err, {name:'Kommunikationsfehler', message:'Verkäufe konnten nicht geladen werden'});
+                        });
+                        return false;
+                    }
+                }
             });
-        })['catch'](function(err) {
+            
+            searchList.on('painted',function() {
+                ViewManager.stopLoading();
+            });
+            
+            self.getMainView().push(searchList);
+        }, function(err) {
+            ViewManager.stopLoading();
             ViewManager.handleError(err);
         });
     },

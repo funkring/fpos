@@ -388,6 +388,12 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             validateOrders: self.validateOrders
         });
         
+        // show order
+        Ext.Viewport.on({
+            scope: self,
+            showOrder: self.onShowOrder
+        });
+        
         // reload data
         self.reloadData();
     },
@@ -1388,6 +1394,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
          return order;
     },
     
+    showOrder: function(orderId) {
+        var self = this;
+        self.orderStore.getProxy().readDocument(orderId, function(err, order) {
+            self.setOrder(order || null);
+            self.validateLines();
+        });
+    },
+    
+    onShowOrder: function(orderId) {
+        this.showOrder(orderId);        
+    },
+    
     // create new order
     nextOrder: function(callback) {
         var self = this;
@@ -1407,7 +1425,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 self.orderStore.getProxy().readDocument(res.id, function(err, order) {
                     self.setOrder(order || null);
                     if (callback) callback();
-                }); 
+                });
             });
         } else if ( callback ) {
             callback();
@@ -2163,15 +2181,34 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 
                 // determine cpos     
-                var fixed_payments = [];         
+                var fixed_payments = [];
+                var noturnover = false; 
+                var ga = false;
                 Ext.each(payment_ids, function(payment) {
                     if ( payment.journal_id == cashJournalId ) {
                         cpos += payment.amount;
                         fixed_payments.push(payment);
                     } else if ( payment.amount !== 0 || payment.payment !== 0) {
                         fixed_payments.push(payment);
+                        var journal = Config.getJournal(payment.journal_id);
+                        // check no turnover, flag
+                        if ( journal.fpos_noturnover ) noturnover = true;
+                        // groupable flag
+                        if ( journal.fpos_group ) {
+                            ga = true;
+                            if ( !orderCopy.partner_id ) {
+                                if ( journal.fpos_partner_id ) {
+                                    orderCopy.partner_id = journal.fpos_partner_id;
+                                } else {
+                                    deferred.reject({name: 'no_partner', message: 'Für die Sammelrechnung wurde kein Kunde ausgewählt'});
+                                }
+                            }
+                        }                        
                     }
                 });
+                
+                // set group invoice flag
+                if ( ga != (orderCopy.ga ? true: false)) orderCopy.ga = ga; 
                 
                 // write order                
                 var date = futil.datetimeToStr(new Date());
@@ -2286,28 +2323,31 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         
                         // build sum
                         var taxes = orderCopy.tax_ids;
-                        var amount_st = 0.0;  
-                        Ext.each(taxes, function(tax) {
-                           var amount = tax.amount_tax + tax.amount_netto;
-                           amount_st += amount;
-                           switch ( tax.st ) {                               
-                                case '1': 
-                                    signable.amount_1 += amount;
-                                    break;
-                                case '2':
-                                    signable.amount_2 += amount;
-                                    break;
-                                case '0':
-                                    signable.amount_0 += amount;
-                                    break;
-                                case 's':
-                                    signable.amount_s += amount;
-                                    break;      
-                                default: 
-                                    signable.amount += amount;
-                                    break;                            
-                           }                           
-                        });
+                        var amount_st = 0.0;
+                        // check if there is a turnover
+                        if ( !noturnover ) {
+                            Ext.each(taxes, function(tax) {
+                               var amount = tax.amount_tax + tax.amount_netto;
+                               amount_st += amount;
+                               switch ( tax.st ) {                               
+                                    case '1': 
+                                        signable.amount_1 += amount;
+                                        break;
+                                    case '2':
+                                        signable.amount_2 += amount;
+                                        break;
+                                    case '0':
+                                        signable.amount_0 += amount;
+                                        break;
+                                    case 's':
+                                        signable.amount_s += amount;
+                                        break;      
+                                    default: 
+                                        signable.amount += amount;
+                                        break;                            
+                               }                           
+                            });
+                        }
                         
                         // add non tax value
                         if ( amount_st != amount_total) {
@@ -3949,17 +3989,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var db = Config.getDB();
         Config.queryLastOrder().then(function(res) {
             if ( res.rows.length > 0 ) {
-                var order = res.rows[0].doc;
-                if ( order.partner_id ) {
-                    db.get(order.partner_id).then(function(partner) {
-                        order.partner = partner;
-                        self.printOrder(order);
-                    })['catch'](function(err) {
-                        self.printOrder(order);
-                    });
-                } else {
-                    self.printOrder(order);
-                }
+                self.orderStore.getProxy().readDocument(res.rows[0].doc, function(err, order) {
+                    if (!err) {
+                    	self.printOrder(order.raw);
+                    } else {
+                        ViewManager.handleError(err, {name:'reprint_err', message: 'Verkauf konnte nicht gedruckt werden' });
+                    }
+                });
             }
          });
     },

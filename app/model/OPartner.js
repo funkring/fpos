@@ -17,11 +17,14 @@ Ext.define('Fpos.model.OPartner', {
         'fax',
         'customer',
         'comment',
-        'vat'
+        'vat',
+        'ga_amount',
+        'ga_count'
        ],
        proxy: {
             type: 'odoo',
             resModel: 'res.partner',
+            domain: [['customer','=',true],['parent_id','=',null]],
             recordDefaults: {
                 customer: true
             }

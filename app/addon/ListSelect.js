@@ -114,7 +114,13 @@ Ext.define('Ext.field.ListSelect', {
                xtype : 'container',
                listeners: {
                    scope: self, 
-                   show: self.firstSearch
+                   show: function(list) {
+                        self.firstSearch();
+                        var searchField = list.down('searchfield');
+                        if ( searchField ) {
+                            searchField.focus();          
+                        }
+                   }
                },
                items: [{
                  docked: 'top',
@@ -128,7 +134,7 @@ Ext.define('Ext.field.ListSelect', {
                  store: store,
                  itemTpl: displayTpl,
                  listeners: {
-                     select: self.onListSelect,
+                     select: self.onListSelect,                     
                      //itemtap: self.onListTap,
                      scope: self
                  }                  
@@ -202,8 +208,8 @@ Ext.define('Ext.field.ListSelect', {
       this.searchOffline();
    },
    
-   firstSearch: function() {
-      this.search();  
+   firstSearch: function() {   
+        this.search();
    },
      
    findNavigationView: function() {

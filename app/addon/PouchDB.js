@@ -432,17 +432,57 @@ Ext.define('Ext.proxy.PouchDB', {
             }
         }
     },
-    
+
     // read document callback
     readDocument: function(uuid, callback) {
         var self = this;
         var db = DBUtil.getDB(self.getDatabase());
-        db.get(uuid).then(function(doc) {
-            var record = self.createRecord(doc);
-            callback(null,record);
-        })['catch']( function (err) {
-            callback(err);
-        });
+        var doc = null;
+        
+        // RESOLVE FIELDS
+        var resolveFields = self.getResolveFields();
+        var resolveFieldIndex = 0;
+        var resolveNext = function() {
+            if ( resolveFieldIndex >= resolveFields.length ) {
+                // finish record if all
+                // fields reached                
+                var record = self.createRecord(doc);
+                callback(null, record);
+            } else {                    
+                var resolve = resolveFields[resolveFieldIndex++];
+                var foreign_uuid = doc[resolve.foreignKey];    
+                if ( foreign_uuid ) {                
+                    db.get(foreign_uuid, function(err, foreignDoc) {
+                        if (err===null) {
+                            doc[resolve.name] = foreignDoc;
+                        }  
+                        resolveNext();
+                    });
+                } else {
+                    resolveNext();
+                }
+            }
+        };
+        
+        
+        if ( !uuid ) {
+            callback({
+                name: 'empty',
+                message: 'Null UUID'
+            });
+        } else if ( typeof uuid === 'object' ) {
+            // RESOLVE FROM DOCUMENT
+            doc = uuid;
+            resolveNext();
+        } else {
+            // RESOLVE string uuid
+            db.get(uuid).then(function(res) {
+                doc = res;
+                resolveNext();
+            })['catch']( function (err) {
+                callback(err);
+            });
+        }
     },
              
     // read function
@@ -544,7 +584,6 @@ Ext.define('Ext.proxy.PouchDB', {
                 
                 // RESOLVE FIELDS
                 if ( resolveFields.length > 0 ) {
-                
                     Ext.each(rows, function(row) {
                         Ext.each(resolveFields, function(resolve) {     
                             var foreign_uuid = row.doc[resolve.foreignKey];
