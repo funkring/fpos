@@ -394,6 +394,43 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             showOrder: self.onShowOrder
         });
         
+        // add pricelist check
+        if ( Config.getOnlinePartner() ) {
+            self.defaultProductInput = self.productInput;
+            self.productInput = function(product, price) {
+                // get partner
+                var partner = self.order.get('partner');
+                if ( partner ) {
+                    // get partner pricelist                    
+                    var partner_pricelist_id = partner.property_product_pricelist;
+                    if ( partner_pricelist_id && partner_pricelist_id != Config.getProfile().pricelist_id ) {
+                        ViewManager.startLoading('Lade Produkt');
+                        Config.getClient().then(function(client) {
+                            client.invoke('product.product', 'fpos_product_info', [product.getId(), partner_pricelist_id, partner._id, 1.0]).then(function(prodInfo) {
+                                // call default with new price
+                                ViewManager.stopLoading();
+                                self.defaultProductInput(product, prodInfo.price);
+                            }, function(err) {
+                                ViewManager.stopLoading();
+                                ViewManager.handleError(err, {name:'invalid_price', message:'Preis konnte nicht abgerufen werden'});
+                            });
+                            // get price
+                        }, function(err) {
+                            // unable to get price
+                            ViewManager.stopLoading();
+                            ViewManager.handleError(err, {name:'no_connection', message:'Keine Verbindung für Preisberechnung'});
+                        });
+                    } else {
+                        // call default
+                        self.defaultProductInput(product, price);
+                    }
+                } else {
+                    // call default
+                    self.defaultProductInput(product, price);
+                }
+            };
+        }
+        
         // reload data
         self.reloadData();
     },
@@ -687,6 +724,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         }
     },
     
+       
     /**
      * handle full data relaod
      */
@@ -3472,7 +3510,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             entry.subtotal_incl += amount;
             entry.price = entry.subtotal_incl;
         }
-        summary.total += amount;
+        
+        // add if no turnover
+        if ( !journal.fpos_noturnover ) {
+            summary.total += amount;
+            return false;
+        }
+        
+        // otherwise return true
+        return true;
     },
     
     updateTaxSummary: function(summary, tax) {
@@ -3543,7 +3589,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         Ext.each(order.line_ids, function(line) {
                             // get product detail                            
                             var pos_report = false;
-                            if (line.product_id) {
+                            if ( line.product_id ) {
                                 var product = self.productStore.getProductById(line.product_id);
                                 if (product) {
                                     pos_report = product.get('pos_report');
@@ -3552,7 +3598,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             // sumup                     
                             var ignoreDetail = !detail && !pos_report;
                             if ( !line.tag ) {
-                                self.updateLineSummary(sumLine, line, ignoreDetail);                             
+                                self.updateLineSummary(sumLine, line, ignoreDetail);
                             } else if ( line.tag == 'i') {
                                 self.updateLineIOSummary(sumIncome, line, ignoreDetail);
                                 ignoreCashIO += line.subtotal_incl;
@@ -3562,15 +3608,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             }
                         });
                         
-                        // calc taxes
-                        Ext.each(order.tax_ids, function(tax) {
-                            self.updateTaxSummary(sumTax, tax);
+                        // calc payment
+                        var noturnover = false;
+                        Ext.each(order.payment_ids, function(payment) {
+                            if ( self.updatePaymentSummary(sumPayment, payment, ignoreCashIO) ) noturnover = true;
                         });
                         
-                        // calc payment
-                        Ext.each(order.payment_ids, function(payment) {
-                            self.updatePaymentSummary(sumPayment, payment, ignoreCashIO);
-                        });
+                        // calc taxes
+                        if ( !noturnover ) {
+                            Ext.each(order.tax_ids, function(tax) {
+                                self.updateTaxSummary(sumTax, tax);
+                            });
+                        }
                     }              
                 });
                 
