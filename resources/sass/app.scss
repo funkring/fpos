@@ -589,14 +589,8 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 
 .PaymentListItem {
     display: table;
-    font-size: 1.3em;
+    font-size: 1.0em;
     font-weight: bold;
-}
-
-.PaymentItem {
-    display: table;
-    font-size: 1.3em;
-    padding: 4px;
 }
 
 .PaymentName {
@@ -610,9 +604,18 @@ div.ProductCategoryButtonSmall > span.x-button-label {
     align: right;
 }
 
+.PaymentItem {
+    display: table;
+    font-size: 1.1em;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
 .PaymentChangeItem {
     display: table;
-    font-size: 1.6em;
+    font-size: 1.5em;
     font-weight: bold;
     padding: 4px;
 }

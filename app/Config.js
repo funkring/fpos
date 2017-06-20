@@ -1195,7 +1195,8 @@ Ext.define('Fpos.Config', {
                      'phone',
                      'mobile',
                      'is_company',
-                     'vat']
+                     'vat',
+                     'property_product_pricelist']
         };
     },
     
@@ -1429,7 +1430,7 @@ Ext.define('Fpos.Config', {
     },
     
     supportNativePrint: function() {
-        return cordova && cordova.plugins && cordova.plugins.printer;
+        return ( typeof(cordova) != 'undefined' && cordova.plugins && cordova.plugins.printer ) ? true : false;
     },
     
     nativePrint: function(htmlPage, options) {        

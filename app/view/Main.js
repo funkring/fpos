@@ -132,6 +132,15 @@ Ext.define('Fpos.view.Main', {
                 },
                 {
                     xtype: 'button',
+                    id: 'printOrderButton',
+                    text: 'Drucken',   
+                    //ui: 'action',
+                    align: 'right',
+                    action: 'printOrder',
+                    hidden: true                
+                },   
+                {
+                    xtype: 'button',
                     id: 'saveOrderButton',
                     text: 'Bonieren',   
                     //ui: 'action',

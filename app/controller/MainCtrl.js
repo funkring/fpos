@@ -33,6 +33,7 @@ Ext.define('Fpos.controller.MainCtrl', {
             loginButton: '#loginButton',
             placeButton: '#placeButton',
             saveOrderButton: '#saveOrderButton',
+            printOrderButton: '#printOrderButton',
             saveOrderButtonMobile: '#saveOrderButtonMobile',
             userButton1: '#userButton1',
             userButton2: '#userButton2',
@@ -943,7 +944,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                     {
                         text: 'Druck wiederholen',
                         action: 'printAgain'
-                    }                 
+                    }
                 ];
                 
           // special options
@@ -1001,7 +1002,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                         {
                             text: 'Kassenbericht',
                             action: 'createCashReport'
-                        }           
+                        }
                     ];
                             
               if ( navigator.app ) {
@@ -1354,11 +1355,14 @@ Ext.define('Fpos.controller.MainCtrl', {
         
         // show save order button
         var saveOrderButton = this.getSaveOrderButton();
+        var printOrderButton = this.getPrintOrderButton();
         var showSaveOrder = ViewManager.hasViewOption(newCard, 'showSaveOrder');
         if ( showSaveOrder ) {
             saveOrderButton.show();
+            printOrderButton.show();
         } else {
             saveOrderButton.hide();
+            printOrderButton.hide();
         }
         
         // update user switches

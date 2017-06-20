@@ -16,7 +16,8 @@ Ext.define('Fpos.model.Partner', {
                 'fax',
                 'customer',
                 'comment',
-                'vat'
+                'vat',
+                'property_product_pricelist'
                 ],        
        identifier: 'uuid',
        proxy: {           

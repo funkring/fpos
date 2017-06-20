@@ -87,6 +87,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             'button[action=printAgain]' : {
                 release: 'onPrintAgain'
             },
+            'button[action=printOrder]' : {
+                release: 'onPrintOrder'
+            },
             'button[action=saveOrder]' :  {
                 release: 'onSaveOrder'
             },
@@ -849,11 +852,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
     },
     
     // save order
-    saveOrder: function(logout) {
+    saveOrder: function(logout, callback) {
         var self = this;
-        if ( !self.isEditable() ) return;
         
         ViewManager.hideMenus();
+        
+        if ( !self.isEditable() ) {
+            if ( callback ) callback();            
+            return;
+        }
          
         var place_id = self.order.get('place_id');
         var place = place_id ? self.placeStore.getPlaceById(place_id) : null;
@@ -893,8 +900,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             } 
                         
             // save order            
-            self.validateLines(true, Config.hasPrinters() && place)['catch'](function(err) {
+            return self.validateLines(true, Config.hasPrinters() && place)['catch'](function(err) {
                 ViewManager.handleError(err, {name:'Fehler', message:'Bestellung konnte nicht boniert werden'});
+                if ( callback ) callback();
             }).then(function(){                
                 if ( logout ) {
                     // logout
@@ -905,7 +913,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }
                 // update place
                 self.updatePlace(place);
+                // callback
+                if ( callback ) callback();        
             });       
+        } else {
+            // save only
+            return self.validateLines(true).then(function() {
+                if ( callback ) callback(); 
+            }, function(err) {
+                if ( callback ) callback();
+            });
         }
     },
     
@@ -3598,7 +3615,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                             // sumup                     
                             var ignoreDetail = !detail && !pos_report;
                             if ( !line.tag ) {
-                                self.updateLineSummary(sumLine, line, ignoreDetail);
+                                if ( !line.flags || line.flags.indexOf('x') < 0) {
+                                    self.updateLineSummary(sumLine, line, ignoreDetail);
+                                }
                             } else if ( line.tag == 'i') {
                                 self.updateLineIOSummary(sumIncome, line, ignoreDetail);
                                 ignoreCashIO += line.subtotal_incl;
@@ -4047,6 +4066,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 });
             }
          });
+    },
+    
+    onPrintOrder: function() {
+        var self = this;
+        self.saveOrder(false, function() {
+            self.printOrder(self.order.raw);
+        });
     },
     
     onKeycode: function(keycode) {
