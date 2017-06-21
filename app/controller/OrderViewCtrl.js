@@ -4055,11 +4055,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         var self = this;
         ViewManager.hideMenus();
         var db = Config.getDB();
-        Config.queryLastOrder().then(function(res) {
+       	Config.queryLastOrder().then(function(res) {
             if ( res.rows.length > 0 ) {
                 self.orderStore.getProxy().readDocument(res.rows[0].doc, function(err, order) {
                     if (!err) {
                     	self.printOrder(order.raw);
+                    	// notify post order again
+                        // ( if enabled )
+                        if ( Config.getProfile().fpos_sync_realtime ) {
+                            Config.getClient().then(function(client) {
+                                client.invoke("fpos.order", "post_order_notify", [order.getId()]);
+                            }, function(err) {
+                                console.error(err);
+                            });
+                        }
                     } else {
                         ViewManager.handleError(err, {name:'reprint_err', message: 'Verkauf konnte nicht gedruckt werden' });
                     }
