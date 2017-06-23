@@ -17,7 +17,8 @@ Ext.define('Fpos.model.Partner', {
                 'customer',
                 'comment',
                 'vat',
-                'property_product_pricelist'
+                'property_product_pricelist',
+                'sale_discount'
                 ],        
        identifier: 'uuid',
        proxy: {           

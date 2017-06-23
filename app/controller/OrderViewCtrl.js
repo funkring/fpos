@@ -629,11 +629,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         // if addition add section 2
                         flags += '2';
                     }
-                }                
-                if ( flags.length > 0 ) {
-                    values.flags = flags;
-                }
-                
+                }  
+                              
                 // amount
                 var a_pre = product.get('pos_amount_pre');
                 if ( a_pre > 0 || a_pre < 0 ) {
@@ -666,7 +663,15 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }  else if ( values.tag ) {
                     values.tag = null;
                 }
-                
+                  
+                // check flags and add         
+                if ( flags.length > 0 ) {
+                    values.flags = flags;
+                } else if ( !values.tag ) {
+                    // only check discount, if no tag and flag
+                    var partner = self.order.get('partner');
+                    if ( partner && partner.sale_discount ) values.discount = partner.sale_discount;
+                }
                 
                 // check flags
                 if ( flags.indexOf('2') >= 0 ) {
@@ -704,7 +709,6 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // validate lines
             self.validateLines().then(function() {
                 self.getOrderItemList().select(changedLine);
-                //self.setDefaultItemMode(changedLine);
             });
             
             // show weight dialog
@@ -4096,6 +4100,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 case 27:
                     this.onInputCancelTap();
                     break;
+                case 188:
                 case 190:
                     this.inputAction('.');
                     break;

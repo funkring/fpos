@@ -16,7 +16,7 @@ Ext.define('Fpos.Config', {
         'Fpos.model.OPartner'
     ],
     config : {       
-        version : '5.0.22',
+        version : '5.0.23',
         log : 'Ext.store.LogStore',
         databaseName : 'fpos',  
         searchDelay : 500,
@@ -1196,7 +1196,8 @@ Ext.define('Fpos.Config', {
                      'mobile',
                      'is_company',
                      'vat',
-                     'property_product_pricelist']
+                     'property_product_pricelist',
+                     'sale_discount']
         };
     },
     
