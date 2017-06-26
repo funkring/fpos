@@ -4092,6 +4092,10 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
         if ( keycode >= 48 && keycode <= 57 ) {            
             var c = String.fromCharCode(keycode);
             this.inputAction(c);
+        } if ( keycode >= 96 && keycode <= 105  )  {
+            // numbers on numberpad
+            var n = keycode - 96;
+            this.inputAction(n.toString());   
         } else {
             switch ( keycode ) {
                 case 13:
@@ -4102,7 +4106,20 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                     break;
                 case 188:
                 case 190:
+                case 108: // Numpad .
                     this.inputAction('.');
+                    break;
+                case 109: // Numpad -
+                    this.inputAction('+/-');
+                    break;
+                case 111: // Numpad /
+                    this.setMode('%', 1);
+                    break;
+                case 107: // Numpad +
+                    this.setMode('€', 1);
+                    break;
+                case 106: // Numpad *
+                    this.setMode('*', 1);
                     break;
                 case 8:
                     this.onPayment();
