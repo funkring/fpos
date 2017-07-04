@@ -484,12 +484,14 @@ Ext.define('Fpos.controller.MainCtrl', {
                     message: "Für den Benutzer wurde keine Kasse eingerichtet"
                 };
             }
-            // save profile
+            // save profile            
             profile._id = '_local/profile';
             if (profile_rev) {
                 profile._rev = profile_rev;                
             }            
-
+    
+            //TODO save last sequence
+            
             // add sync marker
             profile.resync = true;     
             profile_doc = profile;   
@@ -568,6 +570,8 @@ Ext.define('Fpos.controller.MainCtrl', {
                ] 
             }, options);
         }).then(function() {
+            //TODO get profile again
+            
             // CHECK FULL SYNC DB RESET
             // reset only after POS DONE
             // or if LAST SYNC failed
