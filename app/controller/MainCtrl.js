@@ -47,56 +47,56 @@ Ext.define('Fpos.controller.MainCtrl', {
         },
         control: {     
             'button[action=editConfig]' : {
-                release: 'editConfig'
+                tap: 'editConfig'
             },
             'button[action=showHwTest]' : {
-                release: 'showHwTest'
+                tap: 'showHwTest'
             },
             'button[action=showAdmin]' : {
-                release: 'showAdmin'
+                tap: 'showAdmin'
             },
             'button[action=sync]' : {
-                release: 'onSyncTap'
+                tap: 'onSyncTap'
             },
             'button[action=updateApp]' : {
-                release: 'onUpdateApp'
+                tap: 'onUpdateApp'
             },
             'button[action=provisioning]' : {
-                release: 'onProvisioning'
+                tap: 'onProvisioning'
             },
             'button[action=productMenu]' : {
-                release: 'onShowProductMenu'
+                tap: 'onShowProductMenu'
             },
             'button[action=createCashState]' : {
-                release: 'onCashOperation'
+                tap: 'onCashOperation'
             },  
             'button[action=createCashReport]' : {
-                release: 'onCashOperation'
+                tap: 'onCashOperation'
             }, 
             'button[action=createCashUserReport]' : {
-                release: 'onCashOperation'
+                tap: 'onCashOperation'
             },
             'button[action=fastSwitchUser]' : {
-                release: 'onFastSwitchUser'
+                tap: 'onFastSwitchUser'
             },
             'button[action=closeApp]' : {
-                release: 'onCloseApp'
+                tap: 'onCloseApp'
             },
             mainView: {
                 initialize: 'mainViewInitialize',
                 activeitemchange : 'mainActiveItemChange'                   
             },
             mainMenuButton: {
-                release: 'onShowMainMenu'                
+                tap: 'onShowMainMenu'                
             },
             saveRecordButton: {
-                release: 'saveRecord'
+                tap: 'saveRecord'
             },
             loginButton: {
-                release: 'showLogin'
+                tap: 'showLogin'
             },
             placeButton: {
-                release: 'showPlace'
+                tap: 'showPlace'
             }            
         }
     },
@@ -398,9 +398,11 @@ Ext.define('Fpos.controller.MainCtrl', {
         });
     },
     
-    onSyncTap: function() {        
+    onSyncTap: function(s, e) {
+        console.log("Sync");
         ViewManager.hideMenus();
-        this.sync();
+        
+        this.sync();        
     },
     
     onUpdateApp: function() {
@@ -453,7 +455,7 @@ Ext.define('Fpos.controller.MainCtrl', {
         var sync_err = null;
         var resync_failed = false;
         
-        // reload config        
+        // reload config
         ViewManager.startLoading("Synchronisiere Datenbank");
         return db.get('_local/config').then(function(config) {
             // connect                    
@@ -490,8 +492,6 @@ Ext.define('Fpos.controller.MainCtrl', {
                 profile._rev = profile_rev;                
             }            
     
-            //TODO save last sequence
-            
             // add sync marker
             profile.resync = true;     
             profile_doc = profile;   
@@ -569,14 +569,33 @@ Ext.define('Fpos.controller.MainCtrl', {
                    }
                ] 
             }, options);
-        }).then(function() {
-            //TODO get profile again
-            
+        }).then(function() {    
             // CHECK FULL SYNC DB RESET
             // reset only after POS DONE
             // or if LAST SYNC failed
+            ViewManager.startLoading("Lade aktualisiertes Profil");
             profile_doc.resync = (profile_doc.fpos_sync_reset && Config.getPosClosed()) || (!resync && resync_failed);
+            // GET PROFILE AGAIN, and add check action if it is FULL RESYNC
+            return client.invoke('pos.config', 'get_profile', [], {action: profile_doc.fpos_sync_reset && 'check' || ''});
+        }).then(function(profile) {
+            
+            // check profile again
+            if (!profile) {
+                throw {
+                    name: "Kein Profil",
+                    message: "Für den Benutzer wurde keine Kasse eingerichtet"
+                };
+            }
+            
+            // update profile data
+            profile._id = profile_doc._id; // id
+            if ( profile_rev ) profile._rev = profile_rev; // rev
+            profile.resync = profile_doc.resync; // resync flag
+            profile_doc = profile;
+            
+            // put new profile
             return db.put(profile_doc);
+            
         }).then(function() {
             if ( callback )  {
                 ViewManager.stopLoading();

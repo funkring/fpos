@@ -10,13 +10,13 @@ Ext.define('Fpos.controller.AdminCtrl', {
         },
         control: {     
             'button[action=optimizeDB]': {
-                release: 'optimizeDB'
+                tap: 'optimizeDB'
             },
             'button[action=adminResetDB]': {
-                release: 'resetDB'
+                tap: 'resetDB'
             },
             'button[action=activateCard]': {
-                release: 'activateCard'
+                tap: 'activateCard'
             }
         }
     },

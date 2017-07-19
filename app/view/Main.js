@@ -4,7 +4,7 @@ Ext.define('Fpos.view.Main', {
     xtype: 'main',   
     id: 'mainView', 
     requires: [
-        
+      'Ext.SingleTouchButton'  
     ],
     config: {
         defaultBackButtonText: 'Zurück',
@@ -15,7 +15,7 @@ Ext.define('Fpos.view.Main', {
         navigationBar: {            
             items: [
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'loginButton',
                     text: 'Anmelden',                                  
                     align: 'left',
@@ -23,7 +23,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton1',
                     user: null,
                     text: 'User 1',                                  
@@ -32,7 +32,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },            
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton2',
                     user: null,
                     text: 'User 2',                                  
@@ -41,7 +41,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton3',
                     user: null,
                     text: 'User 3',                                  
@@ -50,7 +50,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton4',
                     user: null,
                     text: 'User 4',                                  
@@ -59,7 +59,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton5',
                     user: null,
                     text: 'User 5',                                  
@@ -68,7 +68,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton6',
                     user: null,
                     text: 'User 6',                                  
@@ -77,7 +77,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton7',
                     user: null,
                     text: 'User 7',                                  
@@ -86,7 +86,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton8',
                     user: null,
                     text: 'User 8',                                  
@@ -95,7 +95,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'userButton9',
                     user: null,
                     text: 'User 9',                                  
@@ -104,7 +104,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'placeButton',
                     text: 'Plätze',
                     align: 'left',
@@ -113,7 +113,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                    
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     text: 'Bonieren',
                     id: 'saveOrderButtonMobile', 
                     //ui: 'action',
@@ -123,7 +123,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true 
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     iconCls: 'list',
                     id: 'mainMenuButton',
                     ui: 'plain',
@@ -131,7 +131,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true
                 },
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'printOrderButton',
                     text: 'Drucken',   
                     //ui: 'action',
@@ -140,7 +140,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },   
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'saveOrderButton',
                     text: 'Bonieren',   
                     //ui: 'action',
@@ -150,7 +150,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true                
                 },   
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'deleteRecordButton',
                     iconCls: 'trash',
                     align: 'right',
@@ -158,7 +158,7 @@ Ext.define('Fpos.view.Main', {
                     hidden: true
                 },                 
                 {
-                    xtype: 'button',
+                    xtype: 'sbutton',
                     id: 'saveRecordButton',
                     text: 'Speichern',                                  
                     align: 'right',

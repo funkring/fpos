@@ -6,7 +6,7 @@ Ext.define('Fpos.view.ScaleView', {
     id: 'scaleView',
     requires: [
         'Ext.form.FieldSet', 
-        'Ext.Button',
+        'Ext.SingleTouchButton',
         'Ext.Container',
         'Ext.Label'
     ],
@@ -24,7 +24,7 @@ Ext.define('Fpos.view.ScaleView', {
                 layout: 'vbox',
                 items: [
                     {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Tara',    
                         id: 'taraButton',
                         width: '200px',

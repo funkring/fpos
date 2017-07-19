@@ -22,7 +22,9 @@ Ext.define('Ext.TapLabel', {
     
     // @private
     onTap: function(e) {
-        this.fireAction('tap', [this, e], 'doTap');
+        if ( !futil.isDoubleTap() ) {
+            this.fireAction('tap', [this, e], 'doTap');
+        }
     },
     
     doTap: function(me, e) {

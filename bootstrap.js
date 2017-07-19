@@ -21,6 +21,7 @@ Ext.Loader.addClassPathMappings({
   "Ext.Element-static": "touch/src/dom/Element.static.js",
   "Ext.Element-style": "touch/src/dom/Element.style.js",
   "Ext.Element-traversal": "touch/src/dom/Element.traversal.js",
+  "Ext.SingleTouchButton": "app/addon/SingleTouchButton.js",
   "Ext.TapLabel": "app/addon/TapLabel.js",
   "Ext.client": "app/addon",
   "Ext.core.DomQuery": "touch/src/dom/Query.js",
@@ -96,6 +97,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.Promise": [],
   "Ext.SegmentedButton": [],
   "Ext.Sheet": [],
+  "Ext.SingleTouchButton": [],
   "Ext.Sortable": [],
   "Ext.Spacer": [],
   "Ext.TapLabel": [],
@@ -949,6 +951,9 @@ Ext.ClassManager.addNameAliasMappings({
   ],
   "Ext.Sheet": [
     "widget.sheet"
+  ],
+  "Ext.SingleTouchButton": [
+    "widget.sbutton"
   ],
   "Ext.Sortable": [],
   "Ext.Spacer": [

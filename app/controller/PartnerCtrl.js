@@ -11,7 +11,7 @@ Ext.define('Fpos.controller.PartnerCtrl', {
         },
         control: {
             'button[action=newPartner]': {
-                release: 'onNewPartner'
+                tap: 'onNewPartner'
             }                  
         }
     },

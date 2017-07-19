@@ -5,7 +5,7 @@ Ext.define('Fpos.view.AdminView', {
     xtype: 'fpos_admin',
     id: 'adminView',
     requires: [
-      'Ext.Button'
+      'Ext.SingleTouchButton'
     ],
     config: {        
         layout: 'hbox',
@@ -17,21 +17,21 @@ Ext.define('Fpos.view.AdminView', {
                 scrollable: 'vertical',
                 items: [
                     {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Datenbank optimieren',    
                         action: 'optimizeDB',
                         ui: 'posInputButtonBlack',
                         cls : 'MenuBandButton'      
                     },
                     {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Datenbank zurücksetzen',    
                         action: 'adminResetDB',
                         ui: 'posInputButtonRed',
                         cls : 'MenuBandButton'        
                     },
                     {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Karte aktivieren',    
                         action: 'activateCard',
                         ui: 'posInputButtonGreen',

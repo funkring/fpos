@@ -5,7 +5,7 @@ Ext.define('Fpos.view.TestView', {
     xtype: 'fpos_test',
     id: 'testView',
     requires: [
-      'Ext.Button',
+      'Ext.SingleTouchButton',
       'Ext.Label'
     ],
     config: {        
@@ -19,91 +19,91 @@ Ext.define('Fpos.view.TestView', {
                 scrollable: 'vertical',
                 items: [
                     {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'HW Iface',    
                         action: 'testInterface',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Print',    
                         action: 'testPrint',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'POS Display',    
                         action: 'testDisplay',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Cash Drawer',    
                         action: 'testCashdrawer',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'System Info',    
                         action: 'testInfo',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Delete DB',    
                         action: 'delDB',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                         xtype: 'button',
+                         xtype: 'sbutton',
                          text: 'Reset Dist',
                          action: 'resetDistDB',
                          ui: 'posInputButtonBlack',
                          cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Reset DB',    
                         action: 'resetDB',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Test Payworks',    
                         action: 'testPayworks',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                        xtype: 'button',
+                        xtype: 'sbutton',
                         text: 'Payworks Init',    
                         action: 'testPayworksInit',
                         ui: 'posInputButtonBlack',
                         cls : 'TestButton'
                      },
                      {
-                         xtype: 'button',
+                         xtype: 'sbutton',
                          text: 'Test Prov',
                          action: 'testProvisioning',
                          ui: 'posInputButtonBlack',
                          cls: 'TestButton'
                      },
                      {
-                         xtype: 'button',
+                         xtype: 'sbutton',
                          text: 'Test Card',
                          action: 'testCard',
                          ui: 'posInputButtonBlack',
                          cls: 'TestButton'
                      },
                      {
-                         xtype: 'button',
+                         xtype: 'sbutton',
                          text: 'Test Beep',
                          action: 'testBeep',
                          ui: 'posInputButtonBlack',

@@ -4,7 +4,8 @@ Ext.define('Fpos.view.PartnerListSelect', {
     extend: 'Ext.field.ListSelect',    
     xtype: 'fpos_partner_select',
     requires: [
-        'Fpos.Config'
+        'Fpos.Config',
+        'Ext.SingleTouchButton'
     ],
     config: {
         store: 'PartnerStore',
@@ -25,7 +26,7 @@ Ext.define('Fpos.view.PartnerListSelect', {
         title: 'Kunde',
         autoSelect: false,
         pickerToolbarItems: [{
-            xtype: 'button',
+            xtype: 'sbutton',
             iconCls: 'add',
             align: 'right',
             action: 'newPartner'      
