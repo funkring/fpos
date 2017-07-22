@@ -287,7 +287,7 @@ Ext.define('Fpos.controller.MainCtrl', {
                                                 '{name}',
                                             '</div>',                   
                                             '<div class="PosOrderLineAmount">',
-                                                '{date_order:date("d.m.Y H:i:s")}',
+                                                '{[Ext.util.Format.date(futil.strToDate(values.date_order),"d.m.Y H:i:s")]}',
                                                 '<span class="PosOrderLineSpan">{journal}</span>',
                                                 '<tpl if="pos_reference">',
                                                     '<span class="PosOrderLineSpan">{pos_reference}</span>',
