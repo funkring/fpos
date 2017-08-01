@@ -2953,8 +2953,18 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 //////////////////////////////////////////////////////
                 // FULL RECEIPT TEMPLATE
                 //////////////////////////////////////////////////////
+                
+                var logoTmpl = [];
+                if ( profile.image_format ) {
+                    logoTmpl = [
+                        '<tpl if="logo">',
+                            '<img alt="logo" width="280px"; src="data:image/'+ profile.image_format+';base64,{logo}"/>',
+                        '</tpl>'
+                    ];         
+                }
                      
                 self.printTemplate = Ext.create('Ext.XTemplate',
+                    logoTmpl.join(''),                     
                     profile.receipt_header || '',
                     headerTmpl.join(''),
                     receiptTmpl.join(''),
@@ -3022,7 +3032,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 lines : order.line_ids,
                 date: futil.strToDate(order.date),
                 place: place,
-                pos: profile.name
+                pos: profile.name,
+                logo: null
             };
             
             // add sign pid
@@ -3032,10 +3043,14 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             Config.openCashDrawer();
             
             // print/show it
-            if ( !Config.hasPrinter() ) {
+            var printerStatus = Config.getPrinterStatus();
+            if ( !printerStatus || !printerStatus.installed ) {
                 if ( order.hs ) {
                     data.link = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
                 }
+
+                // add logo
+                data.logo = profile.image_58mm;
                 
                 // print order
                 self.previewPrint(self.printTemplate.apply(data));  
@@ -3058,6 +3073,13 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 } else if ( order.qr ) {
                     data.qrsrc = "qrcode";
                     data.qrdata = order.qr;                    
+                }
+                
+                // add logo
+                if (printerStatus.type == '58mm' ) {
+                    data.logo = profile.image_58mm;
+                } else {
+                    data.logo = profile.image_80mm;
                 }
                 
                 // print order

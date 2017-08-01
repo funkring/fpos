@@ -499,6 +499,11 @@ Ext.define('Fpos.Config', {
         return hwstatus.printer && hwstatus.printer.installed;        
     },
     
+    getPrinterStatus: function() {
+        var hwstatus = this.getHwStatus();
+        return hwstatus.printer;
+    },
+    
     printHtml: function(html) {
         if ( this.hasPrinter() ) {
             window.PosHw.printHtml(html);
