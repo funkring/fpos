@@ -19,9 +19,9 @@ Ext.define('Fpos.view.OrderView', {
                 cls: 'PosStatusBar',
                 items: [                   
                     {
-                       xtype: 'taplabel',
+                       xtype: 'taplabel',                   
                        id: 'posDisplayState',
-                       cls: 'PosDisplayState'                      
+                       cls: 'PosDisplayState'                   
                     },
                     {
                        xtype: 'taplabel',

@@ -228,6 +228,9 @@ $form-field-label-bg-color : #dcdce6;
     padding: 5px;    
     font-size: 1.5em; 
     text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .PosStatusBar {
@@ -527,6 +530,7 @@ div.ProductCategoryButtonSmall > span.x-button-label {
 
 .PosOrderState {
     display: table;
+    width: 100%;
 }
 
 .PosOrderCurrency {

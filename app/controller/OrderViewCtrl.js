@@ -2729,14 +2729,17 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         '</tpl>',
                         '</table>',
                     '</tpl>',
-                    '<tpl if="qrsrc">',
-                        '<img src="{qrsrc}" alt="{qrdata}"/>',
-                        '<tpl if="!o.sig"><p align="center">Sicherheitseinrichtung ausgefallen</p></tpl>',
+                    '<tpl if="link">',
+                        '<p></p>',
+                        '<p style="word-wrap: break-word;line-height: 1.2;"><a href="{link}">{link}</a></p>',
                     '<tpl else>',
-                        '<tpl if="link">',
-                            '<p style="word-wrap: break-word;line-height: 1.2;"><a href="{link}">{link}</a></p>',
+                        '<tpl if="qrsrc">',
+                            '<img src="{qrsrc}" alt="{qrdata}"/>',
                         '</tpl>',
-                    '</tpl>'    
+                    '</tpl>',                    
+                    '<tpl if="sig_failed">',
+                        '<p align="center">Sicherheitseinrichtung ausgefallen</p>',
+                    '</tpl>'
                 ];
                 
                 // DEFAULT LINES
@@ -3033,7 +3036,8 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 date: futil.strToDate(order.date),
                 place: place,
                 pos: profile.name,
-                logo: null
+                logo: null,
+                sig_failed: order.dep && !order.sig
             };
             
             // add sign pid
@@ -3042,12 +3046,16 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
             // open cash drawer
             Config.openCashDrawer();
             
+            // print link 
+            // instead of qr
+            // if hs is active
+            if ( order.hs ) {
+                data.link = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
+            }
+                
             // print/show it
             var printerStatus = Config.getPrinterStatus();
             if ( !printerStatus || !printerStatus.installed ) {
-                if ( order.hs ) {
-                    data.link = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
-                }
 
                 // add logo
                 data.logo = profile.image_58mm;
@@ -3067,10 +3075,9 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 }); 
                               
             } else {
-                if ( order.hs ) {
-                    data.qrsrc = "qrcode";
-                    data.qrdata = Config.buildUrl('fpos/code/' + order.seq.toString() + '/' + order.hs);
-                } else if ( order.qr ) {
+            
+                // add qr code
+                if ( order.qr ) {
                     data.qrsrc = "qrcode";
                     data.qrdata = order.qr;                    
                 }
