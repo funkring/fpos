@@ -2744,6 +2744,21 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 
                 // DEFAULT LINES
                 
+                var formatAmount = function(values) {
+                    var dec = values.a_dec;
+                    if ( dec < 0 ) {
+                        return futil.formatFloat(values.qty, 0);
+                    } else if ( dec > 0 ) {
+                        return futil.formatFloat(values.qty, dec);
+                    } else {
+                        return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
+                    }
+                };
+                
+                var simpleFormatAmount = function(values) {
+                    return futil.formatFloat(values.qty, 0);
+                };
+                
                 var lineTmpl = [
                     '<tpl for="lines">',
                         '<tpl if="!this.hasTag(values,\'#\')">',
@@ -2817,7 +2832,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 if (  profile.iface_receipt == 's'  ) {
                     
                     // SIMPLE LINES
-                
+                    formatAmount = simpleFormatAmount;
                     lineTmpl = [
                         '<tpl for="lines">',
                             '<tpl if="!this.hasTag(values,\'#\')">',
@@ -2836,7 +2851,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 '<tpl else>',                       
                                     '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
                                         '<tr>',
-                                            '<td width="8%" valign="top"/>{[this.formatAmount(values)]}</td>',
+                                            '<td width="8%" valign="top">{[this.formatAmount(values)]}</td>',
                                             '<td width="60%" valign="top">',                                                   
                                                 '{name}',                                               
                                             '</td>',
@@ -2860,7 +2875,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                 } else if ( profile.iface_receipt == 'd' ) {
                 
                     // SIMPLE LINES + DETAIL
-                
+                    formatAmount = simpleFormatAmount;
                     lineTmpl = [
                         '<tpl for="lines">',
                             '<tpl if="!this.hasTag(values,\'#\')">',
@@ -2879,7 +2894,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                                 '<tpl else>',                       
                                     '<tpl if="(!this.hasTag(values) && !this.hasFlag(values,\'u\')) || this.hasFlag(values,\'d\')">',
                                         '<tr>',
-                                            '<td width="8%" valign="top"/>{[this.formatAmount(values)]}</td>',
+                                            '<td width="8%" valign="top">{[this.formatAmount(values)]}</td>',
                                             '<td width="60%" valign="top">',                                                   
                                                 '{name}',
                                                 '<tpl if="values.qty != 1.0">',
@@ -2985,16 +3000,7 @@ Ext.define('Fpos.controller.OrderViewCtrl', {
                         formatText: function(text) {
                             return text ? text.replace(/\n/g,'<br/>') : '';
                         },
-                        formatAmount: function(values)  {
-                            var dec = values.a_dec;
-                            if ( dec < 0 ) {
-                                return futil.formatFloat(values.qty, 0);
-                            } else if ( dec > 0 ) {
-                                return futil.formatFloat(values.qty, dec);
-                            } else {
-                                return futil.formatFloat(values.qty, Config.getQtyDecimals()); 
-                            }
-                        },
+                        formatAmount: formatAmount,
                         hasTag: function(values, tag) {
                             if ( !tag ) {
                                 return values.tag ? true : false;
